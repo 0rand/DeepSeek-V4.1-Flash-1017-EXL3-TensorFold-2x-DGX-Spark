@@ -51,7 +51,7 @@ Send `tools` as in the OpenAI API. `tool_choice` can be:
 - `"required"`: the model must call a tool;
 - `{"type": "function", "function": {"name": "..."}}`: the model must call that tool.
 
-## Replies in an exact format
+## Structured output (exact formats)
 
 | You want | Send |
 |---|---|

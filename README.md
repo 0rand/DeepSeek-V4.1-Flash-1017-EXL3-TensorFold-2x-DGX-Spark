@@ -1,10 +1,10 @@
 # DeepSeek V4.1 Flash on two DGX Spark
 
-**Run DeepSeek's V4.1 Flash model on two NVIDIA DGX Spark computers, twice as fast as the standard setup, and ready for AI agents.**
+**Run DeepSeek's V4.1 Flash model on two NVIDIA DGX Spark computers with about 2× the decode and prefill speed of the standard vLLM setup, ready for AI agents.**
 
 Also on Hugging Face: [Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster](https://huggingface.co/Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster). The engine is [my TensorFold fork](https://github.com/Elevatormusic/TensorFold) (branch `deepseek-v41-tp2`).
 
-Measured on 17 and 18 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run in [`runs/`](runs/2026-10-17/INDEX.md) ([long prompts and 1M](runs/2026-10-18/INDEX.md)).
+Measured on 17 and 18 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run in [`runs/`](runs/2026-10-17/INDEX.md) ([prefill and 1M context](runs/2026-10-18/INDEX.md)).
 
 ---
 
@@ -12,33 +12,33 @@ Measured on 17 and 18 October 2026 on one pair of DGX Spark. Every number on thi
 
 | | Standard setup (vLLM) | This recipe | |
 |---|---:|---:|---|
-| Writing speed, text | 27 tokens/s | **57 tokens/s** | **2.1× faster** |
-| Writing speed, code | 40 tokens/s | **92 tokens/s** | **2.3× faster** |
-| Find one fact in a 64,000-token document | 80 s | **36 s** | **2.2× faster** |
-| Reading speed, 32,000-token document | 925 tokens/s | **2,165 tokens/s** | **2.3× faster** |
-| Longest document, as each setup ships | 262,144 tokens | **1,048,576 tokens** | **4× longer** |
+| Decode, prose (1 request) | 27 tok/s | **57 tok/s** | **2.1× faster** |
+| Decode, code (1 request) | 40 tok/s | **92 tok/s** | **2.3× faster** |
+| Prefill, 32K-token prompt | 925 tok/s | **2,165 tok/s** | **2.3× faster** |
+| Needle-in-a-haystack, 64K-token prompt (request time) | 80 s | **36 s** | **2.2× faster** |
+| Max context length, as each setup ships | 262,144 tokens | **1,048,576 tokens** | **4× longer** |
 
-A *token* is a piece of a word. 100 tokens are about 75 English words.
+*Prefill* is the speed at which the server reads the prompt; it sets the time to first token (TTFT). *Decode* is the speed at which it writes the reply. A *token* is a piece of a word: 100 tokens are about 75 English words.
 
-Both setups ran on the same two computers, with the same model files. The reading speed of this recipe is the middle of 5 runs with new prompts each time (no cache); it ranges from 2,065 to 2,201 tokens/s. The vLLM reading speed comes from the test suite's 32K prompt, which can include a cache hit; that would favor vLLM. In a 1,035,020-token document, the model found the one fact it was asked for; reading the document took 13.6 minutes.
+Both setups ran on the same two computers, with the same model files. The prefill speed of this recipe is the median of 5 runs with cold prompts (new random prompts, no prefix-cache hit); the range is 2,065 to 2,201 tok/s. The vLLM prefill speed comes from the test suite's 32K prompt, which can include a prefix-cache hit; that would favor vLLM. In a needle test with a 1,035,020-token prompt, the model found the needle; the TTFT was 13.6 minutes.
 
-Reading speed with new prompts (bertholomus's benchmark client, middle of 5 runs):
+Prefill with cold prompts (bertholomus's kit_bench client, median of 5 runs):
 
-| Document length | 8,000 tokens | 32,000 | 64,000 | 128,000 | 1,035,020 |
+| Prompt length | 8K tokens | 32K | 64K | 128K | 1,035,020 |
 |---|---:|---:|---:|---:|---:|
-| Tokens per second | 2,179 | 2,165 | 2,037 | 1,961 | 1,266 (1 run) |
+| Prefill (tok/s) | 2,179 | 2,165 | 2,037 | 1,961 | 1,266 (1 run) |
 
 ---
 
 ## What you get
 
-- **Twice the speed.** Replies come about twice as fast as with the standard vLLM setup.
-- **Ready for AI agents.** The model can call tools when you tell it to, and it can reply in an exact format, such as JSON that matches your schema.
-- **Four conversations at once.** Up to 4 requests share the two computers. Together they reach 140 tokens/s on code.
-- **It remembers long documents.** Ask a second question about the same long document and the reply starts in about 1 second instead of 13. After a restart, it starts in about 3 seconds.
-- **It keeps running.** One bad request ends only that request, not the whole server.
-- **Fast reading.** Long documents load at about 2,000 to 2,200 tokens per second, up to 64,000 tokens.
-- **A very long memory.** The model can read up to 1 million tokens in one conversation. In a test with 1,035,020 tokens, it found the one fact it was asked for.
+- **About 2× the decode speed** of the standard vLLM setup: 57 vs 27 tok/s on prose, 92 vs 40 tok/s on code.
+- **Fast prefill.** About 2,000 to 2,200 tok/s for prompts up to 64K tokens.
+- **Ready for AI agents.** Forced tool calls (`tool_choice` set to `required` or to one tool) and structured output (a JSON schema, a regex or a list of choices).
+- **4 concurrent requests.** Up to 4 requests share the two computers. Aggregate decode reaches 140 tok/s on code.
+- **Prefix cache.** A second question about the same long document has a TTFT of about 1 s instead of 13 s. Cached prompts also go to disk, so after a restart the TTFT is about 3 s.
+- **Fault isolation.** One failed request ends only that request, not the whole server.
+- **1M-token context.** The full 1,048,576-token context window. A needle test with a 1,035,020-token prompt passed.
 
 ---
 
@@ -85,7 +85,7 @@ scripts/patch_template.py --worker
 docker/build.sh
 ```
 
-**5. Tune the memory settings (once).** This keeps the model out of swap and stops memory stalls while it reads long documents, on both computers. If memory runs out, it stops the model, not the computer (this needs the earlyoom package, which DGX OS has). It asks for your password on each computer. `scripts/host_tuning.sh --undo` removes it.
+**5. Tune the memory settings (once).** This keeps the model out of swap and stops memory stalls during long prefills, on both computers. If memory runs out, it stops the model, not the computer (this needs the earlyoom package, which DGX OS has). It asks for your password on each computer. `scripts/host_tuning.sh --undo` removes it.
 
 ```bash
 scripts/host_tuning.sh
@@ -119,7 +119,7 @@ Use these three settings in any app that supports a custom OpenAI endpoint:
 
 Thinking is off by default. Turn it on per request with `"reasoning_effort": "high"`.
 
-[The connection guide](docs/CONNECT.md) covers thinking levels, tool calls, exact formats, and use from other computers.
+[The connection guide](docs/CONNECT.md) covers thinking levels, tool calls, structured output, and use from other computers.
 
 ---
 
@@ -140,11 +140,11 @@ If something goes wrong, read [Operations](docs/OPERATIONS.md). It covers restar
 
 The fast engine for this model was written by [bertholomus](https://github.com/bertholomus/deepseek-v4.1-tensorfold-tp2-2xgb10). It was fast, but agent apps could not use it fully. I added what they need, with no loss of speed.
 
-1. **Tool calls on demand.** Apps can now tell the model that it *must* call a tool, or call one specific tool. Agent apps use this to plan their steps.
-2. **Prompts exactly as DeepSeek writes them.** Every prompt now matches DeepSeek's own reference, byte for byte.
-3. **Replies in an exact format.** The model can now follow a JSON schema, a pattern, or a list of choices. This works while it uses its speed tricks, and for 4 requests at once.
-4. **One error no longer stops the server.** Before, one failed request stopped all requests until a manual restart. Now it ends only that request.
-5. **Long documents load faster.** The server now keeps the computer's memory free while it reads a long prompt. Before, the memory filled up and parts of the reading stalled for 1 to 4 seconds.
+1. **Forced tool calls.** `tool_choice` now works with `required` and with one named tool: apps can tell the model that it *must* call a tool, or one specific tool. Agent apps use this to plan their steps.
+2. **Prompt encoding identical to DeepSeek's.** Every prompt now matches DeepSeek's own reference encoder, byte for byte.
+3. **Structured output.** The model can now follow a JSON schema, a regex, or a list of choices. This works with speculative decoding, and with 4 concurrent requests.
+4. **Fault isolation.** Before, one failed request stopped all requests until a manual restart. Now it ends only that request.
+5. **Faster long prefills.** The server now drops the page cache of the Engram tables after each prompt chunk. Before, the page cache filled the memory, and some chunks stalled for 1 to 4 s in reclaim and compaction.
 
 [Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2), [#3](https://github.com/Elevatormusic/TensorFold/pull/3) and [#4](https://github.com/Elevatormusic/TensorFold/pull/4).
 
@@ -152,10 +152,10 @@ The fast engine for this model was written by [bertholomus](https://github.com/b
 
 ## Good to know
 
-- **The first long question after a start is a little slower.** It takes about 1 to 2 seconds more. Later questions do not.
-- **Long documents load a little slower than bertholomus reports.** At 32,000 tokens this setup reads 2,165 tokens/s; they publish 2,421 on different computers and the original V4.1 weights. The speed also changes from run to run (at 64,000 tokens: 1,840 to 2,120 tokens/s).
-- **A 1-million-token document takes time.** Reading it takes about 14 minutes before the first word of the reply.
-- **The standard setup was tested one request at a time only.** So the "four at once" numbers have no vLLM comparison.
+- **The first long prompt after a start has a higher TTFT,** about 1 to 2 s more. Later prompts do not.
+- **Prefill is a little slower than bertholomus reports.** At 32K tokens this setup prefills at 2,165 tok/s; they publish 2,421 on different computers and the original V4.1 weights. Prefill speed also changes from run to run (64K: 1,840 to 2,120 tok/s).
+- **A 1M-token prompt has a TTFT of about 14 minutes** (prefill at 1,266 tok/s).
+- **vLLM was tested with 1 request at a time only.** So the concurrency numbers have no vLLM comparison.
 - **Living Weights is not available.** That TensorFold feature works only with a different model on one computer.
 
 [All known limits](docs/KNOWN-LIMITS.md)
@@ -181,21 +181,21 @@ The fast engine for this model was written by [bertholomus](https://github.com/b
 
 #### This recipe vs the vLLM kit (same computers, same day, same prompts)
 
-vLLM: 1 run. This recipe: 6 runs (6 engine builds of the same day, the last is the released one). The table shows the middle value and the range.
+vLLM: 1 run. This recipe: 6 runs (6 engine builds of the same day, the last is the released one). The table shows the median and the range.
 
-| Single request | vLLM kit | This recipe (middle, range) | Faster by |
+| 1 request | vLLM kit | This recipe (median, range) | Faster by |
 |---|---:|---:|---:|
-| Writing, text | 27.0 tok/s | **56.8** (52.5-57.7) tok/s | **2.1×** |
-| Writing, code | 39.9 tok/s | **92.2** (86.0-93.3) tok/s | **2.3×** |
-| Writing, text, thinking on | 25.7 tok/s | **54.2** (47.2-58.5) tok/s | **2.1×** |
-| Writing, code, thinking on | 34.5 tok/s | **71.6** (59.6-77.8) tok/s | **2.1×** |
-| Find a fact in 64K tokens | 80.4 s | **35.9** (34.0-40.0) s | **2.2×** |
-| Read a 32K prompt (\*) | 925 tok/s | 2,100 (1,597-2,260) tok/s | 2.3× |
-| Find a fact in 200K tokens (\*) | 216.9 s | 109.8 (103.6-126.9) s | 2.0× |
-| Read an 8K prompt, first after a start | 789 tok/s | 562 (427-958) tok/s | 0.7× |
+| Decode, prose | 27.0 tok/s | **56.8** (52.5-57.7) tok/s | **2.1×** |
+| Decode, code | 39.9 tok/s | **92.2** (86.0-93.3) tok/s | **2.3×** |
+| Decode, prose, thinking on | 25.7 tok/s | **54.2** (47.2-58.5) tok/s | **2.1×** |
+| Decode, code, thinking on | 34.5 tok/s | **71.6** (59.6-77.8) tok/s | **2.1×** |
+| Needle test, 64K tokens (request time) | 80.4 s | **35.9** (34.0-40.0) s | **2.2×** |
+| Prefill, 32K prompt (\*) | 925 tok/s | 2,100 (1,597-2,260) tok/s | 2.3× |
+| Needle test, 200K tokens (\*) | 216.9 s | 109.8 (103.6-126.9) s | 2.0× |
+| Prefill, 8K prompt, first after a start | 789 tok/s | 562 (427-958) tok/s | 0.7× |
 
-- Writing speed counts the tokens the server reports, per second of writing. Text and code are shown apart, because code drafts better with speculative decoding.
-- (\*) These two rows can include cache hits, on both engines. The suite's 32K prompt starts with its 8K prompt, and the 200K prompt starts like the 64K one.
+- Decode speed counts the completion tokens the server reports, per second after the first token. Prose and code are shown apart, because code has a higher draft acceptance rate with speculative decoding (greedy: 3.6 tokens per step on code, 2.0 on prose).
+- (\*) These two rows can include prefix-cache hits, on both engines. The suite's 32K prompt starts with its 8K prompt, and the 200K prompt starts like the 64K one.
 - The 8K row is slow because it is the first long prompt after each start. A longer warm-up list does not fix it ([tuning notes](runs/2026-10-17/17_tuning_warmup-spill-drafts/NOTES.md)). The likely cause is cold reads of the Engram tables from disk.
 - Both engines use speculative decoding (vLLM: DSpark, 3 drafts; this recipe: DSpark, 5 drafts; 4 drafts measured slower).
 
@@ -205,28 +205,28 @@ bertholomus's own benchmark client ([`kit_bench.py`](runs/2026-10-17/16_kit-benc
 
 | kit_bench row | Their Zig engine v0.6.0 | Their Python engine v0.5.1 | **This recipe** |
 |---|---:|---:|---:|
-| Writing, set a: code / text / structured | 89.8 / 59.0 / 106.6 | 89.4 / 57.7 / 107.2 | 84.7 / 58.7 / 103.8 |
-| Writing, set b: code / text / structured | 103.1 / 64.1 / 143.2 | 101.5 / 63.4 / 143.4 | 95.1 / 57.7 / 140.6 |
-| 2 / 4 requests at once, total | 83.1 / 118.9 | 79.8 / 113.0 | 81.5 / 116.7 |
-| 4 requests for 90 s, total | 142.0 | 125.3 | 120.0 |
-| Read a prompt, no cache: 8K / 32K / 64K / 128K | 2,433 / 2,495 / 2,461 / 2,354 | 2,387 / 2,421 / 2,363 / 2,242 | 2,179 / 2,165 / 2,037 / 1,961 (\*\*) |
-| Writing after a 128K prompt | 100.1 | 49.8 | 61.8 (52-73, 3 runs) |
+| Decode, set a: code / prose / structured | 89.8 / 59.0 / 106.6 | 89.4 / 57.7 / 107.2 | 84.7 / 58.7 / 103.8 |
+| Decode, set b: code / prose / structured | 103.1 / 64.1 / 143.2 | 101.5 / 63.4 / 143.4 | 95.1 / 57.7 / 140.6 |
+| Aggregate decode, 2 / 4 concurrent requests | 83.1 / 118.9 | 79.8 / 113.0 | 81.5 / 116.7 |
+| Aggregate decode, 4 concurrent requests for 90 s | 142.0 | 125.3 | 120.0 |
+| Prefill, cold prompt: 8K / 32K / 64K / 128K | 2,433 / 2,495 / 2,461 / 2,354 | 2,387 / 2,421 / 2,363 / 2,242 | 2,179 / 2,165 / 2,037 / 1,961 (\*\*) |
+| Decode after a 128K prompt | 100.1 | 49.8 | 61.8 (52-73, 3 runs) |
 
-Their Zig engine does not have the agent features above (forced tool calls and exact formats return an error there).
+Their Zig engine does not have the agent features above (forced tool calls and structured output return an error there).
 
-(\*\*) Middle of 5 runs on 18 October with the final setup (fork PR #4 and `scripts/host_tuning.sh`); ranges 2,174-2,223 / 2,065-2,201 / 1,836-2,119 / 1,851-1,986. On 17 October, before those changes: 2,190 / 1,707 / 1,457 / 1,420. How each change was found: [runs/2026-10-18](runs/2026-10-18/INDEX.md).
+(\*\*) Median of 5 runs on 18 October with the final setup (fork PR #4 and `scripts/host_tuning.sh`); ranges 2,174-2,223 / 2,065-2,201 / 1,836-2,119 / 1,851-1,986. On 17 October, before those changes: 2,190 / 1,707 / 1,457 / 1,420. How each change was found: [runs/2026-10-18](runs/2026-10-18/INDEX.md).
 
-#### Several requests at once (released engine)
+#### Concurrency (released engine)
 
-| Requests | Text, total | Code, total | Code, each |
+| Concurrent requests | Prose, aggregate decode | Code, aggregate decode | Code, per request |
 |---:|---:|---:|---:|
-| 1 | 29.6 tok/s (includes a 7.3 s first-request wait) | 94.1 tok/s | 95.8 tok/s |
+| 1 | 29.6 tok/s (includes a 7.3 s TTFT on the first request) | 94.1 tok/s | 95.8 tok/s |
 | 2 | 73.5 tok/s | 106.6 tok/s | 57.2 tok/s |
 | 3 | 82.3 tok/s | 124.3 tok/s | 43.5 tok/s |
 | 4 | **94.4 tok/s** | **140.3 tok/s** | 36.8 tok/s |
 
-- **Cache.** A second question about the same 24K-token document: first token after **12.8 s cold, 1.1 s warm** (22,528 of 24,210 tokens from the cache).
-- **After a restart** (`SPILL_GIB=64`, on by default): an 18K-token document came back in **2.7 s** instead of 16.8 s.
+- **Prefix cache.** A second question about the same 24K-token document: TTFT **12.8 s cold, 1.1 s warm** (22,528 of 24,210 prompt tokens cached).
+- **After a restart** (`SPILL_GIB=64`, on by default, keeps cached prompts on disk): TTFT for an 18K-token prompt **2.7 s** instead of 16.8 s.
 
 Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 
