@@ -37,7 +37,7 @@ Reading speed with new prompts (bertholomus's benchmark client, middle of 5 runs
 - **Four conversations at once.** Up to 4 requests share the two computers. Together they reach 140 tokens/s on code.
 - **It remembers long documents.** Ask a second question about the same long document and the reply starts in about 1 second instead of 13. After a restart, it starts in about 3 seconds.
 - **It keeps running.** One bad request ends only that request, not the whole server.
-- **Fast reading.** Long documents load at about 2,100 to 2,200 tokens per second, up to 64,000 tokens.
+- **Fast reading.** Long documents load at about 2,000 to 2,200 tokens per second, up to 64,000 tokens.
 - **A very long memory.** The model can read up to 1 million tokens in one conversation. In a test with 1,035,020 tokens, it found the one fact it was asked for.
 
 ---
