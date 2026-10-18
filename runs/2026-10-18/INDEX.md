@@ -25,7 +25,7 @@ hw5 and hw6 ran with the same host settings, set by hand before the engine resta
 
 ## Decode check (final setup)
 
-`kitbench-decode/`: greedy decode, 3 replies per prompt, same text and same number of steps as on 17 October (`runs/2026-10-17`). Set a: code 84.7 (median of `decode-a-ht2.json`; `decode-a-ht.json` gave 71.0), prose 59.0, structured 104.3. Set b: code 98.8, prose 57.4, structured 139.5. In each set-a run, 1 or 2 of the 3 code replies ran at 69-71 tok/s instead of 85: decode has the same slow state as the prompts. Engine counters for the 512-token replies (rank 0 log, `done` lines): prose 1.98 tokens per decode step (253 of 436 drafted tokens accepted), code 3.60 (369 of 542), structured 4.73 (403 of 502); the slow code replies had the same 142 steps.
+`kitbench-decode/`: greedy decode, 3 replies per prompt, same text and same number of steps as on 17 October (`runs/2026-10-17`). Set a: code 84.7 (median of `decode-a-ht2.json`; `decode-a-ht.json` gave 71.0), prose 59.0, structured 104.3. Set b: code 98.8, prose 57.4, structured 139.5. In each set-a run, 1 or 2 of the 3 code replies ran at 69-71 tok/s instead of 85: decode has the same slow state as the prompts. Engine counters for the 512-token replies of set a (`logs/r0-decode-done-ht.log`: every rank 0 `done` line of the decode check; `rounds` = decode steps, `accepted` = accepted/drafted tokens; tokens per decode step = (rounds + accepted) / rounds): prose 1.98 (rounds 258, 253 of 436 drafted tokens accepted), code 3.60 (rounds 142, 369 of 542), structured 4.73 (rounds 108, 403 of 502); the slow code replies (69-71 tok/s) had the same 142 steps.
 
 ## Memory settings: A/B with 0.5 s samples
 
