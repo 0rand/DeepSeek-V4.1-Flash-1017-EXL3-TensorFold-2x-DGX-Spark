@@ -44,7 +44,7 @@ for kv in vm.swappiness=10 vm.compaction_proactiveness=0 vm.extfrag_threshold=50
 done
 [ -z "\$diff" ] && echo "OK memory settings of scripts/host_tuning.sh" \
   || echo "FAIL memory settings differ (\${diff# }): run scripts/host_tuning.sh"
-systemctl is-active -q earlyoom && grep -qF -- "--prefer '^tensorfold'" /etc/default/earlyoom 2>/dev/null \
+systemctl is-active -q earlyoom && grep -qF -- "--prefer ^tensorfold " /etc/default/earlyoom 2>/dev/null \
   && echo "OK earlyoom stops the engine before the node runs out of memory" \
   || echo "FAIL earlyoom is not running with the settings of scripts/host_tuning.sh: run it again"
 docker ps --format '{{.Names}}' | grep -q '^tfv41-r' && echo "FAIL a tfv41 rank already runs: ./stop.sh first" || true

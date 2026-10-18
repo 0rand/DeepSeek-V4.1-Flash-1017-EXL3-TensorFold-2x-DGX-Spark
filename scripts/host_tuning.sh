@@ -101,8 +101,9 @@ systemctl start tensorfold.slice
 printf '%s\n' "vm.swappiness = 10" "vm.compaction_proactiveness = 0" "vm.extfrag_threshold = 500" \
   "vm.min_free_kbytes = 1048576" "vm.watermark_scale_factor = 50" > "$conf"
 sysctl -q -p "$conf"
-# -M: SIGTERM / SIGKILL limits in KiB of MemAvailable. -s 100,100: both signals also when swap is free. -p: earlyoom runs first.
-args="-r 3600 -p -M 1048576,524288 -s 100,100 --prefer '^tensorfold' --avoid '^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)'"
+# -M: SIGTERM / SIGKILL limits in KiB of MemAvailable. -s 100,100: both signals also when swap is free. -p: earlyoom
+# runs first. No quotes: the init script passes these words to earlyoom as they are (systemd removes quotes).
+args="-r 3600 -p -M 1048576,524288 -s 100,100 --prefer ^tensorfold --avoid ^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)"
 [ -f "$eo.pre-tensorfold" ] || cp "$eo" "$eo.pre-tensorfold"
 { grep -v '^EARLYOOM_ARGS=' "$eo.pre-tensorfold" || true; printf 'EARLYOOM_ARGS="%s"\n' "$args"; } > "$eo.new"
 mv "$eo.new" "$eo"
