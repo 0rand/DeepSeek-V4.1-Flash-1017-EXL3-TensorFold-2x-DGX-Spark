@@ -13,7 +13,8 @@ Each item was checked against the files in this repo. The file that supports the
 3. **KV cache bytes per token.** The run files do not hold the KV pool size in tokens, for either engine. See [BENCHMARKS.md](BENCHMARKS.md).
 4. **Context near 1M tokens.**
    - The server is set to 1,048,576 tokens (`--context 1048576`).
-   - One needle test reached 1,034,753 tokens and found the needle (830 s to the first token, [runs/2026-10-18](../runs/2026-10-18/INDEX.md)). It ran once, with one needle at 63% depth, on image `fd2365042f56`.
+   - Two needle tests reached about 1,035,000 tokens and found the needle (818 s and 830 s to the first token, [runs/2026-10-18](../runs/2026-10-18/INDEX.md)). Each had one needle at 63% depth; the second ran on the final setup.
+   - Memory is close to the limit at 1M: the fill took the head down to 1.7 GiB available, and earlyoom stops the engine below 1 GiB. Close other programs on the head before a 1M request.
    - Not measured near 1M: answer quality beyond one fact, decode speed, two long prompts at the same time.
    - The vLLM baseline was set to 262,144 tokens (`MAX_MODEL_LEN`).
 5. **Output quality.** The repo has no perplexity or accuracy test. The suite checks a few fixed tasks. No test compares TensorFold output with vLLM output. The perplexity numbers on the model card are for the weights, not for this engine.

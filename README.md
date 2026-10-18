@@ -20,13 +20,13 @@ Measured on 17 and 18 October 2026 on one pair of DGX Spark. Every number on thi
 
 A *token* is a piece of a word. 100 tokens are about 75 English words.
 
-Both setups ran on the same two computers, with the same model files. The reading speed of this recipe is the middle of 5 runs with new prompts each time (no cache); it ranges from 2,065 to 2,201 tokens/s. The vLLM reading speed comes from the test suite's 32K prompt, which can include a cache hit; that would favor vLLM. In a 1,034,753-token document, the model found the one fact it was asked for; reading the document took 13.8 minutes.
+Both setups ran on the same two computers, with the same model files. The reading speed of this recipe is the middle of 5 runs with new prompts each time (no cache); it ranges from 2,065 to 2,201 tokens/s. The vLLM reading speed comes from the test suite's 32K prompt, which can include a cache hit; that would favor vLLM. In a 1,035,020-token document, the model found the one fact it was asked for; reading the document took 13.6 minutes.
 
 Reading speed with new prompts (bertholomus's benchmark client, middle of 5 runs):
 
-| Document length | 8,000 tokens | 32,000 | 64,000 | 128,000 | 1,034,753 |
+| Document length | 8,000 tokens | 32,000 | 64,000 | 128,000 | 1,035,020 |
 |---|---:|---:|---:|---:|---:|
-| Tokens per second | 2,179 | 2,165 | 2,037 | 1,961 | 1,246 (1 run) |
+| Tokens per second | 2,179 | 2,165 | 2,037 | 1,961 | 1,266 (1 run) |
 
 ---
 
@@ -38,7 +38,7 @@ Reading speed with new prompts (bertholomus's benchmark client, middle of 5 runs
 - **It remembers long documents.** Ask a second question about the same long document and the reply starts in about 1 second instead of 13. After a restart, it starts in about 3 seconds.
 - **It keeps running.** One bad request ends only that request, not the whole server.
 - **Fast reading.** Long documents load at about 2,100 to 2,200 tokens per second, up to 64,000 tokens.
-- **A very long memory.** The model can read up to 1 million tokens in one conversation. In a test with 1,034,753 tokens, it found the one fact it was asked for.
+- **A very long memory.** The model can read up to 1 million tokens in one conversation. In a test with 1,035,020 tokens, it found the one fact it was asked for.
 
 ---
 

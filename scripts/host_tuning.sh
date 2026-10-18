@@ -18,9 +18,10 @@
 #      1.3 s), the first version of this script (extfrag_threshold 1000, kernel watermarks) gave 5, these values
 #      gave 2 (both at 1.31 s) and 128K prompts at 1,986 and 1,981 tokens/s (runs/2026-10-18/INDEX.md).
 #   3. earlyoom (if installed) stops the engine, not the node, when memory runs out. It sends SIGTERM to the
-#      process named "tensorfold" below 1.5 GiB available and SIGKILL below 0.75 GiB. It ignores swap, because the
-#      engine cannot use swap. The engine stops its own growth at 2 GiB available (TF_DS_MEM_FLOOR_GIB), so a
-#      healthy engine is not stopped. Your old file stays as /etc/default/earlyoom.pre-tensorfold.
+#      process named "tensorfold" below 1 GiB available and SIGKILL below 0.5 GiB. It ignores swap, because the
+#      engine cannot use swap. The engine stops its own growth at 2 GiB available (TF_DS_MEM_FLOOR_GIB), and a
+#      1M-token prompt took the head down to 1.7 GiB, so a healthy engine is not stopped. Your old file stays as
+#      /etc/default/earlyoom.pre-tensorfold.
 set -euo pipefail
 # shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
@@ -65,7 +66,7 @@ printf '%s\n' "vm.swappiness = 10" "vm.compaction_proactiveness = 0" "vm.extfrag
 sysctl -q -p "$conf"
 if [ -f "$eo" ]; then
   # -M: SIGTERM / SIGKILL limits in KiB of MemAvailable. -s 100,100: both signals also when swap is free. -p: earlyoom runs first.
-  args="-r 3600 -p -M 1572864,786432 -s 100,100 --prefer '^tensorfold' --avoid '^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)'"
+  args="-r 3600 -p -M 1048576,524288 -s 100,100 --prefer '^tensorfold' --avoid '^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)'"
   [ -f "$eo.pre-tensorfold" ] || cp "$eo" "$eo.pre-tensorfold"
   { grep -v '^EARLYOOM_ARGS=' "$eo.pre-tensorfold" || true; printf 'EARLYOOM_ARGS="%s"\n' "$args"; } > "$eo.new"
   mv "$eo.new" "$eo"

@@ -1,0 +1,23 @@
+{
+ "code": "ORCHID-6456",
+ "found": true,
+ "answer": "ORCHID-6456",
+ "depth": 0.63,
+ "prompt_tokens": 1035020,
+ "context_limit": 1048576,
+ "ttft_s": 817.7,
+ "total_s": 825.9,
+ "prefill_tps": 1266,
+ "usage": {
+  "prompt_tokens": 1035020,
+  "completion_tokens": 7,
+  "total_tokens": 1035027,
+  "prompt_tokens_details": {
+   "cached_tokens": 0
+  },
+  "completion_tokens_details": {
+   "reasoning_tokens": 0
+  }
+ },
+ "utc": "2026-10-18T04:47:07Z"
+}

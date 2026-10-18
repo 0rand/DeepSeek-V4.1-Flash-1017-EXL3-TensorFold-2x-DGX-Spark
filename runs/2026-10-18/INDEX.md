@@ -4,7 +4,7 @@ Same pair of DGX Spark as `runs/2026-10-17/`. All prefill rows use bertholomus's
 
 ## Final setup (the recipe as published)
 
-Image `tensorfold-dsv41:92aa710b533d` (fork PRs #1-#4), `TF_DS_ENGRAM_DONTNEED=1`, `--oom-score-adj 1000`, and the host settings of `scripts/host_tuning.sh`: no swap for the engine, `vm.swappiness=10`, `vm.compaction_proactiveness=0`, `vm.extfrag_threshold=500`, `vm.min_free_kbytes=1048576`, `vm.watermark_scale_factor=50`, and earlyoom set to stop the engine below 1.5 GiB available.
+Image `tensorfold-dsv41:92aa710b533d` (fork PRs #1-#4), `TF_DS_ENGRAM_DONTNEED=1`, `--oom-score-adj 1000`, and the host settings of `scripts/host_tuning.sh`: no swap for the engine, `vm.swappiness=10`, `vm.compaction_proactiveness=0`, `vm.extfrag_threshold=500`, `vm.min_free_kbytes=1048576`, `vm.watermark_scale_factor=50`, and earlyoom set to stop the engine below 1 GiB available.
 
 | Run | 8K (best of 2) | 32K | 64K | 128K | File |
 |---|---:|---:|---:|---:|---|
@@ -21,7 +21,7 @@ hw5 and hw6 ran with the same host settings, set by hand before the engine resta
 
 - `gate/suite-ht.log`: 32/32 in 264 s. The 64K and 200K needles filled from new (31.1 s and 94.9 s). Before the memory changes, the 64K needle froze the head.
 - `gate/grammar-check-ht.log`: 14/14.
-- Lowest MemAvailable during the bench and the gate: 2,206 MiB on the head, 2,712 MiB on the worker. earlyoom acts at 1,533 MiB; it did not act.
+- Lowest MemAvailable during the bench and the gate: 2,206 MiB on the head, 2,712 MiB on the worker. During the 1M needle (below): 1,779 MiB on the head. earlyoom acted at 1,536 MiB in these runs (it did not act); after the 1M run the limit went down to 1,024 MiB.
 
 ## Decode check (final setup)
 
@@ -55,6 +55,8 @@ Same image, `vm.extfrag_threshold=1000` and kernel watermarks. The spread was la
 ## 1M context
 
 `needle-1m.json` (`scripts/needle_1m.py 1035000 0.63`): a 1,034,753-token prompt (limit 1,048,576), random filler lines, one needle at 63% depth. Found (`ORCHID-8071`), first token after 830.4 s (1,246 tok/s), `cached_tokens` 0. Image `fd2365042f56` with swap off; chunk log in `logs/r0-20261018T015205Z.log`.
+
+`needle-1m-final.json`: the same test on the final setup. A 1,035,020-token prompt, found (`ORCHID-6456`), first token after 817.7 s (1,266 tok/s), `cached_tokens` 0. Lowest MemAvailable during the fill: 1,779 MiB on the head, 2,542 MiB on the worker. That was only 243 MiB above earlyoom's first limit (1,536 MiB), so `scripts/host_tuning.sh` now stops the engine below 1,024 MiB (SIGKILL below 512 MiB). MemAvailable already leaves out the kernel's high watermark (about 2.3 GiB with these settings), so the kernel still has its reserve at those limits.
 
 ## How each change was found (in order)
 
