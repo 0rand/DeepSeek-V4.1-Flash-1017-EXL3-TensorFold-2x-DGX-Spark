@@ -2,7 +2,7 @@
 # tests/host_tuning_test.sh [SCRIPT]: runs the node script of host_tuning.sh against stub sysctl/systemctl and temp paths.
 # Checks: the first apply saves the live values; a second apply keeps them; --undo restores them and removes the
 # file; --undo with no saved file falls back to kernel defaults plus "sysctl --system"; a missing or dead earlyoom
-# stops the apply.
+# stops the apply, a failed apply rolls the node back, and --check changes nothing.
 set -euo pipefail
 src=${1:-$(dirname "$0")/../scripts/host_tuning.sh}
 T=$(mktemp -d)
@@ -28,6 +28,7 @@ cat > "$T/bin/systemctl" <<STUB
 case "\$*" in
   "show -p MemorySwapMax --value"*) echo 0 ;;
   "is-active"*) [ -f "$T/inactive" ] && exit 3; echo active ;;
+  "restart earlyoom") [ -f "$T/restartfail" ] && exit 1; echo "systemctl \$*" >> "$T/log" ;;
   *) echo "systemctl \$*" >> "$T/log" ;;
 esac
 STUB
@@ -61,7 +62,22 @@ if PATH="$T/bin:$PATH" bash "$T/node.sh" >/dev/null 2>"$T/err"; then echo "FAIL 
 check "apply without earlyoom stops with a message" "grep -q 'earlyoom is not installed' '$T/err'"
 check "apply without earlyoom changes nothing" "[ ! -f '$T/etc/sysctl.d/99-tensorfold.conf' ] && [ ! -f '$b' ]"
 mv "$T/eo.keep" "$T/etc/default/earlyoom"
+rolled_back="[ ! -f '$T/etc/sysctl.d/99-tensorfold.conf' ] && [ ! -f '$T/etc/systemd/system/tensorfold.slice' ] \
+  && [ ! -f '$b' ] && grep -q '^vm.swappiness=60$' '$T/state' && grep -q '^vm.watermark_scale_factor=10$' '$T/state' \
+  && grep -q '^EARLYOOM_ARGS=\"-r 3600\"$' '$T/etc/default/earlyoom' && [ ! -f '$T/etc/default/earlyoom.pre-tensorfold' ]"
 touch "$T/inactive"
 if PATH="$T/bin:$PATH" bash "$T/node.sh" >/dev/null 2>"$T/err"; then echo "FAIL apply with a dead earlyoom must fail"; exit 1; fi
 check "apply fails when earlyoom does not start" "grep -q 'earlyoom did not start' '$T/err'"
+check "that failure rolls the node back" "$rolled_back && grep -q 'back to its state before the first run' '$T/err'"
+rm -f "$T/inactive"
+touch "$T/restartfail"
+if PATH="$T/bin:$PATH" bash "$T/node.sh" >/dev/null 2>"$T/err"; then echo "FAIL apply with a failed restart must fail"; exit 1; fi
+check "a failed earlyoom restart rolls the node back" "$rolled_back"
+rm -f "$T/restartfail"
+out=$(PATH="$T/bin:$PATH" bash "$T/node.sh" --check)
+check "--check passes on a ready node and changes nothing" "echo '$out' | grep -q ready && [ ! -f '$T/etc/sysctl.d/99-tensorfold.conf' ] && [ ! -f '$b' ]"
+mv "$T/etc/default/earlyoom" "$T/eo.keep"
+if PATH="$T/bin:$PATH" bash "$T/node.sh" --check >/dev/null 2>&1; then echo "FAIL --check without earlyoom must fail"; exit 1; fi
+echo "PASS --check fails without earlyoom"
+mv "$T/eo.keep" "$T/etc/default/earlyoom"
 echo "all checks passed"

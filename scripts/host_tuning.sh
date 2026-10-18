@@ -6,6 +6,8 @@
 #   scripts/host_tuning.sh          apply on the head and the worker (you can run it again; the result is the same)
 #   scripts/host_tuning.sh --undo   remove the changes on both nodes and put back the sysctl values from before
 #                                   the first run (kept in /var/lib/tensorfold-host-tuning/sysctl.before)
+# It checks both nodes before it changes either one. If a step fails on a node, that node goes back to its state
+# before the first run; if the worker fails, the head goes back too, so the two nodes stay alike.
 # Changes on each node:
 #   1. /etc/systemd/system/tensorfold.slice with MemorySwapMax=0. start.sh puts both rank containers in this slice.
 #   2. /etc/sysctl.d/99-tensorfold.conf (kernel defaults in brackets):
@@ -31,10 +33,12 @@ node_script() {
 set -euo pipefail
 eo=/etc/default/earlyoom
 conf=/etc/sysctl.d/99-tensorfold.conf
+slice=/etc/systemd/system/tensorfold.slice
 before=/var/lib/tensorfold-host-tuning/sysctl.before
 keys="vm.swappiness vm.compaction_proactiveness vm.extfrag_threshold vm.min_free_kbytes vm.watermark_scale_factor"
-if [ "${1:-}" = "--undo" ]; then
-  rm -f /etc/systemd/system/tensorfold.slice "$conf"
+
+undo() {  # puts the node back to its state before the first run
+  rm -f "$slice" "$conf"
   systemctl daemon-reload
   if [ -f "$before" ]; then
     sysctl -q -p "$before"
@@ -50,20 +54,38 @@ if [ "${1:-}" = "--undo" ]; then
     mv "$eo.pre-tensorfold" "$eo"
     systemctl restart earlyoom || true
   fi
-  echo "$(hostname): undone ($note)"; exit 0
-fi
+}
+
+case "${1:-}" in
+  --undo) undo; echo "$(hostname): undone ($note)"; exit 0 ;;
+  --check|"") ;;
+  *) echo "unknown option: $1" >&2; exit 2 ;;
+esac
 # earlyoom is the part that keeps the node reachable when memory runs out: stop before any change if it is missing.
 if [ ! -f "$eo" ] || ! command -v earlyoom >/dev/null; then
   echo "$(hostname): earlyoom is not installed. Install it (sudo apt install earlyoom), then run this script again." >&2
   exit 1
 fi
+for k in $keys; do sysctl -n "$k" >/dev/null; done
+if [ "${1:-}" = "--check" ]; then echo "$(hostname): ready"; exit 0; fi
+
 # Keep the live values before the first run, so --undo can put them back. With $conf present they are ours.
 if [ ! -f "$conf" ] && [ ! -f "$before" ]; then
   mkdir -p "${before%/*}"
-  for k in $keys; do echo "$k = $(sysctl -n "$k")"; done > "$before"
+  for k in $keys; do echo "$k = $(sysctl -n "$k")"; done > "$before.new"
+  mv "$before.new" "$before"
 fi
-printf '[Unit]\nDescription=TensorFold rank containers (no swap)\n\n[Slice]\nMemorySwapMax=0\n' \
-  > /etc/systemd/system/tensorfold.slice
+# From here on, a failure puts the node back to its state before the first run, so it is never left half tuned.
+rollback() {
+  local rc=$?
+  [ "$rc" = 0 ] && return
+  set +e; trap - EXIT
+  undo >/dev/null 2>&1
+  echo "$(hostname): setup failed; the node is back to its state before the first run" >&2
+  exit "$rc"
+}
+trap rollback EXIT
+printf '[Unit]\nDescription=TensorFold rank containers (no swap)\n\n[Slice]\nMemorySwapMax=0\n' > "$slice"
 systemctl daemon-reload
 systemctl start tensorfold.slice
 printf '%s\n' "vm.swappiness = 10" "vm.compaction_proactiveness = 0" "vm.extfrag_threshold = 500" \
@@ -81,6 +103,7 @@ if ! systemctl is-active -q earlyoom; then
   echo "$(hostname): earlyoom did not start with the new settings (journalctl -u earlyoom shows why)." >&2
   exit 1
 fi
+trap - EXIT
 echo "$(hostname): swappiness $(cat /proc/sys/vm/swappiness), compaction_proactiveness" \
   "$(cat /proc/sys/vm/compaction_proactiveness), min_free_kbytes $(cat /proc/sys/vm/min_free_kbytes)," \
   "tensorfold.slice swap $(systemctl show -p MemorySwapMax --value tensorfold.slice)," \
@@ -95,10 +118,20 @@ rtmp=""
 cleanup() { rm -f "$tmp"; [ -z "$rtmp" ] || ssh -n -o BatchMode=yes "$WORKER_SSH" "rm -f '$rtmp'" || true; }
 trap cleanup EXIT
 node_script > "$tmp"
+rtmp=$(ssh -n -o BatchMode=yes "$WORKER_SSH" mktemp)
+scp -q "$tmp" "$WORKER_SSH:$rtmp"
+if [ -z "${1:-}" ]; then
+  log "check both nodes before any change"
+  sudo bash "$tmp" --check
+  ssh -t "$WORKER_SSH" "sudo bash '$rtmp' --check"
+fi
 log "head"
 sudo bash "$tmp" "${1:-}"
 log "worker ($WORKER_SSH)"
-rtmp=$(ssh -n -o BatchMode=yes "$WORKER_SSH" mktemp)
-scp -q "$tmp" "$WORKER_SSH:$rtmp"
-ssh -t "$WORKER_SSH" "sudo bash '$rtmp' ${1:-}"
+if ! ssh -t "$WORKER_SSH" "sudo bash '$rtmp' ${1:-}"; then
+  [ -z "${1:-}" ] || exit 1
+  log "the worker failed: the head goes back too, so both nodes stay alike"
+  sudo bash "$tmp" --undo
+  exit 1
+fi
 log "done. Restart the server (./stop.sh, then ./start.sh): the engine sizes its memory at start."
