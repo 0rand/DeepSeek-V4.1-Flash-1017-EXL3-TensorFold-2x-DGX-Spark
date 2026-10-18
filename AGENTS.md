@@ -1,0 +1,34 @@
+# Notes for AI agents
+
+You can set up and run this recipe for a user. Follow these steps in this order. Run every command on the head node, in this folder.
+
+## Setup
+
+1. Check that the two nodes are cabled and reach each other (NVIDIA's [Connect Two Sparks](https://build.nvidia.com/spark/connect-two-sparks) guide; [docs/NETWORK.md](docs/NETWORK.md)). `ibdev2netdev` must show the CX7 ports as Up on both nodes.
+2. `cp .env.example .env`, then fill in the values from `ibdev2netdev`, `ip -br addr` and `show_gids`. Ask the user for paths you cannot find.
+3. `scripts/download.sh` (~400 GB; resumable: run it again after a break). If a download needs a Hugging Face login, ask the user to run `hf auth login`. Never type a token yourself.
+4. `scripts/patch_template.py --worker`
+5. `docker/build.sh`
+6. `./start.sh` (it runs `scripts/preflight.sh` first; fix each `[FAIL]` line it prints). The first start takes ~15 min.
+7. `./verify.sh` must print PASS for all five checks. Only a real reply proves that both nodes work; `/health` alone does not.
+
+Then give the user the three client settings from [docs/CONNECT.md](docs/CONNECT.md).
+
+## Rules
+
+- **Never `docker exec` into `tfv41-r0` or `tfv41-r1` while they serve.** The exec process counts against the rank's memory.
+- **Never stop the display manager** (`systemctl stop gdm`) on a Spark. On the tested pair it powered the node off.
+- **Run one model server at a time.** Each one needs port 8888 and ~100 GB of memory on each node.
+- **Keep `BIND_HOST=127.0.0.1`** unless the user asks for network access. Then set `API_KEY_FILE` too ([docs/CONNECT.md](docs/CONNECT.md)).
+- **If the server stops with exit code 75**, the lane broke on a device fault. Run `./stop.sh && ./start.sh`.
+- **If NCCL hangs at start after a cable or reboot event**, the RoCE GID index moved. Set `GID_INDEX=-1` in `.env` and restart ([docs/NETWORK.md](docs/NETWORK.md)).
+
+## Where to look
+
+| Question | File |
+|---|---|
+| A start fails | `logs/` (saved by `./stop.sh`), `docker logs tfv41-r0`, [docs/OPERATIONS.md](docs/OPERATIONS.md) |
+| How to call the API | [docs/CONNECT.md](docs/CONNECT.md) |
+| Run the tests | [tests/README.md](tests/README.md) |
+| What is not supported | [docs/KNOWN-LIMITS.md](docs/KNOWN-LIMITS.md) |
+| Exact versions and checksums | [runs/2026-10-17/PROVENANCE.md](runs/2026-10-17/PROVENANCE.md) |
