@@ -85,7 +85,7 @@ scripts/patch_template.py --worker
 docker/build.sh
 ```
 
-**5. Tune the memory settings (once).** This keeps the model out of swap and stops memory stalls while it reads long documents, on both computers. If memory runs out, it stops the model, not the computer. It asks for your password on each computer. `scripts/host_tuning.sh --undo` removes it.
+**5. Tune the memory settings (once).** This keeps the model out of swap and stops memory stalls while it reads long documents, on both computers. If memory runs out, it stops the model, not the computer (this needs the earlyoom package, which DGX OS has). It asks for your password on each computer. `scripts/host_tuning.sh --undo` removes it.
 
 ```bash
 scripts/host_tuning.sh

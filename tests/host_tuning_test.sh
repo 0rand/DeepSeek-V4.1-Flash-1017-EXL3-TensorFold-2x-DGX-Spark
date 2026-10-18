@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # tests/host_tuning_test.sh [SCRIPT]: runs the node script of host_tuning.sh against stub sysctl/systemctl and temp paths.
 # Checks: the first apply saves the live values; a second apply keeps them; --undo restores them and removes the
-# file; --undo with no saved file falls back to kernel defaults plus "sysctl --system".
+# file; --undo with no saved file falls back to kernel defaults plus "sysctl --system"; a missing or dead earlyoom
+# stops the apply.
 set -euo pipefail
 src=${1:-$(dirname "$0")/../scripts/host_tuning.sh}
 T=$(mktemp -d)
@@ -24,9 +25,14 @@ esac
 STUB
 cat > "$T/bin/systemctl" <<STUB
 #!/usr/bin/env bash
-case "\$*" in "show -p MemorySwapMax --value"*) echo 0 ;; "is-active"*) echo active ;; *) echo "systemctl \$*" >> "$T/log" ;; esac
+case "\$*" in
+  "show -p MemorySwapMax --value"*) echo 0 ;;
+  "is-active"*) [ -f "$T/inactive" ] && exit 3; echo active ;;
+  *) echo "systemctl \$*" >> "$T/log" ;;
+esac
 STUB
-chmod +x "$T/bin/sysctl" "$T/bin/systemctl"
+printf '#!/bin/sh\n' > "$T/bin/earlyoom"
+chmod +x "$T/bin/sysctl" "$T/bin/systemctl" "$T/bin/earlyoom"
 awk '/^  cat <<'"'"'EOF'"'"'$/ {on=1; next} on && /^EOF$/ {exit} on' "$src" \
   | sed -e "s#/etc/systemd/system#$T/etc/systemd/system#g" -e "s#/etc/sysctl.d#$T/etc/sysctl.d#g" \
         -e "s#/var/lib/#$T/var/lib/#g" -e "s#/etc/default/earlyoom#$T/etc/default/earlyoom#g" > "$T/node.sh"
@@ -48,4 +54,14 @@ rm -f "$b"
 run --undo
 check "undo without a saved file sets kernel defaults" "grep -q '^vm.swappiness=60$' '$T/state' && grep -q '^vm.watermark_scale_factor=10$' '$T/state'"
 check "undo without a saved file reloads the other sysctl files" "grep -q 'sysctl --system' '$T/log'"
+check "apply enables earlyoom" "grep -q 'systemctl enable -q earlyoom' '$T/log'"
+
+mv "$T/etc/default/earlyoom" "$T/eo.keep"
+if PATH="$T/bin:$PATH" bash "$T/node.sh" >/dev/null 2>"$T/err"; then echo "FAIL apply without earlyoom must fail"; exit 1; fi
+check "apply without earlyoom stops with a message" "grep -q 'earlyoom is not installed' '$T/err'"
+check "apply without earlyoom changes nothing" "[ ! -f '$T/etc/sysctl.d/99-tensorfold.conf' ] && [ ! -f '$b' ]"
+mv "$T/eo.keep" "$T/etc/default/earlyoom"
+touch "$T/inactive"
+if PATH="$T/bin:$PATH" bash "$T/node.sh" >/dev/null 2>"$T/err"; then echo "FAIL apply with a dead earlyoom must fail"; exit 1; fi
+check "apply fails when earlyoom does not start" "grep -q 'earlyoom did not start' '$T/err'"
 echo "all checks passed"

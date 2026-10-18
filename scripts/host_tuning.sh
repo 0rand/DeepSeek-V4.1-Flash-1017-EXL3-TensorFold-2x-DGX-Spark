@@ -17,11 +17,11 @@
 #      Measured with 2 bench runs each (248 prompt chunks): background compaction on gave 46 slow chunks (over
 #      1.3 s), the first version of this script (extfrag_threshold 1000, kernel watermarks) gave 5, these values
 #      gave 2 (both at 1.31 s) and 128K prompts at 1,986 and 1,981 tokens/s (runs/2026-10-18/INDEX.md).
-#   3. earlyoom (if installed) stops the engine, not the node, when memory runs out. It sends SIGTERM to the
-#      process named "tensorfold" below 1 GiB available and SIGKILL below 0.5 GiB. It ignores swap, because the
-#      engine cannot use swap. The engine stops its own growth at 2 GiB available (TF_DS_MEM_FLOOR_GIB), and a
-#      1M-token prompt took the head down to 1.7 GiB, so a healthy engine is not stopped. Your old file stays as
-#      /etc/default/earlyoom.pre-tensorfold.
+#   3. earlyoom (required; the script stops if it is missing) stops the engine, not the node, when memory runs
+#      out. It sends SIGTERM to the process named "tensorfold" below 1 GiB available and SIGKILL below 0.5 GiB.
+#      It ignores swap, because the engine cannot use swap. The engine stops its own growth at 2 GiB available
+#      (TF_DS_MEM_FLOOR_GIB), and a 1M-token prompt took the head down to 1.7 GiB, so a healthy engine is not
+#      stopped. Your old file stays as /etc/default/earlyoom.pre-tensorfold.
 set -euo pipefail
 # shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
@@ -52,6 +52,11 @@ if [ "${1:-}" = "--undo" ]; then
   fi
   echo "$(hostname): undone ($note)"; exit 0
 fi
+# earlyoom is the part that keeps the node reachable when memory runs out: stop before any change if it is missing.
+if [ ! -f "$eo" ] || ! command -v earlyoom >/dev/null; then
+  echo "$(hostname): earlyoom is not installed. Install it (sudo apt install earlyoom), then run this script again." >&2
+  exit 1
+fi
 # Keep the live values before the first run, so --undo can put them back. With $conf present they are ours.
 if [ ! -f "$conf" ] && [ ! -f "$before" ]; then
   mkdir -p "${before%/*}"
@@ -64,13 +69,17 @@ systemctl start tensorfold.slice
 printf '%s\n' "vm.swappiness = 10" "vm.compaction_proactiveness = 0" "vm.extfrag_threshold = 500" \
   "vm.min_free_kbytes = 1048576" "vm.watermark_scale_factor = 50" > "$conf"
 sysctl -q -p "$conf"
-if [ -f "$eo" ]; then
-  # -M: SIGTERM / SIGKILL limits in KiB of MemAvailable. -s 100,100: both signals also when swap is free. -p: earlyoom runs first.
-  args="-r 3600 -p -M 1048576,524288 -s 100,100 --prefer '^tensorfold' --avoid '^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)'"
-  [ -f "$eo.pre-tensorfold" ] || cp "$eo" "$eo.pre-tensorfold"
-  { grep -v '^EARLYOOM_ARGS=' "$eo.pre-tensorfold" || true; printf 'EARLYOOM_ARGS="%s"\n' "$args"; } > "$eo.new"
-  mv "$eo.new" "$eo"
-  systemctl restart earlyoom || true
+# -M: SIGTERM / SIGKILL limits in KiB of MemAvailable. -s 100,100: both signals also when swap is free. -p: earlyoom runs first.
+args="-r 3600 -p -M 1048576,524288 -s 100,100 --prefer '^tensorfold' --avoid '^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)'"
+[ -f "$eo.pre-tensorfold" ] || cp "$eo" "$eo.pre-tensorfold"
+{ grep -v '^EARLYOOM_ARGS=' "$eo.pre-tensorfold" || true; printf 'EARLYOOM_ARGS="%s"\n' "$args"; } > "$eo.new"
+mv "$eo.new" "$eo"
+systemctl enable -q earlyoom
+systemctl restart earlyoom
+sleep 1
+if ! systemctl is-active -q earlyoom; then
+  echo "$(hostname): earlyoom did not start with the new settings (journalctl -u earlyoom shows why)." >&2
+  exit 1
 fi
 echo "$(hostname): swappiness $(cat /proc/sys/vm/swappiness), compaction_proactiveness" \
   "$(cat /proc/sys/vm/compaction_proactiveness), min_free_kbytes $(cat /proc/sys/vm/min_free_kbytes)," \
