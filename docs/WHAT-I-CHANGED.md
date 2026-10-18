@@ -6,8 +6,9 @@ All engine changes are in the public fork [Elevatormusic/TensorFold](https://git
 - [#1](https://github.com/Elevatormusic/TensorFold/pull/1): tool_choice and the V4.1 encoding.
 - [#2](https://github.com/Elevatormusic/TensorFold/pull/2): structured output.
 - [#3](https://github.com/Elevatormusic/TensorFold/pull/3): fault isolation.
+- [#4](https://github.com/Elevatormusic/TensorFold/pull/4): faster long prompts (the Engram page drop).
 
-The image in this repo is built from the commit at the head of #3, `fd2365042f56`, which contains all three.
+The image in this repo is built from the commit at the head of #4, `92aa710b533d`, which contains all four and their review fixes. The serving results of 17 October were measured on `fd2365042f56` (the head of #3); #4 and the review fixes do not change decoding.
 
 ## Test score at each step
 
@@ -73,7 +74,7 @@ The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are
   2. a live json_schema request and a plain request;
   3. the 32-test suite;
   4. the `--parallel` grammar check.
-- **Review.** The OpenAI Codex review bot found 8 issues across the 3 PRs in two rounds. All are fixed, each with a test.
+- **Review.** The OpenAI Codex review bot found 8 issues across PRs #1-#3 in two rounds, and 2 more in a third round (#2: a stream whose grammar failed could send one unmasked token; #3: ranks that differ only in draft depth could pass the round check). All are fixed, each with a test.
 
 ## 5. Launcher settings (start.sh)
 
@@ -85,10 +86,15 @@ The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are
 | `--temperature` / `--top-p` | 1.0 / 1.0 | DeepSeek's sampling recommendation for V4.1 |
 | `TF_DS_REPLAY=1` | on | decoder sliding-window bounded replay: the decoder layers run only over the last 128 prompt tokens (DeepSeek's deployment mode); the needle tests pass with it at 64K and 200K |
 | `TF_DS_REPLAY_FLOOR=1` | on | a short prompt chunk whose window reaches below the replay cut reads its keys by the gather path, so a reply never depends on the slot's previous request |
-| `TF_DS_PREFILL_CHUNK=2048` | 2048 | prompt chunk size (default 512); larger chunks prefill faster on GB10, and the prefix cache keeps prompts at these boundaries |
+| `TF_DS_PREFILL_CHUNK=2048` | 2048 | prompt chunk size (default 512); 4096 measured 6-15% slower (runs/2026-10-18), and the prefix cache keeps prompts at these boundaries |
 | `TF_DS_RANK_CACHE` | `/cache/tf-ds-rank` | each rank writes its weight shard to one file on the first start; later starts read it back (~2 min instead of ~15) |
 | `TF_DS_RANK_CACHE_READERS=32` | 32 | reader threads for that file (default 8); NVMe Gen5 reads at ~11.7 GB/s with 32 |
-| `TF_DS_WARM_LENGTHS` | `1,17,...,2113` | prompt lengths for the warm-up, so no request pays a Triton kernel build |
+| `TF_DS_WARM_LENGTHS` | `1,2,...,17,33,131,514,1024,2113` | prompt lengths for the warm-up, so no request pays a Triton kernel build (prompts of 3-16 tokens each build their own kernel) |
+| `TRITON_CACHE_DIR`, `CUDA_CACHE_PATH` | under `/cache` | compiled kernels survive a restart: short prompts take 0.1 s on first use instead of 2.6-6.1 s |
+| `TF_DS_SPILL_GIB=64` | 64 | kept prompts are also written to disk, so a prompt survives a restart |
+| `TF_DS_ENGRAM_DONTNEED=1` | on | PR #4: drops the Engram tables' cached pages after each prompt chunk, so long prompts do not push the node into reclaim and compaction stalls |
+| `--oom-score-adj 1000` | docker flag | if a node runs out of memory, the kernel and earlyoom stop the engine first, not sshd or the systemd manager |
+| `--cgroup-parent tensorfold.slice` | docker flag | the slice from `scripts/host_tuning.sh`, where the engine cannot swap |
 | `TF_DS_ENGRAM=/engram` | path | DeepSeek's 1017 Engram tables (shards 47/48), read from NVMe at random offsets |
 | `TF_RDMA_*`, `NCCL_IB_*` | CX7 ports | TP=2 runs on both ConnectX-7 ports with RoCE v2 (see [NETWORK.md](NETWORK.md)) |
 

@@ -35,6 +35,18 @@ avail=\$(awk '/MemAvailable/ {print int(\$2/1048576)}' /proc/meminfo); [ "\$avai
 mkdir -p "$CACHE_DIR"; free=\$(df -BG --output=avail "$CACHE_DIR" | tail -1 | tr -dc 0-9)
 [ -d "$CACHE_DIR/tf-ds-rank" ] && need=5 || need=110
 [ "\$free" -ge "\$need" ] && echo "OK \$free GiB free for the cache" || echo "FAIL \$free GiB free in $CACHE_DIR (need \$need)"
+[ -z "${CGROUP_PARENT-tensorfold.slice}" ] || [ "\$(systemctl show -p MemorySwapMax --value ${CGROUP_PARENT-tensorfold.slice} 2>/dev/null)" = 0 ] \
+  && echo "OK no swap for the engine" || echo "FAIL ${CGROUP_PARENT-tensorfold.slice} has swap or is missing: run scripts/host_tuning.sh"
+diff=""
+for kv in vm.swappiness=10 vm.compaction_proactiveness=0 vm.extfrag_threshold=500 vm.min_free_kbytes=1048576 \
+    vm.watermark_scale_factor=50; do
+  k=\${kv%%=*}; [ "\$(cat /proc/sys/\$(echo "\$k" | tr . /) 2>/dev/null)" = "\${kv#*=}" ] || diff="\$diff \$k"
+done
+[ -z "\$diff" ] && echo "OK memory settings of scripts/host_tuning.sh" \
+  || echo "FAIL memory settings differ (\${diff# }): run scripts/host_tuning.sh"
+systemctl is-active -q earlyoom && grep -qF -- "--prefer ^tensorfold " /etc/default/earlyoom 2>/dev/null \
+  && echo "OK earlyoom stops the engine before the node runs out of memory" \
+  || echo "FAIL earlyoom is not running with the settings of scripts/host_tuning.sh: run it again"
 docker ps --format '{{.Names}}' | grep -q '^tfv41-r' && echo "FAIL a tfv41 rank already runs: ./stop.sh first" || true
 EOF
 )

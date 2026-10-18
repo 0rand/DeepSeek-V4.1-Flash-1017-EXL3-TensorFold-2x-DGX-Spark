@@ -1,0 +1,6 @@
+before local pswpin 3224433 pswpout 7913259 allocstall_normal 461431 allocstall_movable 729028 pgscan_direct 115960677 
+before 10.100.80.2 pswpin 4850984 pswpout 9907892 allocstall_normal 435860 allocstall_movable 1028632 pgscan_direct 135911733 
+after64 local pswpin 3224434 pswpout 7915450 allocstall_normal 462331 allocstall_movable 729127 pgscan_direct 116041486 
+after64 10.100.80.2 pswpin 4853187 pswpout 9963681 allocstall_normal 436130 allocstall_movable 1031384 pgscan_direct 136155412 
+afterall local pswpin 3259897 pswpout 7990943 allocstall_normal 462654 allocstall_movable 729648 pgscan_direct 116154915 
+afterall 10.100.80.2 pswpin 4855873 pswpout 9980303 allocstall_normal 436194 allocstall_movable 1043889 pgscan_direct 137100571 
