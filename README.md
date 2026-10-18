@@ -2,7 +2,7 @@
 
 **Run DeepSeek's V4.1 Flash model on two NVIDIA DGX Spark computers, twice as fast as the standard setup, and ready for AI agents.**
 
-Tested on 17 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved test run in [`runs/`](runs/2026-10-17/INDEX.md).
+Measured on 17 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run in [`runs/`](runs/2026-10-17/INDEX.md).
 
 ---
 
@@ -13,11 +13,10 @@ Tested on 17 October 2026 on one pair of DGX Spark. Every number on this page co
 | Writing speed, text | 27 tokens/s | **57 tokens/s** | **2.1× faster** |
 | Writing speed, code | 40 tokens/s | **92 tokens/s** | **2.3× faster** |
 | Find one fact in a 64,000-token document | 80 s | **36 s** | **2.2× faster** |
-| Agent tests passed | 32 of 32 | **32 of 32** | same |
 
 A *token* is a piece of a word. 100 tokens are about 75 English words.
 
-Both setups ran on the same two computers, with the same model files and the same tests, on the same day.
+Both setups ran on the same two computers, with the same model files and the same prompts, on the same day.
 
 ---
 
@@ -105,14 +104,12 @@ If something goes wrong, read [Operations](docs/OPERATIONS.md). It covers restar
 
 ## What I changed to make it work
 
-The fast engine for this model was written by [bertholomus](https://github.com/bertholomus/deepseek-v4.1-tensorfold-tp2-2xgb10). It was fast, but it was not ready for agents: it passed **25 of 32** agent tests. I fixed it, and it now passes **32 of 32**, with no loss of speed.
+The fast engine for this model was written by [bertholomus](https://github.com/bertholomus/deepseek-v4.1-tensorfold-tp2-2xgb10). It was fast, but agent apps could not use it fully. I added what they need, with no loss of speed.
 
 1. **Tool calls on demand.** Apps can now tell the model that it *must* call a tool, or call one specific tool. Agent apps use this to plan their steps.
-2. **Prompts exactly as DeepSeek writes them.** Every prompt now matches DeepSeek's own reference, byte for byte, in 12 of 12 tests.
+2. **Prompts exactly as DeepSeek writes them.** Every prompt now matches DeepSeek's own reference, byte for byte.
 3. **Replies in an exact format.** The model can now follow a JSON schema, a pattern, or a list of choices. This works while it uses its speed tricks, and for 4 requests at once.
 4. **One error no longer stops the server.** Before, one failed request stopped all requests until a manual restart. Now it ends only that request.
-
-Every change went through an automatic safety check that puts the old version back if any test fails. That check caught a real bug before release. Hermes Agent's own client also passed all 35 of its tests.
 
 [Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2) and [#3](https://github.com/Elevatormusic/TensorFold/pull/3).
 
@@ -121,7 +118,7 @@ Every change went through an automatic safety check that puts the old version ba
 ## Good to know
 
 - **The first long question after a start is slower.** It takes about 6 seconds more. Later questions do not.
-- **Long documents load slower than in bertholomus's own tests.** With 32,000 tokens or more, this setup reads text 30 to 37% slower than their published numbers. The cause is not known yet.
+- **Long documents load slower than bertholomus reports.** With 32,000 tokens or more, this setup reads text 30 to 37% slower than their published numbers. The cause is not known yet.
 - **The standard setup was tested one request at a time only.** So the "four at once" numbers have no vLLM comparison.
 - **Living Weights is not available.** That TensorFold feature works only with a different model on one computer.
 
@@ -146,7 +143,7 @@ Every change went through an automatic safety check that puts the old version ba
 <details>
 <summary><b>Full speed results</b></summary>
 
-#### This recipe vs the vLLM kit (same computers, same day, same tests)
+#### This recipe vs the vLLM kit (same computers, same day, same prompts)
 
 vLLM: 1 run. This recipe: 6 runs (6 engine builds of the same day, the last is the released one). The table shows the middle value and the range.
 
