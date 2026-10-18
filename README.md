@@ -206,8 +206,8 @@ bertholomus's own benchmark client ([`kit_bench.py`](runs/2026-10-17/16_kit-benc
 
 | kit_bench row | Their Zig engine v0.6.0 | Their Python engine v0.5.1 | **This recipe** |
 |---|---:|---:|---:|
-| Decode, set a: code / prose / structured | 89.8 / 59.0 / 106.6 | 89.4 / 57.7 / 107.2 | 84.7 / 58.7 / 103.8 |
-| Decode, set b: code / prose / structured | 103.1 / 64.1 / 143.2 | 101.5 / 63.4 / 143.4 | 95.1 / 57.7 / 140.6 |
+| Decode, set a: code / prose / structured | 89.8 / 59.0 / 106.6 | 89.4 / 57.7 / 107.2 | 84.8 / 58.6 / 103.9 (\*\*\*) |
+| Decode, set b: code / prose / structured | 103.1 / 64.1 / 143.2 | 101.5 / 63.4 / 143.4 | 98.6 / 56.8 / 139.7 (\*\*\*) |
 | Aggregate decode, 2 / 4 concurrent requests | 83.1 / 118.9 | 79.8 / 113.0 | 81.5 / 116.7 |
 | Aggregate decode, 4 concurrent requests for 90 s | 142.0 | 125.3 | 120.0 |
 | Prefill, cold prompt: 8K / 32K / 64K / 128K | 2,433 / 2,495 / 2,461 / 2,354 | 2,387 / 2,421 / 2,363 / 2,242 | 2,166 / 2,179 / 2,110 / 1,989 (\*\*) |
@@ -216,6 +216,8 @@ bertholomus's own benchmark client ([`kit_bench.py`](runs/2026-10-17/16_kit-benc
 Their Zig engine does not have the agent features above (forced tool calls and structured output return an error there).
 
 (\*\*) Median of 3 runs on 18 October with the final setup (fork PRs #4 and #6, `scripts/host_tuning.sh` with transparent huge pages off); ranges 2,163-2,189 / 2,174-2,195 / 2,110-2,115 / 1,976-1,991. Before the O_DIRECT spill and THP change (median of 5): 2,179 / 2,165 / 2,037 / 1,961, with 64K from 1,836 to 2,119. On 17 October: 2,190 / 1,707 / 1,457 / 1,420. How each change was found: [runs/2026-10-18](runs/2026-10-18/INDEX.md).
+
+(\*\*\*) Median of 3 greedy runs on 18 October with transparent huge pages off; each set of 3 is within 0.6%. Before (THP madvise), 1 of 3 code replies ran at 69-71 tok/s instead of 85 (set a: 84.7 / 58.7 / 103.8, set b: 95.1 / 57.7 / 140.6). Files: [runs/2026-10-18/kitbench-decode](runs/2026-10-18/kitbench-decode/).
 
 #### Concurrency (released engine)
 

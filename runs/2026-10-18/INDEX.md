@@ -37,6 +37,38 @@ The GPU of a GB10 reads host memory through the SMMU. When the kernel moves page
 - **CUDA extensions after a new image.** The engine compiles them at its first start, after the weights (~99 GiB) are loaded. On the worker the compiler took the node below 1 GiB, and earlyoom stopped the rank; the killed build left a lock file, and the next build waited on it. `scripts/build_extensions.sh` (run by `start.sh`) now compiles them before the weights load, on both nodes, and removes leftover locks.
 - **Allocator headroom.** After the warm-up, the engine may grow only while `TF_DS_MEM_FLOOR_GIB` stays free. With the default 2.0 and 3.3 GiB available after the warm-up, the second chunk of an 8K prompt failed (CUDA out of memory in the Engram gather, 400 MiB). `start.sh` now sets 1.5, above earlyoom's 1 GiB limit.
 
+### Decode with THP off
+
+`kitbench-decode/decode-{a,b}-nothp.json`, greedy, 3 replies per prompt, same texts as before. The slow decode state is gone: all 3 code replies of set a run at 84.7-85.1 tok/s (before: 69.5 / 71.0 / 85.2 in `decode-a-ht.json`).
+
+| Set | Code | Prose | Structured |
+|---|---|---|---|
+| a | 84.7 / 85.1 / 84.8 | 58.8 / 58.6 / 58.6 | 103.9 / 104.0 / 103.5 |
+| b | 98.3 / 98.6 / 98.7 | 56.8 / 56.8 / 57.0 | 140.0 / 139.5 / 139.7 |
+
+### Kernel profile of a 64K prompt (nsys)
+
+`nsys/`: 6 s in the middle of one cold 64K prompt, both ranks, `scripts/nsys64k.sh`. Nsight Systems on this GB10 records no PyTorch kernels with its default hardware CUDA trace; `--trace=cuda-sw` (software trace) records them. Stats were made with the image's nsys 2026.3. Rank 0, share of GPU kernel time (`nsys/r0-top.txt`; rank 1 is within 1 point):
+
+| Part | Kernels | Share |
+|---|---|---:|
+| MoE experts (EXL3) | `grouped_mma`, `grouped_rows`, `rot_in` (bf16), `down_combine`, `gateup_epilogue`, `unpack` | 37.7% |
+| Prompt-chunk all-gather (NCCL, 2 ranks) | `ncclDevKernel_AllGather_RING_LL` (the engine sets `NCCL_PROTO=Simple`; NCCL names its shared kernel `_LL`) | 12.4% |
+| hc (hyper-connections) | `_hc_post`, `_hc_partial`, `_hc_finish` | 11.3% |
+| Dense matmuls (Triton) | `_gemm`, `rot_in` | 11.6% |
+| Indexer (ratio-2 attention) | `_index_score_rows` | 6.5% |
+| Indexer top-k (PyTorch radix select) | `mbtopk::computeBlockDigitCounts`, `gatherTopK` | 6.2% |
+| Sparse attention | `_sparse_attn_part` | 5.9% |
+| fp32 SIMT matmul (no tensor cores) | `cutlass_80_simt_sgemm_128x256` | 1.4% |
+
+The kernels fill the window (6.22 s of kernel time in 6 s, with the NCCL kernel on its own stream), so the CPU does not hold back prefill. Candidates, largest expected gain first:
+
+1. **Overlap the all-gather with compute.** It is on the critical path (12%). Split each 2048-token chunk in two and gather one half while the other half computes; or gather bf16 partials in place of fp32 (half the bytes; needs a quality check).
+2. **Fused top-k for the indexer.** PyTorch's radix top-k takes 6.2%, about as long as the scoring kernel itself. A top-k inside `_index_score_rows` (or a per-row threshold select) removes most of it. This part also grows with position.
+3. **Fuse the hc kernels** (11.3% in 3 kernels and ~750 launches in 6 s).
+4. **fp32 SIMT matmul to TF32 or bf16 tensor cores** (1.4%, small but simple).
+5. **MoE expert kernels** (38%): the largest part, but already hand-written; ncu is the next step there.
+
 ## Previous setup (image 92aa710b533d)
 
 Image `tensorfold-dsv41:92aa710b533d` (fork PRs #1-#4), `TF_DS_ENGRAM_DONTNEED=1`, `--oom-score-adj 1000`, and the host settings of `scripts/host_tuning.sh`: no swap for the engine, `vm.swappiness=10`, `vm.compaction_proactiveness=0`, `vm.extfrag_threshold=500`, `vm.min_free_kbytes=1048576`, `vm.watermark_scale_factor=50`, and earlyoom set to stop the engine below 1 GiB available.

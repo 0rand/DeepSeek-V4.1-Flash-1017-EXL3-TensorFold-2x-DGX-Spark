@@ -1,0 +1,83 @@
+{
+ "cmd": "decode",
+ "base": "http://172.17.0.1:8888",
+ "model": "DeepSeek-v4.1-Flash-1017-TF",
+ "unix": 1792315904.533559,
+ "result": [
+  {
+   "set": "a",
+   "prompt": "code",
+   "max_tokens": 512,
+   "reps": 3,
+   "decode_tps_median": 84.77750918721169,
+   "decode_tps_all": [
+    84.749,
+    85.089,
+    84.778
+   ],
+   "tokens_all": [
+    512,
+    512,
+    512
+   ],
+   "chunks_all": [
+    143,
+    143,
+    143
+   ],
+   "ttft_s_median": 0.160822395933792,
+   "identical_texts": true,
+   "sample": "# Thread-Safe LRU Cache with Per-Entry TTL\n\nBelow is a complete implementation of a thread-safe LRU cache with per-entry TTL expiry, followed by a comprehensive test suite.\n\n## Implementation\n\n```python\n\"\"\"\nThread-safe LRU cache with per-entry TTL expiry.\n\nThis module provides :class:`TTLLRUCache`, a fixed-capacity cache that evicts\nthe least-recently-used entry when full, and additionally expires"
+  },
+  {
+   "set": "a",
+   "prompt": "prose",
+   "max_tokens": 512,
+   "reps": 3,
+   "decode_tps_median": 58.60246014126465,
+   "decode_tps_all": [
+    58.813,
+    58.602,
+    58.584
+   ],
+   "tokens_all": [
+    512,
+    512,
+    512
+   ],
+   "chunks_all": [
+    259,
+    259,
+    259
+   ],
+   "ttft_s_median": 0.16506455396302044,
+   "identical_texts": true,
+   "sample": "# The Beacon and the Keeper: A History of Lighthouses\n\n## I. The First Fires\n\nBefore there were towers, there were fires. On headlands and hilltops, along the shores of the Mediterranean and the North Sea, ancient peoples piled driftwood and kept it burning through the night so that fishermen and traders could find their way home. The principle was simple and has never changed: light where there i"
+  },
+  {
+   "set": "a",
+   "prompt": "structured",
+   "max_tokens": 512,
+   "reps": 3,
+   "decode_tps_median": 103.92686286550651,
+   "decode_tps_all": [
+    103.927,
+    104.012,
+    103.483
+   ],
+   "tokens_all": [
+    512,
+    512,
+    512
+   ],
+   "chunks_all": [
+    109,
+    109,
+    109
+   ],
+   "ttft_s_median": 0.24792262399569154,
+   "identical_texts": true,
+   "sample": "[\n  {\n    \"id\": 1,\n    \"name\": \"Avery Chen\",\n    \"department\": \"Engineering\",\n    \"title\": \"VP of Engineering\",\n    \"salary\": 215000,\n    \"start_date\": \"2018-03-12\",\n    \"manager_id\": null,\n    \"skills\": [\"System Architecture\", \"Team Leadership\", \"Cloud Infrastructure\"]\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Priya Raman\",\n    \"department\": \"Engineering\",\n    \"title\": \"Senior Backend Engineer\",\n    \"sa"
+  }
+ ]
+}
