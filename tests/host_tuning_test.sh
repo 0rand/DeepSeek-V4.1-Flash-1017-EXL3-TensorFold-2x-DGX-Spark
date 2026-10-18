@@ -2,7 +2,8 @@
 # tests/host_tuning_test.sh [SCRIPT]: runs the node script of host_tuning.sh against stub sysctl/systemctl and temp paths.
 # Checks: the first apply saves the live values; a second apply keeps them; --undo restores them and removes the
 # file; --undo with no saved file falls back to kernel defaults plus "sysctl --system"; a missing or dead earlyoom
-# stops the apply, a failed apply rolls the node back, and --check changes nothing.
+# stops the apply, a failed apply rolls the node back, --check changes nothing, and --undo puts back the boot and
+# run state of earlyoom.
 set -euo pipefail
 src=${1:-$(dirname "$0")/../scripts/host_tuning.sh}
 T=$(mktemp -d)
@@ -27,11 +28,16 @@ cat > "$T/bin/systemctl" <<STUB
 #!/usr/bin/env bash
 case "\$*" in
   "show -p MemorySwapMax --value"*) echo 0 ;;
-  "is-active"*) [ -f "$T/inactive" ] && exit 3; echo active ;;
-  "restart earlyoom") [ -f "$T/restartfail" ] && exit 1; echo "systemctl \$*" >> "$T/log" ;;
+  "is-enabled earlyoom") if [ -f "$T/eo-enabled" ]; then echo enabled; else echo disabled; exit 1; fi ;;
+  "is-active"*) [ -f "$T/inactive" ] && exit 3; if [ -f "$T/eo-active" ]; then echo active; else echo inactive; exit 3; fi ;;
+  "enable -q earlyoom") touch "$T/eo-enabled"; echo "systemctl \$*" >> "$T/log" ;;
+  "disable -q earlyoom") rm -f "$T/eo-enabled"; echo "systemctl \$*" >> "$T/log" ;;
+  "restart earlyoom") [ -f "$T/restartfail" ] && exit 1; touch "$T/eo-active"; echo "systemctl \$*" >> "$T/log" ;;
+  "stop earlyoom") rm -f "$T/eo-active"; echo "systemctl \$*" >> "$T/log" ;;
   *) echo "systemctl \$*" >> "$T/log" ;;
 esac
 STUB
+touch "$T/eo-enabled" "$T/eo-active"
 printf '#!/bin/sh\n' > "$T/bin/earlyoom"
 chmod +x "$T/bin/sysctl" "$T/bin/systemctl" "$T/bin/earlyoom"
 awk '/^  cat <<'"'"'EOF'"'"'$/ {on=1; next} on && /^EOF$/ {exit} on' "$src" \
@@ -80,4 +86,10 @@ mv "$T/etc/default/earlyoom" "$T/eo.keep"
 if PATH="$T/bin:$PATH" bash "$T/node.sh" --check >/dev/null 2>&1; then echo "FAIL --check without earlyoom must fail"; exit 1; fi
 echo "PASS --check fails without earlyoom"
 mv "$T/eo.keep" "$T/etc/default/earlyoom"
+e="$T/var/lib/tensorfold-host-tuning/earlyoom.before"
+rm -f "$T/eo-enabled" "$T/eo-active"
+run
+check "apply enables and starts a disabled, stopped earlyoom" "[ -f '$T/eo-enabled' ] && [ -f '$T/eo-active' ] && grep -q '^disabled inactive$' '$e'"
+run --undo
+check "undo disables and stops it again" "[ ! -f '$T/eo-enabled' ] && [ ! -f '$T/eo-active' ] && [ ! -f '$e' ]"
 echo "all checks passed"

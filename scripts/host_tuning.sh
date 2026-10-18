@@ -35,6 +35,7 @@ eo=/etc/default/earlyoom
 conf=/etc/sysctl.d/99-tensorfold.conf
 slice=/etc/systemd/system/tensorfold.slice
 before=/var/lib/tensorfold-host-tuning/sysctl.before
+eostate=/var/lib/tensorfold-host-tuning/earlyoom.before
 keys="vm.swappiness vm.compaction_proactiveness vm.extfrag_threshold vm.min_free_kbytes vm.watermark_scale_factor"
 
 undo() {  # puts the node back to its state before the first run
@@ -52,8 +53,12 @@ undo() {  # puts the node back to its state before the first run
   fi
   if [ -f "$eo.pre-tensorfold" ]; then
     mv "$eo.pre-tensorfold" "$eo"
-    systemctl restart earlyoom || true
+    was_enabled=enabled; was_active=active
+    if [ -f "$eostate" ]; then read -r was_enabled was_active < "$eostate"; fi
+    if [ "$was_enabled" = disabled ]; then systemctl disable -q earlyoom || true; fi
+    if [ "$was_active" = active ]; then systemctl restart earlyoom || true; else systemctl stop earlyoom || true; fi
   fi
+  rm -f "$eostate"
 }
 
 case "${1:-}" in
@@ -74,6 +79,11 @@ if [ ! -f "$conf" ] && [ ! -f "$before" ]; then
   mkdir -p "${before%/*}"
   for k in $keys; do echo "$k = $(sysctl -n "$k")"; done > "$before.new"
   mv "$before.new" "$before"
+fi
+# Also keep earlyoom's boot and run state before we first take it over, so --undo can put that back too.
+if [ ! -f "$eo.pre-tensorfold" ] && [ ! -f "$eostate" ]; then
+  mkdir -p "${eostate%/*}"
+  echo "$(systemctl is-enabled earlyoom 2>/dev/null || true) $(systemctl is-active earlyoom 2>/dev/null || true)" > "$eostate"
 fi
 # From here on, a failure puts the node back to its state before the first run, so it is never left half tuned.
 rollback() {
