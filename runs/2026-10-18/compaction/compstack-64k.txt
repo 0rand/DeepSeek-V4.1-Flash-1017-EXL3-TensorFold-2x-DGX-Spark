@@ -1,0 +1,506 @@
+Attaching 5 probes...
+
+
+@attempts[9, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0d4e15fd0 do_page_fault+280
+	ffffdcd0d4e16754 do_translation_fault+116
+	ffffdcd0d33e9fc0 do_mem_abort+80
+	ffffdcd0d4dfca5c el0_da+84
+	ffffdcd0d4dfe350 el0t_64_sync_handler+240
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 1
+@attempts[9, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8a4 alloc_pages_mpol+164
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0d4e15fd0 do_page_fault+280
+	ffffdcd0d4e16754 do_translation_fault+116
+	ffffdcd0d33e9fc0 do_mem_abort+80
+	ffffdcd0d4dfca5c el0_da+84
+	ffffdcd0d4dfe350 el0t_64_sync_handler+240
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 1
+@attempts[9, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0861d3890 handle_fault+104
+	ffffdcd0861d39d8 uvm_populate_pageable_vma+152
+	ffffdcd0861d3b78 uvm_populate_pageable+104
+	ffffdcd0861d3ce0 uvm_api_populate_pageable+208
+	ffffdcd086143be4 uvm_ioctl+4476
+	ffffdcd086144300 uvm_unlocked_ioctl_entry.part.0+232
+	ffffdcd08614442c uvm_unlocked_ioctl_entry+156
+	ffffdcd0d3a029c0 __arm64_sys_ioctl+208
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+]: 2
+@attempts[9, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8a4 alloc_pages_mpol+164
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0861d3890 handle_fault+104
+	ffffdcd0861d39d8 uvm_populate_pageable_vma+152
+	ffffdcd0861d3b78 uvm_populate_pageable+104
+	ffffdcd0861d3ce0 uvm_api_populate_pageable+208
+	ffffdcd086143be4 uvm_ioctl+4476
+	ffffdcd086144300 uvm_unlocked_ioctl_entry.part.0+232
+	ffffdcd08614442c uvm_unlocked_ioctl_entry+156
+	ffffdcd0d3a029c0 __arm64_sys_ioctl+208
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+]: 3
+@attempts[9, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391eeac __alloc_pages_slowpath.constprop.0+852
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 14
+@attempts[9, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 15
+@attempts[8, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391eeac __alloc_pages_slowpath.constprop.0+852
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 32
+@attempts[7, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391eeac __alloc_pages_slowpath.constprop.0+852
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 32
+@attempts[8, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 39
+@attempts[7, 
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d38bce08 try_to_compact_pages+712
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 47
+@ms_by_stack[
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb94c compact_zone_order+196
+	ffffdcd0d38bcc38 try_to_compact_pages+248
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0861d3890 handle_fault+104
+	ffffdcd0861d39d8 uvm_populate_pageable_vma+152
+	ffffdcd0861d3b78 uvm_populate_pageable+104
+	ffffdcd0861d3ce0 uvm_api_populate_pageable+208
+	ffffdcd086143be4 uvm_ioctl+4476
+	ffffdcd086144300 uvm_unlocked_ioctl_entry.part.0+232
+	ffffdcd08614442c uvm_unlocked_ioctl_entry+156
+	ffffdcd0d3a029c0 __arm64_sys_ioctl+208
+	ffffdcd0d33d7240 invoke_syscall+168
+]: 0
+@ms_by_stack[
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb94c compact_zone_order+196
+	ffffdcd0d38bcc38 try_to_compact_pages+248
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0d4e15fd0 do_page_fault+280
+	ffffdcd0d4e16754 do_translation_fault+116
+	ffffdcd0d33e9fc0 do_mem_abort+80
+	ffffdcd0d4dfca5c el0_da+84
+	ffffdcd0d4dfe350 el0t_64_sync_handler+240
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 0
+@ms_by_stack[
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb94c compact_zone_order+196
+	ffffdcd0d38bcc38 try_to_compact_pages+248
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8a4 alloc_pages_mpol+164
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0d4e15fd0 do_page_fault+280
+	ffffdcd0d4e16754 do_translation_fault+116
+	ffffdcd0d33e9fc0 do_mem_abort+80
+	ffffdcd0d4dfca5c el0_da+84
+	ffffdcd0d4dfe350 el0t_64_sync_handler+240
+	ffffdcd0d33b1e98 el0t_64_sync+440
+]: 0
+@ms_by_stack[
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb94c compact_zone_order+196
+	ffffdcd0d38bcc38 try_to_compact_pages+248
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8a4 alloc_pages_mpol+164
+	ffffdcd0d396cea8 folio_alloc_mpol_noprof+32
+	ffffdcd0d396d1d4 vma_alloc_folio_noprof+140
+	ffffdcd0d39944b0 vma_alloc_anon_folio_pmd+64
+	ffffdcd0d3999a38 __do_huge_pmd_anonymous_page+56
+	ffffdcd0d3999e08 do_huge_pmd_anonymous_page+168
+	ffffdcd0d38df284 __handle_mm_fault+812
+	ffffdcd0d38df5a8 handle_mm_fault+288
+	ffffdcd0861d3890 handle_fault+104
+	ffffdcd0861d39d8 uvm_populate_pageable_vma+152
+	ffffdcd0861d3b78 uvm_populate_pageable+104
+	ffffdcd0861d3ce0 uvm_api_populate_pageable+208
+	ffffdcd086143be4 uvm_ioctl+4476
+	ffffdcd086144300 uvm_unlocked_ioctl_entry.part.0+232
+	ffffdcd08614442c uvm_unlocked_ioctl_entry+156
+	ffffdcd0d3a029c0 __arm64_sys_ioctl+208
+	ffffdcd0d33d7240 invoke_syscall+168
+]: 1
+@ms_by_stack[
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb94c compact_zone_order+196
+	ffffdcd0d38bcc38 try_to_compact_pages+248
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391eeac __alloc_pages_slowpath.constprop.0+852
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+]: 83
+@ms_by_stack[
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb230 compact_zone+1016
+	ffffdcd0d38bb94c compact_zone_order+196
+	ffffdcd0d38bcc38 try_to_compact_pages+248
+	ffffdcd0d391e434 __alloc_pages_direct_compact+148
+	ffffdcd0d391f0a0 __alloc_pages_slowpath.constprop.0+1352
+	ffffdcd0d391f6c8 __alloc_frozen_pages_noprof+728
+	ffffdcd0d396c8c4 alloc_pages_mpol+196
+	ffffdcd0d396d2bc alloc_frozen_pages_noprof+108
+	ffffdcd0d396d3e0 folio_alloc_noprof+32
+	ffffdcd0d384a7a4 filemap_alloc_folio_noprof.part.0+340
+	ffffdcd0d3853884 __filemap_get_folio_mpol+644
+	ffffdcd0d3b40bb8 ext4_da_write_begin+400
+	ffffdcd0d384b890 generic_perform_write+200
+	ffffdcd0d3b23040 ext4_buffered_write_iter+120
+	ffffdcd0d3b23684 ext4_file_write_iter+148
+	ffffdcd0d39df1b0 vfs_write+624
+	ffffdcd0d39df5ec ksys_write+124
+	ffffdcd0d39df6d0 __arm64_sys_write+40
+	ffffdcd0d33d7240 invoke_syscall+168
+	ffffdcd0d33d73e4 el0_svc_common.constprop.0+276
+	ffffdcd0d33d7438 do_el0_svc+40
+	ffffdcd0d4dfdb80 el0_svc+64
+	ffffdcd0d4dfe320 el0t_64_sync_handler+192
+]: 85
+
+@ustacks[9, 
+	ef1af5e09184 $x+48 (/usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+	ef1af5e0889c $x+284 (/usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+	ef1af5e08564 $x+100 (/usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+	ef1af5e0479c $x+92 (/usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+	ef1af5e01ffc c10::alloc_cpu(unsigned long)+60 (/usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+	ef1af5e01dfc $x+40 (/usr/local/lib/python3.12/dist-packages/torch/lib/libc10.so)
+	ef1b1f824a7c at::detail::empty_strided_generic(c10::ArrayRef<long>, c10::ArrayRef<long>, c10::Allocator*, c10::DispatchKeySet, c10::ScalarType)+228 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f8248ec $x+108 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f824844 $x+124 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f82478c at::native::empty_strided_cpu(c10::ArrayRef<long>, c10::ArrayRef<long>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>)+60 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f8246d4 $x+148 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f81cf3c at::_ops::empty_strided::redispatch(c10::DispatchKeySet, c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>)+252 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f81ce18 $x+152 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f848794 at::_ops::empty_strided::call(c10::ArrayRef<c10::SymInt>, c10::ArrayRef<c10::SymInt>, std::optional<c10::ScalarType>, std::optional<c10::Layout>, std::optional<c10::Device>, std::optional<bool>)+376 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f8485fc at::empty_strided(c10::ArrayRef<long>, c10::ArrayRef<long>, c10::TensorOptions)+288 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f847f68 $x+744 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+]: 2
+@ustacks[9, 
+	ef1ba2236d50 ioctl+16 (/usr/lib/aarch64-linux-gnu/libc.so.6)
+	ef1a751e7210 0xef1a751e7210 ([unknown])
+	ef1a74567ae0 0xef1a74567ae0 ([unknown])
+	ef1a751d9cf8 0xef1a751d9cf8 ([unknown])
+	ef1a744860b0 0xef1a744860b0 ([unknown])
+	ef1a74486770 0xef1a74486770 ([unknown])
+	ef1a74486f1c 0xef1a74486f1c ([unknown])
+	ef1a74607c2c 0xef1a74607c2c ([unknown])
+	ef1a74603a14 cuMemcpyDtoHAsync_v2+48 (/usr/lib/aarch64-linux-gnu/libcuda.so.580.178.04)
+	ef1b2cace338 0xef1b2cace338 ([unknown])
+	ef1b2ca9c014 0xef1b2ca9c014 ([unknown])
+	ef1b2caf7758 cudaMemcpyAsync+472 (/usr/local/cuda-13.3/targets/sbsa-linux/lib/libcudart.so.13.3.29)
+	ef1b16a164c0 at::native::copy_kernel_cuda(at::TensorIterator&, bool)+1216 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cuda.so)
+	ef1b1f817500 at::native::copy_impl(at::Tensor&, at::Tensor const&, bool) [clone .isra.0]+1016 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1ff267d0 at::native::copy_(at::Tensor&, at::Tensor const&, bool) [clone .cold.0]+16 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+	ef1b1f83d5e8 at::_ops::copy_::call(at::Tensor&, at::Tensor const&, bool)+284 (/usr/local/lib/python3.12/dist-packages/torch/lib/libtorch_cpu.so)
+]: 5
+@ustacks[7, 
+	ef1ba2231e8c write+108 (/usr/lib/aarch64-linux-gnu/libc.so.6)
+	ef1844237cc0 _RNvXs8_NtCsfQfHhyvAE2O_3std2fsRNtB5_4FileNtNtB7_2io5Write5write+24 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f88b0 _ZN3std2io8buffered9bufwriter18BufWriter$LT$W$GT$9flush_buf17hd4dbd556c8f83e54E.llvm.6760094274695101184+104 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ccc4c std::io::buffered::bufwriter::BufWriter$LT$W$GT$::write_all_cold::h9999dac80d859dcd+56 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f7278 safetensors::tensor::serialize_to_file::h804b7c3390b86acb+1656 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f4464 pyo3::marker::Python::detach::h0a5d1bf6e7dee20f+128 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441e08e0 safetensors_rust::__pyfunction_serialize_file::h637eda1c163473b7+576 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed280 pyo3::impl_::trampoline::trampoline::h44f20d58624b991e+88 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed5a4 pyo3::impl_::trampoline::fastcall_cfunction_with_keywords::h21fb4ce562aad53f+72 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	50337c 0x50337c ([unknown])
+	4c36bc PyObject_Vectorcall+76 (/usr/bin/python3.12)
+	5639e4 _PyEval_EvalFrameDefault+2208 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	566f94 _PyEval_EvalFrameDefault+15952 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	6e4a90 0x6e4a90 ([unknown])
+]: 6
+@ustacks[9, 
+	ef1ba2231e8c write+108 (/usr/lib/aarch64-linux-gnu/libc.so.6)
+	ef1844237cc0 _RNvXs8_NtCsfQfHhyvAE2O_3std2fsRNtB5_4FileNtNtB7_2io5Write5write+24 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ccce4 std::io::buffered::bufwriter::BufWriter$LT$W$GT$::write_all_cold::h9999dac80d859dcd+208 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f7278 safetensors::tensor::serialize_to_file::h804b7c3390b86acb+1656 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f4464 pyo3::marker::Python::detach::h0a5d1bf6e7dee20f+128 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441e08e0 safetensors_rust::__pyfunction_serialize_file::h637eda1c163473b7+576 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed280 pyo3::impl_::trampoline::trampoline::h44f20d58624b991e+88 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed5a4 pyo3::impl_::trampoline::fastcall_cfunction_with_keywords::h21fb4ce562aad53f+72 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	50337c 0x50337c ([unknown])
+	4c36bc PyObject_Vectorcall+76 (/usr/bin/python3.12)
+	5639e4 _PyEval_EvalFrameDefault+2208 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	566f94 _PyEval_EvalFrameDefault+15952 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	6e4a90 0x6e4a90 ([unknown])
+	686260 0x686260 ([unknown])
+]: 29
+@ustacks[8, 
+	ef1ba2231e8c write+108 (/usr/lib/aarch64-linux-gnu/libc.so.6)
+	ef1844237cc0 _RNvXs8_NtCsfQfHhyvAE2O_3std2fsRNtB5_4FileNtNtB7_2io5Write5write+24 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ccce4 std::io::buffered::bufwriter::BufWriter$LT$W$GT$::write_all_cold::h9999dac80d859dcd+208 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f7278 safetensors::tensor::serialize_to_file::h804b7c3390b86acb+1656 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f4464 pyo3::marker::Python::detach::h0a5d1bf6e7dee20f+128 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441e08e0 safetensors_rust::__pyfunction_serialize_file::h637eda1c163473b7+576 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed280 pyo3::impl_::trampoline::trampoline::h44f20d58624b991e+88 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed5a4 pyo3::impl_::trampoline::fastcall_cfunction_with_keywords::h21fb4ce562aad53f+72 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	50337c 0x50337c ([unknown])
+	4c36bc PyObject_Vectorcall+76 (/usr/bin/python3.12)
+	5639e4 _PyEval_EvalFrameDefault+2208 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	566f94 _PyEval_EvalFrameDefault+15952 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	6e4a90 0x6e4a90 ([unknown])
+	686260 0x686260 ([unknown])
+]: 71
+@ustacks[7, 
+	ef1ba2231e8c write+108 (/usr/lib/aarch64-linux-gnu/libc.so.6)
+	ef1844237cc0 _RNvXs8_NtCsfQfHhyvAE2O_3std2fsRNtB5_4FileNtNtB7_2io5Write5write+24 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ccce4 std::io::buffered::bufwriter::BufWriter$LT$W$GT$::write_all_cold::h9999dac80d859dcd+208 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f7278 safetensors::tensor::serialize_to_file::h804b7c3390b86acb+1656 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441f4464 pyo3::marker::Python::detach::h0a5d1bf6e7dee20f+128 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441e08e0 safetensors_rust::__pyfunction_serialize_file::h637eda1c163473b7+576 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed280 pyo3::impl_::trampoline::trampoline::h44f20d58624b991e+88 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	ef18441ed5a4 pyo3::impl_::trampoline::fastcall_cfunction_with_keywords::h21fb4ce562aad53f+72 (/usr/local/lib/python3.12/dist-packages/safetensors/_safetensors_rust.abi3.so)
+	50337c 0x50337c ([unknown])
+	4c36bc PyObject_Vectorcall+76 (/usr/bin/python3.12)
+	5639e4 _PyEval_EvalFrameDefault+2208 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	566f94 _PyEval_EvalFrameDefault+15952 (/usr/bin/python3.12)
+	4c6ca4 0x4c6ca4 ([unknown])
+	6e4a90 0x6e4a90 ([unknown])
+	686260 0x686260 ([unknown])
+]: 73

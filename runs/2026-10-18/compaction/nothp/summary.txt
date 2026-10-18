@@ -1,0 +1,15 @@
+## nothp
+   pf-nothp1-8k.json 8K=2220 8K=2208
+   pf-nothp1-long.json 32K=2210 64K=2128 128K=1995
+   pf-nothp2-8k.json 8K=2179 8K=2177
+   pf-nothp2-long.json 32K=2189 64K=2116 128K=1996
+   pf-nothp3-8k.json 8K=2176 8K=2176
+   pf-nothp3-long.json 32K=2186 64K=2113 128K=1997
+   rank 0: 372 chunks, median 0.97s, slow 1 (1.31)
+     DR: 0 events, 0 ms total, max 0.0 ms; in slow chunks 0 (0 ms)
+     CP: 0 events, 0 ms total, max 0.0 ms; in slow chunks 0 (0 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%
+   rank 1: 372 chunks, median 0.97s, slow 1 (1.31)
+     DR: 0 events, 0 ms total, max 0.0 ms; in slow chunks 0 (0 ms)
+     CP: 0 events, 0 ms total, max 0.0 ms; in slow chunks 0 (0 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%

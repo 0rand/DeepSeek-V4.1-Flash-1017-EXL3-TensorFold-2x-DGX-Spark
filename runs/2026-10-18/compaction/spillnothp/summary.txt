@@ -1,0 +1,15 @@
+## spillnothp
+   pf-spillnothp1-8k.json 8K=2182 8K=2115
+   pf-spillnothp1-long.json 32K=2193 64K=2047 128K=1959
+   pf-spillnothp2-8k.json 8K=1686 8K=2174
+   pf-spillnothp2-long.json 32K=2184 64K=2052 128K=1970
+   pf-spillnothp3-8k.json 8K=2165 8K=1655
+   pf-spillnothp3-long.json 32K=2069 64K=2016 128K=1979
+   rank 0: 372 chunks, median 0.98s, slow 14 (2.06, 1.96, 1.93, 1.90, 1.62, 1.58)
+     DR: 961 events, 130 ms total, max 9.9 ms; in slow chunks 228 (9 ms)
+     CP: 1702 events, 1702 ms total, max 93.0 ms; in slow chunks 287 (63 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%
+   rank 1: 372 chunks, median 0.98s, slow 14 (2.06, 1.96, 1.93, 1.90, 1.62, 1.58)
+     DR: 1665 events, 951 ms total, max 22.9 ms; in slow chunks 774 (665 ms)
+     CP: 1859 events, 2035 ms total, max 43.0 ms; in slow chunks 0 (0 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%

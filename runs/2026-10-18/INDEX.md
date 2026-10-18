@@ -2,7 +2,42 @@
 
 Same pair of DGX Spark as `runs/2026-10-17/`. All prefill rows use bertholomus's `kit_bench.py prefill` (random-word prompts, so no prompt-cache hit; `cached_tokens` is 0 in the server log) through `scripts/src127.py` (it connects from 127.0.0.1). `scripts/pf.sh TAG` runs one 8K warm prompt, then 8K two times, then 32K, 64K and 128K once each. Speed is `prompt_tokens / time to first token`.
 
-## Final setup (the recipe as published)
+## Current setup: compaction stalls removed (06:00-09:15 UTC)
+
+Image `tensorfold-dsv41:07aa02585f64` (fork PRs #1-#4 and [#6](https://github.com/Elevatormusic/TensorFold/pull/6): spill files written with `O_DIRECT`), the host settings below plus transparent huge pages off (`scripts/host_tuning.sh` item 4), `TF_DS_MEM_FLOOR_GIB=1.5`, the prefix-cache spill on (`TF_DS_SPILL_GIB=64`, as the recipe ships).
+
+| Run (3 passes) | 8K (both reps) | 32K | 64K | 128K | Slow chunks (> 1.3 s) |
+|---|---|---:|---:|---:|---:|
+| odirect2, pass 1 | 2,189 / 2,186 | 2,195 | 2,115 | 1,976 | |
+| odirect2, pass 2 | 2,166 / 2,166 | 2,179 | 2,110 | 1,989 | |
+| odirect2, pass 3 | 2,163 / 2,165 | 2,174 | 2,110 | 1,991 | |
+| **Range** | **2,163-2,189** | **2,174-2,195** | **2,110-2,115** | **1,976-1,991** | 5: 2 in the first prompt after the start (3.16 s, 1.64 s), 3 at 1.31-1.32 s (the last chunk of a 128K prompt is always ~1.3 s) |
+
+Files: `compaction/odirect/` and `compaction/odirect2/` (two starts of the same code; `odirect` had an image without xgrammar, which does not change prefill). Release gate on this setup: suite 32/32 in 249 s, grammar check 14/14.
+
+### What caused the slow chunks
+
+The GPU of a GB10 reads host memory through the SMMU. When the kernel moves pages to make large free blocks (compaction), the GPU waits, even when another process asked for the compaction. `scripts/tracenode.sh` ran `scripts/memtrace.bt` (bpftrace on `mm_compaction_*` and `mm_vmscan_direct_reclaim_*`), `scripts/hwsample.sh` and a thread sampler on both nodes during each run; `scripts/profsum.py` puts the events next to the chunk log.
+
+| Run (3 passes each, `compaction/<run>/`) | Spill | THP | Slow chunks | Compaction in the run (head) | 32K | 64K |
+|---|---|---|---:|---|---:|---:|
+| `base` (image 92aa710b533d) | buffered | madvise | 19 | 59 s, 55 s of it inside slow chunks (spill writer threads) | 1,746-1,769 | 1,492-1,747 |
+| `pin` (+ busiest engine threads on the fast cores) | buffered | madvise | 20 | 4.9 s, none inside slow chunks | 1,944-2,128 | 1,970-2,111 |
+| `nospill` (+ pinned) | off | madvise | 10 | 14.1 s by the router healthcheck's `python`, 3.7 s by khugepaged, inside the large slow chunks | 2,192-2,196 | 1,989-2,126 |
+| `nothp` (+ pinned) | off | never | 1 (1.31 s) | 0 | 2,186-2,210 | 2,113-2,128 |
+| `spillnothp` | buffered | never | 14 | 15.9 s by kcompactd (page-cache folios of the spill writes) | 2,069-2,193 | 2,016-2,052 |
+| `odirect2` (current) | `O_DIRECT` | never | 5 (2 in the first prompt, 3 at 1.31-1.32 s) | 0.05 s | 2,174-2,195 | 2,110-2,115 |
+
+- **The spill writes.** `safetensors.save_file` wrote through the page cache, and ext4 asked for order 7-9 folios. Kernel stacks (`compaction/compstack-64k.txt`, `scripts/compstack.bt`): `try_to_compact_pages` < `filemap_alloc_folio` < `ext4_da_write_begin` < `vfs_write`, user stack `safetensors::tensor::serialize_to_file`.
+- **Transparent huge pages.** The LiteLLM router container's Docker healthcheck starts `python` every 10 s. Its start-up, and khugepaged, made synchronous compactions of 2.4-4.7 s, each at the same moment as a slow chunk of the same length (`compaction/nospill/mem-head.txt`, `compaction/memstall-psi.txt`). The engine does not use huge pages.
+- **Not the cause:** the CPU core type. The busiest engine thread ran on a Cortex-X925 core in every sample (`threads.txt`), and the GPU clock stayed flat. The `pin` run looked better only because its compaction was lower.
+
+### Two start problems found on the way
+
+- **CUDA extensions after a new image.** The engine compiles them at its first start, after the weights (~99 GiB) are loaded. On the worker the compiler took the node below 1 GiB, and earlyoom stopped the rank; the killed build left a lock file, and the next build waited on it. `scripts/build_extensions.sh` (run by `start.sh`) now compiles them before the weights load, on both nodes, and removes leftover locks.
+- **Allocator headroom.** After the warm-up, the engine may grow only while `TF_DS_MEM_FLOOR_GIB` stays free. With the default 2.0 and 3.3 GiB available after the warm-up, the second chunk of an 8K prompt failed (CUDA out of memory in the Engram gather, 400 MiB). `start.sh` now sets 1.5, above earlyoom's 1 GiB limit.
+
+## Previous setup (image 92aa710b533d)
 
 Image `tensorfold-dsv41:92aa710b533d` (fork PRs #1-#4), `TF_DS_ENGRAM_DONTNEED=1`, `--oom-score-adj 1000`, and the host settings of `scripts/host_tuning.sh`: no swap for the engine, `vm.swappiness=10`, `vm.compaction_proactiveness=0`, `vm.extfrag_threshold=500`, `vm.min_free_kbytes=1048576`, `vm.watermark_scale_factor=50`, and earlyoom set to stop the engine below 1 GiB available.
 

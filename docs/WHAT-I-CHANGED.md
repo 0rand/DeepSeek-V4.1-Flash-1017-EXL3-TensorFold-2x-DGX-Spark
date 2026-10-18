@@ -7,8 +7,9 @@ All engine changes are in the public fork [Elevatormusic/TensorFold](https://git
 - [#2](https://github.com/Elevatormusic/TensorFold/pull/2): structured output.
 - [#3](https://github.com/Elevatormusic/TensorFold/pull/3): fault isolation.
 - [#4](https://github.com/Elevatormusic/TensorFold/pull/4): faster long prefills (the Engram page drop).
+- [#6](https://github.com/Elevatormusic/TensorFold/pull/6): steady prefill with the prefix-cache spill on (spill files written with `O_DIRECT`, past the page cache).
 
-The image in this repo is built from the commit at the head of #4, `92aa710b533d`, which contains all four and their review fixes. The serving results of 17 October were measured on `fd2365042f56` (the head of #3); #4 and the review fixes do not change decoding.
+The image in this repo is built from the commit at the head of #6, `07aa02585f64`, which contains all five and their review fixes. The serving results of 17 October were measured on `fd2365042f56` (the head of #3); #4 and the review fixes do not change decoding.
 
 ## Test score at each step
 
@@ -91,8 +92,9 @@ The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are
 | `TF_DS_RANK_CACHE_READERS=32` | 32 | reader threads for that file (default 8); NVMe Gen5 reads at ~11.7 GB/s with 32 |
 | `TF_DS_WARM_LENGTHS` | `1,2,...,17,33,131,514,1024,2113` | prompt lengths for the warm-up, so no request pays a Triton kernel build (prompts of 3-16 tokens each build their own kernel) |
 | `TRITON_CACHE_DIR`, `CUDA_CACHE_PATH` | under `/cache` | compiled kernels survive a restart: short prompts take 0.1 s on first use instead of 2.6-6.1 s |
-| `TF_DS_SPILL_GIB=64` | 64 | kept prompts are also written to disk, so a prompt survives a restart |
+| `TF_DS_SPILL_GIB=64` | 64 | kept prompts are also written to disk, so a prompt survives a restart (PR #6 writes them with `O_DIRECT`, so the writes do not start page compaction) |
 | `TF_DS_ENGRAM_DONTNEED=1` | on | PR #4: drops the Engram tables' cached pages after each prompt chunk, so long prefills do not push the node into reclaim and compaction stalls |
+| `TF_DS_MEM_FLOOR_GIB=1.5` | 1.5 | after the warm-up, the engine grows only while 1.5 GiB of host memory stays free. The default (2.0) left 1.2-1.4 GiB of headroom on some starts, and the second chunk of an 8K prompt then failed with CUDA out of memory. 1.5 stays above earlyoom's 1 GiB limit |
 | `--oom-score-adj 1000` | docker flag | if a node runs out of memory, the kernel and earlyoom stop the engine first, not sshd or the systemd manager |
 | `--cgroup-parent tensorfold.slice` | docker flag | the slice from `scripts/host_tuning.sh`, where the engine cannot swap |
 | `TF_DS_ENGRAM=/engram` | path | DeepSeek's 1017 Engram tables (shards 47/48), read from NVMe at random offsets |

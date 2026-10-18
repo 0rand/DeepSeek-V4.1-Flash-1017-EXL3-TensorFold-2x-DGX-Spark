@@ -1,0 +1,15 @@
+## odirect
+   pf-odirect1-8k.json 8K=2212 8K=2203
+   pf-odirect1-long.json 32K=2201 64K=2120 128K=1985
+   pf-odirect2-8k.json 8K=2169 8K=2182
+   pf-odirect2-long.json 32K=2178 64K=2113 128K=1994
+   pf-odirect3-8k.json 8K=2178 8K=2172
+   pf-odirect3-long.json 32K=2184 64K=2113 128K=1989
+   rank 0: 372 chunks, median 0.97s, slow 4 (1.85, 1.48, 1.32, 1.31)
+     DR: 181 events, 10 ms total, max 1.7 ms; in slow chunks 175 (8 ms)
+     CP: 588 events, 361 ms total, max 13.0 ms; in slow chunks 304 (169 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%
+   rank 1: 372 chunks, median 0.97s, slow 4 (1.85, 1.48, 1.32, 1.31)
+     DR: 22 events, 47 ms total, max 3.7 ms; in slow chunks 22 (47 ms)
+     CP: 0 events, 0 ms total, max 0.0 ms; in slow chunks 0 (0 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%
