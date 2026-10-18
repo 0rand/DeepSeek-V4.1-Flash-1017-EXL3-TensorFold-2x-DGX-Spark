@@ -6,7 +6,7 @@ All engine changes are in the public fork [Elevatormusic/TensorFold](https://git
 - [#1](https://github.com/Elevatormusic/TensorFold/pull/1): tool_choice and the V4.1 encoding.
 - [#2](https://github.com/Elevatormusic/TensorFold/pull/2): structured output.
 - [#3](https://github.com/Elevatormusic/TensorFold/pull/3): fault isolation.
-- [#4](https://github.com/Elevatormusic/TensorFold/pull/4): faster long prompts (the Engram page drop).
+- [#4](https://github.com/Elevatormusic/TensorFold/pull/4): faster long prefills (the Engram page drop).
 
 The image in this repo is built from the commit at the head of #4, `92aa710b533d`, which contains all four and their review fixes. The serving results of 17 October were measured on `fd2365042f56` (the head of #3); #4 and the review fixes do not change decoding.
 
@@ -92,7 +92,7 @@ The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are
 | `TF_DS_WARM_LENGTHS` | `1,2,...,17,33,131,514,1024,2113` | prompt lengths for the warm-up, so no request pays a Triton kernel build (prompts of 3-16 tokens each build their own kernel) |
 | `TRITON_CACHE_DIR`, `CUDA_CACHE_PATH` | under `/cache` | compiled kernels survive a restart: short prompts take 0.1 s on first use instead of 2.6-6.1 s |
 | `TF_DS_SPILL_GIB=64` | 64 | kept prompts are also written to disk, so a prompt survives a restart |
-| `TF_DS_ENGRAM_DONTNEED=1` | on | PR #4: drops the Engram tables' cached pages after each prompt chunk, so long prompts do not push the node into reclaim and compaction stalls |
+| `TF_DS_ENGRAM_DONTNEED=1` | on | PR #4: drops the Engram tables' cached pages after each prompt chunk, so long prefills do not push the node into reclaim and compaction stalls |
 | `--oom-score-adj 1000` | docker flag | if a node runs out of memory, the kernel and earlyoom stop the engine first, not sshd or the systemd manager |
 | `--cgroup-parent tensorfold.slice` | docker flag | the slice from `scripts/host_tuning.sh`, where the engine cannot swap |
 | `TF_DS_ENGRAM=/engram` | path | DeepSeek's 1017 Engram tables (shards 47/48), read from NVMe at random offsets |

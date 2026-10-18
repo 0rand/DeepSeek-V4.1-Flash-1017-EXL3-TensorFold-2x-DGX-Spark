@@ -13,7 +13,7 @@ Image `tensorfold-dsv41:92aa710b533d` (fork PRs #1-#4), `TF_DS_ENGRAM_DONTNEED=1
 | ht1 (after `scripts/host_tuning.sh` and an engine restart) | 2,223 | 2,065 | 2,037 | 1,914 | `kitbench-prefill/pf-ht1-*.json` |
 | ht2 | 2,179 | 2,165 | 1,836 | 1,961 | `kitbench-prefill/pf-ht2-*.json` |
 | ht3 | 2,177 | 2,100 | 1,889 | 1,851 | `kitbench-prefill/pf-ht3-*.json` |
-| **Middle value** | **2,179** | **2,165** | **2,037** | **1,961** | |
+| **Median** | **2,179** | **2,165** | **2,037** | **1,961** | |
 
 hw5 and hw6 ran with the same host settings, set by hand before the engine restart. The 128K prompt is now steady (1,851-1,986). The 64K prompt still varies (1,836-2,119). No other request reached the server during these runs.
 
@@ -25,7 +25,7 @@ hw5 and hw6 ran with the same host settings, set by hand before the engine resta
 
 ## Decode check (final setup)
 
-`kitbench-decode/`: greedy decode, 3 replies per prompt, same text and same number of steps as on 17 October (`runs/2026-10-17`). Set a: code 84.7 (middle of `decode-a-ht2.json`; `decode-a-ht.json` gave 71.0), prose 59.0, structured 104.3. Set b: code 98.8, prose 57.4, structured 139.5. In each set-a run, 1 or 2 of the 3 code replies ran at 69-71 tok/s instead of 85: decode has the same slow state as the prompts.
+`kitbench-decode/`: greedy decode, 3 replies per prompt, same text and same number of steps as on 17 October (`runs/2026-10-17`). Set a: code 84.7 (median of `decode-a-ht2.json`; `decode-a-ht.json` gave 71.0), prose 59.0, structured 104.3. Set b: code 98.8, prose 57.4, structured 139.5. In each set-a run, 1 or 2 of the 3 code replies ran at 69-71 tok/s instead of 85: decode has the same slow state as the prompts. Engine counters for the 512-token replies of set a (`kitbench-decode/r0-done-ht.log`: every rank 0 `done` line of the decode check; `rounds` = decode steps, `accepted` = accepted/drafted tokens; tokens per decode step = (rounds + accepted) / rounds): prose 1.98 (rounds 258, 253 of 436 drafted tokens accepted), code 3.60 (rounds 142, 369 of 542), structured 4.73 (rounds 108, 403 of 502); the slow code replies (69-71 tok/s) had the same 142 steps.
 
 ## Memory settings: A/B with 0.5 s samples
 
@@ -50,7 +50,7 @@ Same image, `vm.extfrag_threshold=1000` and kernel watermarks. The spread was la
 | A (same code, mounted test copy) | 2,200 | 2,188 | 2,113 | 1,988 | `kitbench-prefill/pf-dn-async-*.json` |
 | B (final image) | 2,160 | 2,180 | 2,113 | 1,202 | `kitbench-prefill/pf-final1-*.json` |
 | C (final image, right after B) | 1,690 | 1,865 | 1,879 | 1,540 | `kitbench-prefill/pf-final2-*.json` |
-| Middle value | 2,160 | 2,180 | 2,113 | 1,540 | |
+| Median | 2,160 | 2,180 | 2,113 | 1,540 | |
 
 ## 1M context
 
@@ -71,7 +71,7 @@ Same image, `vm.extfrag_threshold=1000` and kernel watermarks. The spread was la
 | 6 | + spill off (rejected: no gain, spill stays on) | 2,087 | 1,988 | 1,901 | `pf-dn-nospill-*.json` |
 | 7 | + page drop on its own thread (fork PR #4) | 2,188 | 2,113 | 1,988 | `pf-dn-async-*.json` |
 | 8 | + 32 Engram reader threads (rejected) | 2,100 | 2,050 | 1,953 | `pf-dn-t32-*.json` |
-| 9 | + final memory settings (`extfrag_threshold=500`, `min_free_kbytes=1048576`, `watermark_scale_factor=50`), middle of 5 runs | 2,165 | 2,037 | 1,961 | `pf-hw5-*` to `pf-ht3-*` |
+| 9 | + final memory settings (`extfrag_threshold=500`, `min_free_kbytes=1048576`, `watermark_scale_factor=50`), median of 5 runs | 2,165 | 2,037 | 1,961 | `pf-hw5-*` to `pf-ht3-*` |
 
 What the measurements showed:
 
