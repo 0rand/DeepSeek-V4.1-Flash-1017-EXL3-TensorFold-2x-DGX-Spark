@@ -1,0 +1,41 @@
+[PASS] speed/decode_prose_off tok_s=52.5 per_prompt=[51.2, 53.8] ttft_s=[0.16, 0.12]
+[PASS] speed/decode_code_off tok_s=91.7 per_prompt=[94.0, 89.5] ttft_s=[0.17, 0.16]
+[PASS] speed/decode_prose_think tok_s=51.5 per_prompt=[51.5] ttft_s=[0.25]
+[PASS] speed/decode_code_think tok_s=70.9 per_prompt=[70.9] ttft_s=[0.2]
+[PASS] speed/prefill_8k prompt_tokens=8001 ttft_s=14.52 prefill_tok_s=551.0
+[PASS] speed/prefill_32k prompt_tokens=32001 ttft_s=15.12 prefill_tok_s=2116.0
+[PASS] tools/single_call_off s=2.2 finish=tool_calls
+[PASS] tools/single_call_think s=1.5 finish=tool_calls
+[PASS] tools/no_call_when_not_needed s=1.3
+[PASS] tools/tool_choice_required s=1.7
+[PASS] tools/tool_choice_named s=1.2
+[PASS] tools/nested_arguments s=1.8
+[PASS] tools/parallel_calls_one_turn s=1.4 n_calls=2
+[PASS] tools/tool_result_round_trip_off s=1.6
+[PASS] tools/tool_result_round_trip_think s=2.8
+[PASS] tools/streaming_tool_call_deltas s=1.6
+[PASS] tools/agent_loop_off steps=4 s=6.4
+[PASS] tools/agent_loop_think steps=4 s=5.5
+[FAIL] schema/strict_off 
+       detail: HTTPError: HTTP Error 500: Internal Server Error
+[FAIL] schema/strict_think 
+       detail: HTTPError: HTTP Error 500: Internal Server Error
+[FAIL] schema/json_object 
+       detail: HTTPError: HTTP Error 500: Internal Server Error
+[FAIL] schema/choice 
+       detail: HTTPError: HTTP Error 500: Internal Server Error
+[FAIL] schema/regex 
+       detail: HTTPError: HTTP Error 500: Internal Server Error
+[PASS] schema/json_from_prompt_only valid=5/5
+[PASS] reasoning/thinking_modes 
+       {"off": {"reasoning_chars": 0, "answer_ok": true, "tokens": 2, "s": 0.2}, "low": {"reasoning_chars": 181, "answer_ok": true, "tokens": 81, "s": 1.1}, "high": {"reasoning_chars": 137, "answer_ok": true, "tokens": 49, "s": 0.9}, "max": {"reasoning_chars": 217, "answer_ok": true, "tokens": 93, "s": 1.5}}
+[PASS] reasoning/no_think_tag_leak 
+[PASS] format/stop_sequence got=1 2 3 4 5 6
+[PASS] format/multilingual_utf8 
+[PASS] long_context/needle_64k prompt_tokens=64030 s=40.0 got=ORCHID-7731
+[PASS] long_context/needle_200k prompt_tokens=200030 s=110.6 got=ORCHID-7731
+[PASS] router/chat_tools_stream s=1.6
+[PASS] router/default_request_hermes_shape s=0.5 reasoning_chars=62
+
+27/32 passed in 294s -> ~/deploy/v41-1017-20261017/suite-results.json
+SUITE_EXIT=0

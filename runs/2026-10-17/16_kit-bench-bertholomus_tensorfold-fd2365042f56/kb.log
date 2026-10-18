@@ -1,0 +1,54 @@
+[kb 23:10:12Z] start, kit_bench sha256 83a4fbeb987032f9
+{"ready_after_s": 0.0589747428894043, "probe_started_unix": 1792278612.3019192}
+[kb 23:10:12Z] decode set a (512 tokens, 3 reps)
+{"prompt": "code", "decode_tps_median": 84.733368113371, "decode_tps_all": [84.789, 84.733, 84.691], "tokens_all": [512, 512, 512], "identical_texts": true}
+{"prompt": "prose", "decode_tps_median": 58.712264338103545, "decode_tps_all": [58.701, 58.712, 58.781], "tokens_all": [512, 512, 512], "identical_texts": true}
+{"prompt": "structured", "decode_tps_median": 103.82120659679661, "decode_tps_all": [103.821, 103.629, 104.065], "tokens_all": [512, 512, 512], "identical_texts": true}
+
+[kb 23:11:14Z] decode set b (384 tokens, 3 reps)
+{"prompt": "code", "decode_tps_median": 95.14176544812683, "decode_tps_all": [95.43, 95.04, 95.142], "tokens_all": [384, 384, 384], "identical_texts": true}
+{"prompt": "prose", "decode_tps_median": 57.703168442183475, "decode_tps_all": [57.703, 57.72, 57.587], "tokens_all": [384, 384, 384], "identical_texts": true}
+{"prompt": "structured", "decode_tps_median": 140.6455418716621, "decode_tps_all": [140.046, 140.646, 140.788], "tokens_all": [384, 384, 384], "identical_texts": true}
+
+[kb 23:11:57Z] concurrent set b (2,4 streams, 384 tokens, 9 reps)
+{"streams": 2, "rep": 0, "aggregate_tps": 70.07387540135328, "per_stream_decode_tps": [64.598, 42.126]}
+{"streams": 2, "rep": 1, "aggregate_tps": 81.41948725377797, "per_stream_decode_tps": [64.749, 41.984]}
+{"streams": 2, "rep": 2, "aggregate_tps": 81.71704690663016, "per_stream_decode_tps": [66.178, 41.351]}
+{"streams": 2, "rep": 3, "aggregate_tps": 81.40633867950437, "per_stream_decode_tps": [65.926, 41.19]}
+{"streams": 2, "rep": 4, "aggregate_tps": 81.66776000805451, "per_stream_decode_tps": [64.786, 42.106]}
+{"streams": 2, "rep": 5, "aggregate_tps": 81.6033885143615, "per_stream_decode_tps": [66.222, 41.298]}
+{"streams": 2, "rep": 6, "aggregate_tps": 81.70616488394396, "per_stream_decode_tps": [66.221, 41.338]}
+{"streams": 2, "rep": 7, "aggregate_tps": 81.53243156315744, "per_stream_decode_tps": [66.062, 41.237]}
+{"streams": 2, "rep": 8, "aggregate_tps": 81.49909032921443, "per_stream_decode_tps": [66.014, 41.222]}
+{"streams": 4, "rep": 0, "aggregate_tps": 116.34449609987935, "per_stream_decode_tps": [36.229, 29.993, 42.697, 38.291]}
+{"streams": 4, "rep": 1, "aggregate_tps": 116.71490880395206, "per_stream_decode_tps": [37.84, 29.407, 42.555, 37.715]}
+{"streams": 4, "rep": 2, "aggregate_tps": 116.91621198376703, "per_stream_decode_tps": [36.393, 30.261, 44.373, 37.498]}
+{"streams": 4, "rep": 3, "aggregate_tps": 116.64603042080113, "per_stream_decode_tps": [37.421, 29.801, 44.326, 36.849]}
+{"streams": 4, "rep": 4, "aggregate_tps": 116.84642687306022, "per_stream_decode_tps": [36.397, 30.242, 44.339, 37.505]}
+{"streams": 4, "rep": 5, "aggregate_tps": 116.8243030361559, "per_stream_decode_tps": [37.894, 30.108, 42.046, 37.294]}
+{"streams": 4, "rep": 6, "aggregate_tps": 116.6675106386129, "per_stream_decode_tps": [36.336, 30.074, 42.779, 38.372]}
+{"streams": 4, "rep": 7, "aggregate_tps": 116.16140426932651, "per_stream_decode_tps": [37.301, 30.349, 42.753, 36.734]}
+{"streams": 4, "rep": 8, "aggregate_tps": 116.62402980491285, "per_stream_decode_tps": [37.36, 29.381, 44.189, 37.227]}
+
+[kb 23:15:22Z] sustained 4 streams 90 s set b
+{"streams": 4, "seconds": 90.0, "max_tokens": 256, "set": "b", "requests": 44, "aggregate_tps": 120.03, "per_stream_tps_p50": 34.096, "per_stream_tps_p95": 41.731, "per_stream_tps_p05": 21.604, "ttft_s_p50": 0.205, "ttft_s_p95": 0.391}
+
+[kb 23:16:59Z] prefill 8K (best of 2)
+{"length": 8192, "rep": 0, "prompt_tokens": 8192, "ttft_s": 3.7403291121590883, "prefill_tps": 2190.181600161705}
+{"length": 8192, "rep": 1, "prompt_tokens": 8192, "ttft_s": 3.775498224887997, "prefill_tps": 2169.779857396972}
+
+[kb 23:17:06Z] prefill 32K/64K/128K
+{"length": 32768, "rep": 0, "prompt_tokens": 32768, "ttft_s": 19.19981699809432, "prefill_tps": 1706.6829336577734}
+{"length": 65536, "rep": 0, "prompt_tokens": 65536, "ttft_s": 44.991319036111236, "prefill_tps": 1456.636555763103}
+{"length": 131072, "rep": 0, "prompt_tokens": 131072, "ttft_s": 92.27935081697069, "prefill_tps": 1420.382770788794}
+
+[kb 23:19:44Z] depth 128K run 1
+{"length": 131072, "prompt_tokens": 131072, "ttft_s": 94.15263803792186, "tokens": 256, "decode_tps": 51.89544080126089}
+
+[kb 23:21:24Z] depth 128K run 2
+{"length": 131072, "prompt_tokens": 131072, "ttft_s": 85.69232992408797, "tokens": 256, "decode_tps": 61.8415932030423}
+
+[kb 23:22:55Z] depth 128K run 3
+{"length": 131072, "prompt_tokens": 131072, "ttft_s": 102.08497963380069, "tokens": 256, "decode_tps": 72.55302032725417}
+
+[kb 23:24:41Z] KB_DONE

@@ -1,0 +1,361 @@
+[
+ {
+  "group": "speed",
+  "name": "decode_prose_off",
+  "pass": true,
+  "tok_s": 27.0,
+  "per_prompt": [
+   24.7,
+   29.3
+  ],
+  "ttft_s": [
+   0.32,
+   0.28
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "decode_code_off",
+  "pass": true,
+  "tok_s": 39.9,
+  "per_prompt": [
+   40.4,
+   39.4
+  ],
+  "ttft_s": [
+   0.47,
+   0.32
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "decode_prose_think",
+  "pass": true,
+  "tok_s": 25.7,
+  "per_prompt": [
+   25.7
+  ],
+  "ttft_s": [
+   0.41
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "decode_code_think",
+  "pass": true,
+  "tok_s": 34.5,
+  "per_prompt": [
+   34.5
+  ],
+  "ttft_s": [
+   0.4
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "prefill_8k",
+  "pass": true,
+  "prompt_tokens": 8001,
+  "ttft_s": 10.13,
+  "prefill_tok_s": 789.0
+ },
+ {
+  "group": "speed",
+  "name": "prefill_32k",
+  "pass": true,
+  "prompt_tokens": 32001,
+  "ttft_s": 34.6,
+  "prefill_tok_s": 925.0
+ },
+ {
+  "group": "tools",
+  "name": "single_call_off",
+  "pass": true,
+  "s": 2.1,
+  "finish": "tool_calls",
+  "detail": "[{\"id\": \"chatcmpl-tool-a379defaafa70127\", \"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"arguments\": \"{\\\"city\\\": \\\"Tokyo\\\", \\\"unit\\\": \\\"celsius\\\"}\"}}]"
+ },
+ {
+  "group": "tools",
+  "name": "single_call_think",
+  "pass": true,
+  "s": 2.0,
+  "finish": "tool_calls",
+  "detail": "[{\"id\": \"chatcmpl-tool-94f063085747c6e9\", \"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"arguments\": \"{\\\"city\\\": \\\"Tokyo\\\", \\\"unit\\\": \\\"celsius\\\"}\"}}]"
+ },
+ {
+  "group": "tools",
+  "name": "no_call_when_not_needed",
+  "pass": true,
+  "s": 0.6,
+  "detail": {
+   "role": "assistant",
+   "content": "Paris",
+   "refusal": null,
+   "annotations": null,
+   "audio": null,
+   "function_call": null,
+   "reasoning": null
+  }
+ },
+ {
+  "group": "tools",
+  "name": "tool_choice_required",
+  "pass": true,
+  "s": 2.6,
+  "detail": {
+   "role": "assistant",
+   "content": "",
+   "refusal": null,
+   "annotations": null,
+   "audio": null,
+   "function_call": null,
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-a9ce6ab079b846d6",
+     "type": "function",
+     "function": {
+      "name": "get_weather",
+      "arguments": "{\"city\": \"Paris\", \"unit\": \"celsius\"}"
+     }
+    },
+    {
+     "id": "chatcmpl-tool-b4eac23420928e35",
+     "type": "function",
+     "function": {
+      "name": "get_time",
+      "arguments": "{\"timezone\": \"Europe/Paris\"}"
+     }
+    }
+   ],
+   "reasoning": null
+  }
+ },
+ {
+  "group": "tools",
+  "name": "tool_choice_named",
+  "pass": true,
+  "s": 1.6,
+  "detail": {
+   "role": "assistant",
+   "content": "",
+   "refusal": null,
+   "annotations": null,
+   "audio": null,
+   "function_call": null,
+   "tool_calls": [
+    {
+     "id": "chatcmpl-tool-be5191e78b17939d",
+     "type": "function",
+     "function": {
+      "name": "get_time",
+      "arguments": "{\"timezone\": \"Europe/Paris\"}"
+     }
+    }
+   ],
+   "reasoning": null
+  }
+ },
+ {
+  "group": "tools",
+  "name": "nested_arguments",
+  "pass": true,
+  "s": 4.0,
+  "detail": {
+   "title": "Q4 roadmap",
+   "start": "2026-10-20T14:00:00",
+   "duration_minutes": 45,
+   "attendees": [
+    {
+     "name": "Ana",
+     "email": "ana@example.com"
+    },
+    {
+     "name": "Raj",
+     "email": "raj@example.com"
+    }
+   ],
+   "reminder": {
+    "minutes_before": 10
+   }
+  }
+ },
+ {
+  "group": "tools",
+  "name": "parallel_calls_one_turn",
+  "pass": true,
+  "s": 2.6,
+  "n_calls": 2,
+  "detail": [
+   "lima",
+   "oslo"
+  ]
+ },
+ {
+  "group": "tools",
+  "name": "tool_result_round_trip_off",
+  "pass": true,
+  "s": 3.1,
+  "detail": "the weather in berlin is currently **3\u00b0c** with windy conditions and light rain.\n\n**yes, you'll want a coat.** at 3\u00b0c it's quite cold, and the wind plus light rain will make it feel even colder. i'd recommend a warm, water-resistant coat (or a waterproof layer over a warm one), and consider gloves a"
+ },
+ {
+  "group": "tools",
+  "name": "tool_result_round_trip_think",
+  "pass": true,
+  "s": 2.4,
+  "detail": "it's currently **3\u00b0c in berlin**, with windy conditions and light rain.\n\n**yes, you'll want a coat** \u2014 3\u00b0c is cold, and the wind plus light rain will make it feel even chillier. i'd recommend a warm, water-resistant coat (and maybe a scarf, given the wind)."
+ },
+ {
+  "group": "tools",
+  "name": "streaming_tool_call_deltas",
+  "pass": true,
+  "s": 1.9,
+  "detail": {
+   "name": "get_weather",
+   "args": "{\"city\": \"Madrid\", \"unit\": \"fahrenheit\"}"
+  }
+ },
+ {
+  "group": "tools",
+  "name": "agent_loop_off",
+  "pass": true,
+  "steps": 4,
+  "s": 5.9,
+  "detail": {
+   "out.txt": "8042",
+   "last": "DONE"
+  }
+ },
+ {
+  "group": "tools",
+  "name": "agent_loop_think",
+  "pass": true,
+  "steps": 4,
+  "s": 6.5,
+  "detail": {
+   "out.txt": "8042",
+   "last": "DONE"
+  }
+ },
+ {
+  "group": "schema",
+  "name": "json_schema_strict_off",
+  "pass": true,
+  "valid": "5/5",
+  "detail": []
+ },
+ {
+  "group": "schema",
+  "name": "json_schema_strict_think",
+  "pass": true,
+  "valid": "3/3",
+  "detail": []
+ },
+ {
+  "group": "schema",
+  "name": "json_object_mode",
+  "pass": true,
+  "detail": {
+   "city": "Lisbon",
+   "country": "Portugal",
+   "population": 545923
+  }
+ },
+ {
+  "group": "schema",
+  "name": "choice_constraint",
+  "pass": true,
+  "got": "negative"
+ },
+ {
+  "group": "schema",
+  "name": "regex_constraint",
+  "pass": true,
+  "got": "(555) 010-4477"
+ },
+ {
+  "group": "schema",
+  "name": "json_from_prompt_only",
+  "pass": true,
+  "valid": "5/5"
+ },
+ {
+  "group": "reasoning",
+  "name": "thinking_modes",
+  "pass": true,
+  "detail": {
+   "off": {
+    "reasoning_chars": 0,
+    "answer_ok": true,
+    "tokens": 75,
+    "s": 3.6
+   },
+   "low": {
+    "reasoning_chars": 167,
+    "answer_ok": true,
+    "tokens": 73,
+    "s": 2.4
+   },
+   "high": {
+    "reasoning_chars": 138,
+    "answer_ok": true,
+    "tokens": 60,
+    "s": 2.1
+   },
+   "max": {
+    "reasoning_chars": 286,
+    "answer_ok": true,
+    "tokens": 118,
+    "s": 4.1
+   }
+  }
+ },
+ {
+  "group": "reasoning",
+  "name": "no_think_tag_leak",
+  "pass": true,
+  "detail": "No. 221 is composite because it equals 13 \u00d7 17."
+ },
+ {
+  "group": "format",
+  "name": "stop_sequence",
+  "pass": true,
+  "got": "1 2 3 4 5 6"
+ },
+ {
+  "group": "format",
+  "name": "multilingual_utf8",
+  "pass": true,
+  "detail": "Japanese: \u56f3\u66f8\u9928\u306f9\u6642\u306b\u958b\u304d\u307e\u3059\u3002  \nFrench: La biblioth\u00e8que ouvre \u00e0 neuf heures."
+ },
+ {
+  "group": "long_context",
+  "name": "needle_64k",
+  "pass": true,
+  "prompt_tokens": 64030,
+  "s": 80.4,
+  "got": "ORCHID-7731"
+ },
+ {
+  "group": "long_context",
+  "name": "needle_200k",
+  "pass": true,
+  "prompt_tokens": 200030,
+  "s": 216.9,
+  "got": "ORCHID-7731"
+ },
+ {
+  "group": "router",
+  "name": "chat_tools_stream",
+  "pass": true,
+  "s": 2.5,
+  "detail": "{\"city\": \"Rome\", \"unit\": \"celsius\"}"
+ },
+ {
+  "group": "router",
+  "name": "default_request_hermes_shape",
+  "pass": true,
+  "s": 1.9,
+  "reasoning_chars": 68
+ }
+]

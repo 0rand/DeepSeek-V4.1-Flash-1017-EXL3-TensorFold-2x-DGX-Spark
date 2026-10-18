@@ -1,0 +1,39 @@
+runtime provider=custom api_mode=chat_completions base_url=https://<router-host>/v1 key=set
+PASS math stream none     wire=['none'] calls=1 tools=0 reasoning=0/0 5.5s  final='$36' thinking=''
+PASS math stream minimal  wire=['minimal'] calls=1 tools=0 reasoning=0/0 0.9s  final='$36' thinking=''
+PASS math stream low      wire=['low'] calls=1 tools=0 reasoning=59/59 1.3s  final='$36' thinking='Pack of 3 = $4. 27 pens = 9 packs = $36.\n\nAnswer: $36 only.'
+PASS math stream medium   wire=['medium'] calls=1 tools=0 reasoning=86/86 1.3s  final='$36' thinking='$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36.'
+PASS math stream high     wire=['high'] calls=1 tools=0 reasoning=86/86 1.3s  final='$36' thinking='$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36.'
+PASS math stream xhigh    wire=['xhigh'] calls=1 tools=0 reasoning=83/83 1.2s  final='$36' thinking='27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.'
+PASS math stream max      wire=['max'] calls=1 tools=0 reasoning=83/83 1.2s  final='$36' thinking='27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.'
+PASS math stream ultra    wire=['max'] calls=1 tools=0 reasoning=83/83 1.2s  final='$36' thinking='27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.'
+PASS math quiet  none     wire=['none'] calls=1 tools=0 reasoning=0/0 0.9s  final='$36' thinking=''
+PASS math quiet  minimal  wire=['minimal'] calls=1 tools=0 reasoning=0/0 1.0s  final='$36' thinking=''
+PASS math quiet  low      wire=['low'] calls=1 tools=0 reasoning=118/59 1.3s  final='$36' thinking='Pack of 3 = $4. 27 pens = 9 packs = $36.\n\nAnswer: $36 only.Pack of 3 = $4. 27 pens = 9 pac'
+PASS math quiet  medium   wire=['medium'] calls=1 tools=0 reasoning=172/86 1.3s  final='$36' thinking='$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36.$4 p'
+PASS math quiet  high     wire=['high'] calls=1 tools=0 reasoning=172/86 1.3s  final='$36' thinking='$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36.$4 p'
+PASS math quiet  xhigh    wire=['xhigh'] calls=1 tools=0 reasoning=166/83 1.2s  final='$36' thinking='27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.27 pens'
+PASS math quiet  max      wire=['max'] calls=1 tools=0 reasoning=166/83 1.2s  final='$36' thinking='27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.27 pens'
+PASS math quiet  ultra    wire=['max'] calls=1 tools=0 reasoning=166/83 1.2s  final='$36' thinking='27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.27 pens'
+PASS tool stream none     wire=['none'] calls=3 tools=2 reasoning=0/2 4.8s  final='Added "buy milk" (pending). The list has 1 task.' thinking='  '
+PASS tool stream minimal  wire=['minimal'] calls=3 tools=2 reasoning=0/2 3.3s  final='Added "buy milk" (pending). The list has 1 task.' thinking='  '
+PASS tool stream low      wire=['low'] calls=3 tools=2 reasoning=85/86 4.6s  final='One task on the list: "buy milk" (pending).' thinking='I need to load the todo_list tool schema first, then call it. Let me search/describe.'
+PASS tool stream medium   wire=['medium'] calls=3 tools=2 reasoning=288/288 5.7s  final='One task on the list: "buy milk" (pending).' thinking="The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.Add o"
+PASS tool stream high     wire=['high'] calls=3 tools=2 reasoning=288/288 4.7s  final='One task on the list: "buy milk" (pending).' thinking="The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.Add o"
+PASS tool stream xhigh    wire=['xhigh'] calls=3 tools=2 reasoning=556/556 6.9s  final='Added "buy milk" — there\'s 1 task on the list, pending.' thinking="The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+PASS tool stream max      wire=['max'] calls=3 tools=2 reasoning=556/556 5.8s  final='Added "buy milk" — there\'s 1 task on the list, pending.' thinking="The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+PASS tool stream ultra    wire=['max'] calls=3 tools=2 reasoning=556/556 5.8s  final='Added "buy milk" — there\'s 1 task on the list, pending.' thinking="The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+PASS tool quiet  none     wire=['none'] calls=3 tools=2 reasoning=0/2 3.3s  final='Added "buy milk" (pending). The list has 1 task.' thinking='  '
+PASS tool quiet  minimal  wire=['minimal'] calls=3 tools=2 reasoning=0/2 3.3s  final='Added "buy milk" (pending). The list has 1 task.' thinking='  '
+PASS tool quiet  low      wire=['low'] calls=3 tools=2 reasoning=170/86 3.6s  final='One task on the list: "buy milk" (pending).' thinking='I need to load the todo_list tool schema first, then call it. Let me search/describe.I nee'
+PASS tool quiet  medium   wire=['medium'] calls=3 tools=2 reasoning=576/288 4.7s  final='One task on the list: "buy milk" (pending).' thinking="The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.The u"
+PASS tool quiet  high     wire=['high'] calls=3 tools=2 reasoning=576/288 4.7s  final='One task on the list: "buy milk" (pending).' thinking="The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.The u"
+PASS tool quiet  xhigh    wire=['xhigh'] calls=3 tools=2 reasoning=1112/556 5.8s  final='Added "buy milk" — there\'s 1 task on the list, pending.' thinking="The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+PASS tool quiet  max      wire=['max'] calls=3 tools=2 reasoning=1112/556 5.8s  final='Added "buy milk" — there\'s 1 task on the list, pending.' thinking="The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+PASS tool quiet  ultra    wire=['max'] calls=3 tools=2 reasoning=1112/556 5.8s  final='Added "buy milk" — there\'s 1 task on the list, pending.' thinking="The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+PASS title wire=['none'] calls=1 0.9s  title='Debug nginx 502 after port 9000 move' 
+PASS title wire=['none'] calls=1 0.7s  title='Three-day Kyoto garden and food trip' 
+PASS title wire=['none'] calls=1 0.7s  title='Rust borrow checker Vec push during iteration' 
+
+35/35 passed
+EXIT=0

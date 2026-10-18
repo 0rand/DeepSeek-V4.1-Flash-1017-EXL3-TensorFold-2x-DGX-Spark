@@ -1,0 +1,340 @@
+[
+ {
+  "group": "speed",
+  "name": "decode_prose_off",
+  "pass": true,
+  "tok_s": 52.5,
+  "per_prompt": [
+   51.2,
+   53.8
+  ],
+  "ttft_s": [
+   0.16,
+   0.12
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "decode_code_off",
+  "pass": true,
+  "tok_s": 91.7,
+  "per_prompt": [
+   94.0,
+   89.5
+  ],
+  "ttft_s": [
+   0.17,
+   0.16
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "decode_prose_think",
+  "pass": true,
+  "tok_s": 51.5,
+  "per_prompt": [
+   51.5
+  ],
+  "ttft_s": [
+   0.25
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "decode_code_think",
+  "pass": true,
+  "tok_s": 70.9,
+  "per_prompt": [
+   70.9
+  ],
+  "ttft_s": [
+   0.2
+  ]
+ },
+ {
+  "group": "speed",
+  "name": "prefill_8k",
+  "pass": true,
+  "prompt_tokens": 8001,
+  "ttft_s": 14.52,
+  "prefill_tok_s": 551.0
+ },
+ {
+  "group": "speed",
+  "name": "prefill_32k",
+  "pass": true,
+  "prompt_tokens": 32001,
+  "ttft_s": 15.12,
+  "prefill_tok_s": 2116.0
+ },
+ {
+  "group": "tools",
+  "name": "single_call_off",
+  "pass": true,
+  "s": 2.2,
+  "finish": "tool_calls",
+  "detail": "[{\"id\": \"call_68ba3c8afad94d56b770fa8d\", \"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"arguments\": \"{\\\"city\\\":\\\"Tokyo\\\",\\\"unit\\\":\\\"celsius\\\"}\"}}]"
+ },
+ {
+  "group": "tools",
+  "name": "single_call_think",
+  "pass": true,
+  "s": 1.5,
+  "finish": "tool_calls",
+  "detail": "[{\"id\": \"call_2ebcc52db9b64563b2d92534\", \"type\": \"function\", \"function\": {\"name\": \"get_weather\", \"arguments\": \"{\\\"city\\\":\\\"Tokyo\\\",\\\"unit\\\":\\\"celsius\\\"}\"}}]"
+ },
+ {
+  "group": "tools",
+  "name": "no_call_when_not_needed",
+  "pass": true,
+  "s": 1.3,
+  "detail": {
+   "role": "assistant",
+   "content": "Paris"
+  }
+ },
+ {
+  "group": "tools",
+  "name": "tool_choice_required",
+  "pass": true,
+  "s": 1.7,
+  "detail": {
+   "role": "assistant",
+   "content": null,
+   "tool_calls": [
+    {
+     "id": "call_ea06d6d9985b42b9aea1b9ab",
+     "type": "function",
+     "function": {
+      "name": "get_weather",
+      "arguments": "{\"city\":\"Tokyo\",\"unit\":\"celsius\"}"
+     }
+    },
+    {
+     "id": "call_5b884969125648ad8facd5b2",
+     "type": "function",
+     "function": {
+      "name": "get_time",
+      "arguments": "{\"timezone\":\"Asia/Tokyo\"}"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "group": "tools",
+  "name": "tool_choice_named",
+  "pass": true,
+  "s": 1.2,
+  "detail": {
+   "role": "assistant",
+   "content": null,
+   "tool_calls": [
+    {
+     "id": "call_a62868cec8c94fabbcab1908",
+     "type": "function",
+     "function": {
+      "name": "get_time",
+      "arguments": "{\"timezone\":\"Europe/Paris\"}"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "group": "tools",
+  "name": "nested_arguments",
+  "pass": true,
+  "s": 1.8,
+  "detail": {
+   "title": "Q4 roadmap",
+   "start": "2026-10-20T14:00:00",
+   "duration_minutes": 45,
+   "attendees": [
+    {
+     "name": "Ana",
+     "email": "ana@example.com"
+    },
+    {
+     "name": "Raj",
+     "email": "raj@example.com"
+    }
+   ],
+   "reminder": {
+    "minutes_before": 10
+   }
+  }
+ },
+ {
+  "group": "tools",
+  "name": "parallel_calls_one_turn",
+  "pass": true,
+  "s": 1.4,
+  "n_calls": 2,
+  "detail": [
+   "lima",
+   "oslo"
+  ]
+ },
+ {
+  "group": "tools",
+  "name": "tool_result_round_trip_off",
+  "pass": true,
+  "s": 1.6,
+  "detail": "the weather in berlin is currently **3\u00b0c** with **windy conditions and light rain**.\n\n**yes, you'll definitely need a coat!** at 3\u00b0c it's quite cold, and the wind and rain will make it feel even chillier. i'd recommend a warm, waterproof coat along with some layers underneath to stay comfortable."
+ },
+ {
+  "group": "tools",
+  "name": "tool_result_round_trip_think",
+  "pass": true,
+  "s": 2.8,
+  "detail": "**berlin weather:** 3\u00b0c, windy with light rain.\n\n**do you need a coat? yes \u2014 definitely.** at 3\u00b0c with wind and light rain, it'll feel close to or below freezing with wind chill. you'll want a warm winter coat, plus a waterproof layer or umbrella, and ideally something for your hands and ears."
+ },
+ {
+  "group": "tools",
+  "name": "streaming_tool_call_deltas",
+  "pass": true,
+  "s": 1.6,
+  "detail": {
+   "name": "get_weather",
+   "args": "{\"city\":\"Madrid\",\"unit\":\"fahrenheit\"}"
+  }
+ },
+ {
+  "group": "tools",
+  "name": "agent_loop_off",
+  "pass": true,
+  "steps": 4,
+  "s": 6.4,
+  "detail": {
+   "out.txt": "8042",
+   "last": "Verified: `config.json` gives `\"port\": 8041`, and I wrote `8042` to `out.txt`.\n\nDONE"
+  }
+ },
+ {
+  "group": "tools",
+  "name": "agent_loop_think",
+  "pass": true,
+  "steps": 4,
+  "s": 5.5,
+  "detail": {
+   "out.txt": "8042",
+   "last": "DONE"
+  }
+ },
+ {
+  "group": "schema",
+  "name": "strict_off",
+  "pass": false,
+  "detail": "HTTPError: HTTP Error 500: Internal Server Error"
+ },
+ {
+  "group": "schema",
+  "name": "strict_think",
+  "pass": false,
+  "detail": "HTTPError: HTTP Error 500: Internal Server Error"
+ },
+ {
+  "group": "schema",
+  "name": "json_object",
+  "pass": false,
+  "detail": "HTTPError: HTTP Error 500: Internal Server Error"
+ },
+ {
+  "group": "schema",
+  "name": "choice",
+  "pass": false,
+  "detail": "HTTPError: HTTP Error 500: Internal Server Error"
+ },
+ {
+  "group": "schema",
+  "name": "regex",
+  "pass": false,
+  "detail": "HTTPError: HTTP Error 500: Internal Server Error"
+ },
+ {
+  "group": "schema",
+  "name": "json_from_prompt_only",
+  "pass": true,
+  "valid": "5/5"
+ },
+ {
+  "group": "reasoning",
+  "name": "thinking_modes",
+  "pass": true,
+  "detail": {
+   "off": {
+    "reasoning_chars": 0,
+    "answer_ok": true,
+    "tokens": 2,
+    "s": 0.2
+   },
+   "low": {
+    "reasoning_chars": 181,
+    "answer_ok": true,
+    "tokens": 81,
+    "s": 1.1
+   },
+   "high": {
+    "reasoning_chars": 137,
+    "answer_ok": true,
+    "tokens": 49,
+    "s": 0.9
+   },
+   "max": {
+    "reasoning_chars": 217,
+    "answer_ok": true,
+    "tokens": 93,
+    "s": 1.5
+   }
+  }
+ },
+ {
+  "group": "reasoning",
+  "name": "no_think_tag_leak",
+  "pass": true,
+  "detail": "No. 221 equals 13 \u00d7 17, so it is not prime."
+ },
+ {
+  "group": "format",
+  "name": "stop_sequence",
+  "pass": true,
+  "got": "1 2 3 4 5 6"
+ },
+ {
+  "group": "format",
+  "name": "multilingual_utf8",
+  "pass": true,
+  "detail": "Japanese: \u56f3\u66f8\u9928\u306f9\u6642\u306b\u958b\u304d\u307e\u3059\u3002  \nFrench: La biblioth\u00e8que ouvre \u00e0 neuf heures."
+ },
+ {
+  "group": "long_context",
+  "name": "needle_64k",
+  "pass": true,
+  "prompt_tokens": 64030,
+  "s": 40.0,
+  "got": "ORCHID-7731"
+ },
+ {
+  "group": "long_context",
+  "name": "needle_200k",
+  "pass": true,
+  "prompt_tokens": 200030,
+  "s": 110.6,
+  "got": "ORCHID-7731"
+ },
+ {
+  "group": "router",
+  "name": "chat_tools_stream",
+  "pass": true,
+  "s": 1.6,
+  "detail": "{\"city\":\"Rome\",\"unit\":\"celsius\"}"
+ },
+ {
+  "group": "router",
+  "name": "default_request_hermes_shape",
+  "pass": true,
+  "s": 0.5,
+  "reasoning_chars": 62
+ }
+]

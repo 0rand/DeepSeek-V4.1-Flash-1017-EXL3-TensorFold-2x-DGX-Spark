@@ -1,0 +1,904 @@
+[
+ {
+  "level": "none",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 5.5,
+  "wire_efforts": [
+   "none"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 0,
+  "final": "$36",
+  "reasoning_preview": ""
+ },
+ {
+  "level": "minimal",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 0.9,
+  "wire_efforts": [
+   "minimal"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 0,
+  "final": "$36",
+  "reasoning_preview": ""
+ },
+ {
+  "level": "low",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 1.3,
+  "wire_efforts": [
+   "low"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 59,
+  "stored_reasoning_chars": 59,
+  "final": "$36",
+  "reasoning_preview": "Pack of 3 = $4. 27 pens = 9 packs = $36.\n\nAnswer: $36 only."
+ },
+ {
+  "level": "medium",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 1.3,
+  "wire_efforts": [
+   "medium"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 86,
+  "stored_reasoning_chars": 86,
+  "final": "$36",
+  "reasoning_preview": "$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36."
+ },
+ {
+  "level": "high",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 1.3,
+  "wire_efforts": [
+   "high"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 86,
+  "stored_reasoning_chars": 86,
+  "final": "$36",
+  "reasoning_preview": "$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36."
+ },
+ {
+  "level": "xhigh",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 1.2,
+  "wire_efforts": [
+   "xhigh"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 83,
+  "stored_reasoning_chars": 83,
+  "final": "$36",
+  "reasoning_preview": "27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36."
+ },
+ {
+  "level": "max",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 1.2,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 83,
+  "stored_reasoning_chars": 83,
+  "final": "$36",
+  "reasoning_preview": "27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36."
+ },
+ {
+  "level": "ultra",
+  "mode": "stream",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 1.2,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 83,
+  "stored_reasoning_chars": 83,
+  "final": "$36",
+  "reasoning_preview": "27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36."
+ },
+ {
+  "level": "none",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 0.9,
+  "wire_efforts": [
+   "none"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 0,
+  "final": "$36",
+  "reasoning_preview": ""
+ },
+ {
+  "level": "minimal",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 1.0,
+  "wire_efforts": [
+   "minimal"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 0,
+  "final": "$36",
+  "reasoning_preview": ""
+ },
+ {
+  "level": "low",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 1.3,
+  "wire_efforts": [
+   "low"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 118,
+  "stored_reasoning_chars": 59,
+  "final": "$36",
+  "reasoning_preview": "Pack of 3 = $4. 27 pens = 9 packs = $36.\n\nAnswer: $36 only.Pack of 3 = $4. 27 pens = 9 pac"
+ },
+ {
+  "level": "medium",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 1.3,
+  "wire_efforts": [
+   "medium"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 172,
+  "stored_reasoning_chars": 86,
+  "final": "$36",
+  "reasoning_preview": "$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36.$4 p"
+ },
+ {
+  "level": "high",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 1.3,
+  "wire_efforts": [
+   "high"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 172,
+  "stored_reasoning_chars": 86,
+  "final": "$36",
+  "reasoning_preview": "$4 per pack of 3 pens → 27 pens = 9 packs → $36.\n\nAnswer with dollar amount only: $36.$4 p"
+ },
+ {
+  "level": "xhigh",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 1.2,
+  "wire_efforts": [
+   "xhigh"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 166,
+  "stored_reasoning_chars": 83,
+  "final": "$36",
+  "reasoning_preview": "27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.27 pens"
+ },
+ {
+  "level": "max",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 1.2,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 166,
+  "stored_reasoning_chars": 83,
+  "final": "$36",
+  "reasoning_preview": "27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.27 pens"
+ },
+ {
+  "level": "ultra",
+  "mode": "quiet",
+  "task": "math",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 1.2,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 1,
+  "tool_msgs": 0,
+  "reasoning_chars": 166,
+  "stored_reasoning_chars": 83,
+  "final": "$36",
+  "reasoning_preview": "27 pens / 3 per pack = 9 packs. 9 × $4 = $36.\n\nAnswer with dollar amount only: $36.27 pens"
+ },
+ {
+  "level": "none",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 4.8,
+  "wire_efforts": [
+   "none"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 2,
+  "final": "Added \"buy milk\" (pending). The list has 1 task.",
+  "reasoning_preview": "  "
+ },
+ {
+  "level": "minimal",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 3.3,
+  "wire_efforts": [
+   "minimal"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 2,
+  "final": "Added \"buy milk\" (pending). The list has 1 task.",
+  "reasoning_preview": "  "
+ },
+ {
+  "level": "low",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 4.6,
+  "wire_efforts": [
+   "low"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 85,
+  "stored_reasoning_chars": 86,
+  "final": "One task on the list: \"buy milk\" (pending).",
+  "reasoning_preview": "I need to load the todo_list tool schema first, then call it. Let me search/describe."
+ },
+ {
+  "level": "medium",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 5.7,
+  "wire_efforts": [
+   "medium"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 288,
+  "stored_reasoning_chars": 288,
+  "final": "One task on the list: \"buy milk\" (pending).",
+  "reasoning_preview": "The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.Add o"
+ },
+ {
+  "level": "high",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 4.7,
+  "wire_efforts": [
+   "high"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 288,
+  "stored_reasoning_chars": 288,
+  "final": "One task on the list: \"buy milk\" (pending).",
+  "reasoning_preview": "The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.Add o"
+ },
+ {
+  "level": "xhigh",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 6.9,
+  "wire_efforts": [
+   "xhigh"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 556,
+  "stored_reasoning_chars": 556,
+  "final": "Added \"buy milk\" — there's 1 task on the list, pending.",
+  "reasoning_preview": "The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+ },
+ {
+  "level": "max",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 5.8,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 556,
+  "stored_reasoning_chars": 556,
+  "final": "Added \"buy milk\" — there's 1 task on the list, pending.",
+  "reasoning_preview": "The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+ },
+ {
+  "level": "ultra",
+  "mode": "stream",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true,
+   "streamed": true
+  },
+  "s": 5.8,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 556,
+  "stored_reasoning_chars": 556,
+  "final": "Added \"buy milk\" — there's 1 task on the list, pending.",
+  "reasoning_preview": "The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+ },
+ {
+  "level": "none",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 3.3,
+  "wire_efforts": [
+   "none"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 2,
+  "final": "Added \"buy milk\" (pending). The list has 1 task.",
+  "reasoning_preview": "  "
+ },
+ {
+  "level": "minimal",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 3.3,
+  "wire_efforts": [
+   "minimal"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 0,
+  "stored_reasoning_chars": 2,
+  "final": "Added \"buy milk\" (pending). The list has 1 task.",
+  "reasoning_preview": "  "
+ },
+ {
+  "level": "low",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 3.6,
+  "wire_efforts": [
+   "low"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 170,
+  "stored_reasoning_chars": 86,
+  "final": "One task on the list: \"buy milk\" (pending).",
+  "reasoning_preview": "I need to load the todo_list tool schema first, then call it. Let me search/describe.I nee"
+ },
+ {
+  "level": "medium",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 4.7,
+  "wire_efforts": [
+   "medium"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 576,
+  "stored_reasoning_chars": 288,
+  "final": "One task on the list: \"buy milk\" (pending).",
+  "reasoning_preview": "The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.The u"
+ },
+ {
+  "level": "high",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 4.7,
+  "wire_efforts": [
+   "high"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 576,
+  "stored_reasoning_chars": 288,
+  "final": "One task on the list: \"buy milk\" (pending).",
+  "reasoning_preview": "The user asks to use todo_list tool to add a task 'buy milk'. Let me load the schema.The u"
+ },
+ {
+  "level": "xhigh",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 5.8,
+  "wire_efforts": [
+   "xhigh"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 1112,
+  "stored_reasoning_chars": 556,
+  "final": "Added \"buy milk\" — there's 1 task on the list, pending.",
+  "reasoning_preview": "The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+ },
+ {
+  "level": "max",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 5.8,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 1112,
+  "stored_reasoning_chars": 556,
+  "final": "Added \"buy milk\" — there's 1 task on the list, pending.",
+  "reasoning_preview": "The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+ },
+ {
+  "level": "ultra",
+  "mode": "quiet",
+  "task": "tool",
+  "ok": true,
+  "checks": {
+   "wire": true,
+   "reasoning": true,
+   "answer": true,
+   "no_tags": true
+  },
+  "s": 5.8,
+  "wire_efforts": [
+   "max"
+  ],
+  "wire_stream": [
+   "True"
+  ],
+  "wire_other_reasoning_keys": [],
+  "api_calls": 3,
+  "tool_msgs": 2,
+  "reasoning_chars": 1112,
+  "stored_reasoning_chars": 556,
+  "final": "Added \"buy milk\" — there's 1 task on the list, pending.",
+  "reasoning_preview": "The user asks to use the todo_list tool. It's a deferred tool. I need to load its schema v"
+ },
+ {
+  "level": "-",
+  "mode": "aux",
+  "task": "title",
+  "ok": true,
+  "checks": {
+   "title": true,
+   "wire_schema": true,
+   "no_errors": true
+  },
+  "s": 0.9,
+  "wire_efforts": [
+   "none"
+  ],
+  "api_calls": 1,
+  "final": "Debug nginx 502 after port 9000 move",
+  "errors": []
+ },
+ {
+  "level": "-",
+  "mode": "aux",
+  "task": "title",
+  "ok": true,
+  "checks": {
+   "title": true,
+   "wire_schema": true,
+   "no_errors": true
+  },
+  "s": 0.7,
+  "wire_efforts": [
+   "none"
+  ],
+  "api_calls": 1,
+  "final": "Three-day Kyoto garden and food trip",
+  "errors": []
+ },
+ {
+  "level": "-",
+  "mode": "aux",
+  "task": "title",
+  "ok": true,
+  "checks": {
+   "title": true,
+   "wire_schema": true,
+   "no_errors": true
+  },
+  "s": 0.7,
+  "wire_efforts": [
+   "none"
+  ],
+  "api_calls": 1,
+  "final": "Rust borrow checker Vec push during iteration",
+  "errors": []
+ }
+]

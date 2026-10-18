@@ -1,0 +1,13 @@
+[PASS] chat, one turn
+[PASS] chat, system + two turns
+[PASS] thinking low
+[PASS] thinking max + system
+[PASS] thinking, earlier reasoning dropped
+[PASS] tools, chat
+[PASS] tools, call + result, thinking
+[PASS] tools, two parallel calls + results
+[PASS] mid-conversation system
+[PASS] json_object, no system
+[PASS] json_object + system + tools, thinking
+[PASS] two leading systems + tools
+12/12 match (a SKIP counts as a match)
