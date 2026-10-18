@@ -4,7 +4,8 @@
 # long prompts then read 10-30% slower with 1-4 s stalls (runs/2026-10-18/). When memory runs out, the head can also
 # stop (no ssh) until you cut its power. The engine's RUNBOOK.md asks for the swap part.
 #   scripts/host_tuning.sh          apply on the head and the worker (you can run it again; the result is the same)
-#   scripts/host_tuning.sh --undo   remove the changes on both nodes
+#   scripts/host_tuning.sh --undo   remove the changes on both nodes and put back the sysctl values from before
+#                                   the first run (kept in /var/lib/tensorfold-host-tuning/sysctl.before)
 # Changes on each node:
 #   1. /etc/systemd/system/tensorfold.slice with MemorySwapMax=0. start.sh puts both rank containers in this slice.
 #   2. /etc/sysctl.d/99-tensorfold.conf (kernel defaults in brackets):
@@ -28,23 +29,40 @@ node_script() {
   cat <<'EOF'
 set -euo pipefail
 eo=/etc/default/earlyoom
+conf=/etc/sysctl.d/99-tensorfold.conf
+before=/var/lib/tensorfold-host-tuning/sysctl.before
+keys="vm.swappiness vm.compaction_proactiveness vm.extfrag_threshold vm.min_free_kbytes vm.watermark_scale_factor"
 if [ "${1:-}" = "--undo" ]; then
-  rm -f /etc/systemd/system/tensorfold.slice /etc/sysctl.d/99-tensorfold.conf
+  rm -f /etc/systemd/system/tensorfold.slice "$conf"
   systemctl daemon-reload
-  sysctl -q -w vm.swappiness=60 vm.compaction_proactiveness=20 vm.extfrag_threshold=500 vm.watermark_scale_factor=10
+  if [ -f "$before" ]; then
+    sysctl -q -p "$before"
+    rm -f "$before"
+    note="sysctl values from before the first run are back"
+  else
+    # No saved values (a run of an older version of this script): kernel defaults, then the other sysctl files.
+    sysctl -q -w vm.swappiness=60 vm.compaction_proactiveness=20 vm.extfrag_threshold=500 vm.watermark_scale_factor=10
+    sysctl -q --system || true
+    note="no saved sysctl values: kernel defaults set, vm.min_free_kbytes goes back at the next boot"
+  fi
   if [ -f "$eo.pre-tensorfold" ]; then
     mv "$eo.pre-tensorfold" "$eo"
     systemctl restart earlyoom || true
   fi
-  echo "$(hostname): undone (vm.min_free_kbytes goes back to the kernel value at the next boot)"; exit 0
+  echo "$(hostname): undone ($note)"; exit 0
+fi
+# Keep the live values before the first run, so --undo can put them back. With $conf present they are ours.
+if [ ! -f "$conf" ] && [ ! -f "$before" ]; then
+  mkdir -p "${before%/*}"
+  for k in $keys; do echo "$k = $(sysctl -n "$k")"; done > "$before"
 fi
 printf '[Unit]\nDescription=TensorFold rank containers (no swap)\n\n[Slice]\nMemorySwapMax=0\n' \
   > /etc/systemd/system/tensorfold.slice
 systemctl daemon-reload
 systemctl start tensorfold.slice
 printf '%s\n' "vm.swappiness = 10" "vm.compaction_proactiveness = 0" "vm.extfrag_threshold = 500" \
-  "vm.min_free_kbytes = 1048576" "vm.watermark_scale_factor = 50" > /etc/sysctl.d/99-tensorfold.conf
-sysctl -q -p /etc/sysctl.d/99-tensorfold.conf
+  "vm.min_free_kbytes = 1048576" "vm.watermark_scale_factor = 50" > "$conf"
+sysctl -q -p "$conf"
 if [ -f "$eo" ]; then
   # -M: SIGTERM / SIGKILL limits in KiB of MemAvailable. -s 100,100: both signals also when swap is free. -p: earlyoom runs first.
   args="-r 3600 -p -M 1572864,786432 -s 100,100 --prefer '^tensorfold' --avoid '^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)'"
