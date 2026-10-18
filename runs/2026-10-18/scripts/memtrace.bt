@@ -1,0 +1,16 @@
+// memtrace.bt: direct reclaim and compaction stalls with their length (drsnoop/compactsnoop replacement for aarch64).
+// DR = direct reclaim, CP = one compaction run (direct or kcompactd), DC = direct compaction attempts per comm (5 s).
+tracepoint:vmscan:mm_vmscan_direct_reclaim_begin { @drs[tid] = nsecs; }
+tracepoint:vmscan:mm_vmscan_direct_reclaim_end /@drs[tid]/ {
+  printf("DR %s pid=%d tid=%d cpu=%d us=%d reclaimed=%d\n", comm, pid, tid, cpu, (nsecs - @drs[tid]) / 1000, args->nr_reclaimed);
+  delete(@drs[tid]);
+}
+tracepoint:compaction:mm_compaction_begin { @cs[tid] = nsecs; }
+tracepoint:compaction:mm_compaction_end /@cs[tid]/ {
+  printf("CP %s pid=%d tid=%d cpu=%d us=%d status=%d sync=%d\n", comm, pid, tid, cpu, (nsecs - @cs[tid]) / 1000, args->status, args->sync);
+  delete(@cs[tid]);
+}
+tracepoint:compaction:mm_compaction_try_to_compact_pages { @dc[comm, args->order] = count(); }
+tracepoint:vmscan:mm_vmscan_kswapd_wake { @kswapd_wake = count(); }
+interval:s:5 { print(@dc); clear(@dc); print(@kswapd_wake); clear(@kswapd_wake); }
+END { clear(@drs); clear(@cs); }

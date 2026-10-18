@@ -1,0 +1,15 @@
+## pin
+   pf-pin1-8k.json 8K=2174 8K=2154
+   pf-pin1-long.json 32K=1944 64K=2111 128K=1930
+   pf-pin2-8k.json 8K=2171 8K=2173
+   pf-pin2-long.json 32K=2003 64K=2106 128K=1890
+   pf-pin3-8k.json 8K=2177 8K=2178
+   pf-pin3-long.json 32K=2128 64K=1970 128K=1920
+   rank 0: 372 chunks, median 0.98s, slow 20 (2.57, 2.50, 2.45, 2.41, 2.31, 2.26)
+     DR: 529 events, 69 ms total, max 9.4 ms; in slow chunks 0 (0 ms)
+     CP: 1091 events, 4880 ms total, max 731.3 ms; in slow chunks 0 (0 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%
+   rank 1: 372 chunks, median 0.98s, slow 20 (2.57, 2.50, 2.45, 2.41, 2.31, 2.26)
+     DR: 235 events, 13 ms total, max 0.6 ms; in slow chunks 0 (0 ms)
+     CP: 456 events, 2622 ms total, max 461.0 ms; in slow chunks 0 (0 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%

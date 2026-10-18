@@ -1,0 +1,1286 @@
+1792312964.073 Attaching 8 probes...
+1792312969.082 
+1792312969.082 @kswapd_wake: 0
+1792312972.168 CP kcompactd0 pid=148 tid=148 cpu=2 us=716 status=5 sync=1
+1792312972.188 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=163 status=8 sync=0
+1792312972.188 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=311 status=8 sync=0
+1792312972.188 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=82 status=8 sync=0
+1792312972.188 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=51 status=8 sync=0
+1792312972.188 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=11 status=8 sync=0
+1792312972.188 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=377 status=6 sync=0
+1792312972.189 CP kcompactd0 pid=148 tid=148 cpu=7 us=307 status=5 sync=1
+1792312972.191 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=156 status=8 sync=0
+1792312972.192 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=549 status=6 sync=0
+1792312972.192 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=445 reclaimed=77
+1792312972.193 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=458 status=5 sync=0
+1792312972.193 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=259 reclaimed=64
+1792312972.193 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=136 status=8 sync=0
+1792312972.194 CP kcompactd0 pid=148 tid=148 cpu=7 us=83 status=6 sync=1
+1792312972.199 CP kcompactd0 pid=148 tid=148 cpu=9 us=271 status=5 sync=1
+1792312972.201 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=839 status=5 sync=0
+1792312972.203 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=80 status=8 sync=0
+1792312972.203 CP kcompactd0 pid=148 tid=148 cpu=11 us=433 status=5 sync=1
+1792312972.206 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=80 status=8 sync=0
+1792312972.206 CP kcompactd0 pid=148 tid=148 cpu=18 us=255 status=5 sync=1
+1792312972.209 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=423 status=5 sync=0
+1792312972.211 CP kcompactd0 pid=148 tid=148 cpu=18 us=453 status=5 sync=1
+1792312972.213 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=956 status=5 sync=0
+1792312972.214 CP kcompactd0 pid=148 tid=148 cpu=19 us=193 status=5 sync=1
+1792312972.218 CP kcompactd0 pid=148 tid=148 cpu=6 us=502 status=5 sync=1
+1792312972.222 CP kcompactd0 pid=148 tid=148 cpu=5 us=247 status=5 sync=1
+1792312972.237 CP kcompactd0 pid=148 tid=148 cpu=3 us=455 status=5 sync=1
+1792312972.239 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=226 status=5 sync=0
+1792312972.239 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=308 reclaimed=64
+1792312972.239 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=137 status=8 sync=0
+1792312972.240 CP kcompactd0 pid=148 tid=148 cpu=6 us=154 status=6 sync=1
+1792312972.241 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=139 status=8 sync=0
+1792312972.242 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=6 status=8 sync=0
+1792312972.242 CP kcompactd0 pid=148 tid=148 cpu=6 us=117 status=6 sync=1
+1792312972.244 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=140 status=8 sync=0
+1792312972.244 CP kcompactd0 pid=148 tid=148 cpu=16 us=126 status=6 sync=1
+1792312972.246 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=139 status=8 sync=0
+1792312972.247 CP kcompactd0 pid=148 tid=148 cpu=16 us=105 status=6 sync=1
+1792312972.249 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=232 status=5 sync=0
+1792312972.249 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=18 reclaimed=64
+1792312972.249 CP kcompactd0 pid=148 tid=148 cpu=16 us=235 status=5 sync=1
+1792312972.251 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=126 status=7 sync=0
+1792312972.251 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=14 reclaimed=64
+1792312972.252 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=269 status=6 sync=0
+1792312972.252 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=5 reclaimed=64
+1792312972.252 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=344 status=5 sync=0
+1792312972.252 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=5 reclaimed=64
+1792312972.252 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=230 status=5 sync=0
+1792312972.252 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.252 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=254 status=5 sync=0
+1792312972.252 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.253 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=238 status=5 sync=0
+1792312972.253 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=6 reclaimed=64
+1792312972.253 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=241 status=5 sync=0
+1792312972.253 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.253 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=34 status=7 sync=0
+1792312972.253 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.253 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=4 status=7 sync=0
+1792312972.253 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=2 reclaimed=64
+1792312972.253 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=48 status=7 sync=0
+1792312972.253 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=5 reclaimed=64
+1792312972.253 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=248 status=6 sync=0
+1792312972.253 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.254 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=297 status=5 sync=0
+1792312972.254 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.254 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=246 status=5 sync=0
+1792312972.254 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.254 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=31 status=7 sync=0
+1792312972.254 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.254 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=14 status=7 sync=0
+1792312972.254 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=8 reclaimed=64
+1792312972.254 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=269 status=6 sync=0
+1792312972.254 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=5 reclaimed=64
+1792312972.255 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=265 status=5 sync=0
+1792312972.255 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.255 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=232 status=5 sync=0
+1792312972.255 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.255 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=17 status=7 sync=0
+1792312972.255 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.255 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=230 status=6 sync=0
+1792312972.255 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.255 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=234 status=5 sync=0
+1792312972.255 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=7 reclaimed=64
+1792312972.255 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=23 status=7 sync=0
+1792312972.255 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.256 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=231 status=6 sync=0
+1792312972.256 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.256 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=266 status=5 sync=0
+1792312972.256 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.256 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=234 status=5 sync=0
+1792312972.256 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.256 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=235 status=5 sync=0
+1792312972.256 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.257 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=233 status=5 sync=0
+1792312972.257 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.257 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=266 status=5 sync=0
+1792312972.257 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=8 reclaimed=64
+1792312972.257 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=246 status=5 sync=0
+1792312972.257 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.258 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=247 status=5 sync=0
+1792312972.258 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.258 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=233 status=5 sync=0
+1792312972.258 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.258 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=229 status=5 sync=0
+1792312972.258 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.258 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=236 status=5 sync=0
+1792312972.258 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.259 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=249 status=5 sync=0
+1792312972.259 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.259 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=241 status=5 sync=0
+1792312972.259 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.259 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=249 status=5 sync=0
+1792312972.259 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.259 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=259 status=5 sync=0
+1792312972.259 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.260 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=282 status=5 sync=0
+1792312972.260 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=7 reclaimed=64
+1792312972.260 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=243 status=5 sync=0
+1792312972.260 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.260 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=234 status=5 sync=0
+1792312972.260 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.260 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=10 status=7 sync=0
+1792312972.260 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.260 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=228 status=6 sync=0
+1792312972.260 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=7 reclaimed=64
+1792312972.261 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=230 status=5 sync=0
+1792312972.261 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=7 reclaimed=64
+1792312972.261 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=242 status=5 sync=0
+1792312972.261 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.261 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=252 status=5 sync=0
+1792312972.261 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=5 reclaimed=64
+1792312972.261 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=245 status=5 sync=0
+1792312972.261 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.262 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=261 status=5 sync=0
+1792312972.262 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.262 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=43 status=7 sync=0
+1792312972.262 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=8 reclaimed=64
+1792312972.262 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=8 status=7 sync=0
+1792312972.262 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=6 reclaimed=64
+1792312972.262 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=224 status=6 sync=0
+1792312972.262 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.262 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=18 status=7 sync=0
+1792312972.262 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.262 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=222 status=6 sync=0
+1792312972.262 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.263 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=251 status=5 sync=0
+1792312972.263 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=2 reclaimed=64
+1792312972.263 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=250 status=5 sync=0
+1792312972.263 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.263 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=228 status=5 sync=0
+1792312972.263 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=7 reclaimed=64
+1792312972.263 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=242 status=5 sync=0
+1792312972.263 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.264 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=233 status=5 sync=0
+1792312972.264 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.264 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=18 status=7 sync=0
+1792312972.264 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=6 reclaimed=64
+1792312972.264 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=18 status=7 sync=0
+1792312972.264 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.264 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=233 status=6 sync=0
+1792312972.264 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.264 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=253 status=5 sync=0
+1792312972.264 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.265 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=253 status=5 sync=0
+1792312972.265 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.265 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=29 status=7 sync=0
+1792312972.265 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.265 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=55 status=7 sync=0
+1792312972.265 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.265 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=228 status=6 sync=0
+1792312972.265 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.265 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=227 status=5 sync=0
+1792312972.265 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.265 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=249 status=5 sync=0
+1792312972.265 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=5 reclaimed=64
+1792312972.266 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=229 status=5 sync=0
+1792312972.266 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.266 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=15 status=7 sync=0
+1792312972.266 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=6 reclaimed=64
+1792312972.266 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=233 status=6 sync=0
+1792312972.266 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.266 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=231 status=5 sync=0
+1792312972.266 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=6 reclaimed=64
+1792312972.266 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=231 status=5 sync=0
+1792312972.266 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.267 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=237 status=5 sync=0
+1792312972.267 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=9 reclaimed=64
+1792312972.267 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=39 status=7 sync=0
+1792312972.267 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.267 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=31 status=7 sync=0
+1792312972.267 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=3 reclaimed=64
+1792312972.267 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=37 status=7 sync=0
+1792312972.268 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.268 CP kcompactd0 pid=148 tid=148 cpu=16 us=4 status=6 sync=1
+1792312972.268 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=218 status=6 sync=0
+1792312972.269 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=4 reclaimed=64
+1792312972.270 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=393 status=5 sync=0
+1792312972.270 CP kcompactd0 pid=148 tid=148 cpu=16 us=979 status=5 sync=1
+1792312972.271 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=486 status=5 sync=0
+1792312972.273 CP kcompactd0 pid=148 tid=148 cpu=16 us=491 status=5 sync=1
+1792312972.273 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=15 status=8 sync=0
+1792312972.275 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=681 status=6 sync=0
+1792312972.275 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=328 status=5 sync=0
+1792312972.276 CP kcompactd0 pid=148 tid=148 cpu=16 us=448 status=6 sync=1
+1792312972.278 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=707 status=5 sync=0
+1792312972.278 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=268 reclaimed=64
+1792312972.279 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=23 status=8 sync=0
+1792312972.279 CP kcompactd0 pid=148 tid=148 cpu=16 us=488 status=5 sync=1
+1792312972.281 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=249 status=5 sync=0
+1792312972.282 CP kcompactd0 pid=148 tid=148 cpu=16 us=516 status=5 sync=1
+1792312972.285 CP kcompactd0 pid=148 tid=148 cpu=16 us=947 status=5 sync=1
+1792312972.288 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=468 status=5 sync=0
+1792312972.290 CP kcompactd0 pid=148 tid=148 cpu=17 us=834 status=5 sync=1
+1792312972.290 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=363 status=6 sync=0
+1792312972.292 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=219 status=5 sync=0
+1792312972.293 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=162 status=8 sync=0
+1792312972.294 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=896 status=8 sync=0
+1792312972.294 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=171 status=8 sync=0
+1792312972.294 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=215 status=8 sync=0
+1792312972.296 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1026 status=8 sync=0
+1792312972.297 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=704 status=8 sync=0
+1792312972.298 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=779 status=8 sync=0
+1792312972.299 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=545 status=8 sync=0
+1792312972.300 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=718 status=8 sync=0
+1792312972.300 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=7 status=7 sync=0
+1792312972.300 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=50 reclaimed=67
+1792312972.301 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=8 status=8 sync=0
+1792312972.302 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=721 status=8 sync=0
+1792312972.303 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=732 status=8 sync=0
+1792312972.305 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1106 status=8 sync=0
+1792312972.306 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=673 status=8 sync=0
+1792312972.308 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=689 status=8 sync=0
+1792312972.310 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1410 status=8 sync=0
+1792312972.312 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1227 status=8 sync=0
+1792312972.314 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=661 status=8 sync=0
+1792312972.314 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=3 status=8 sync=0
+1792312972.314 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1 status=8 sync=0
+1792312972.314 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=212 status=6 sync=0
+1792312972.316 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1313 status=8 sync=0
+1792312972.317 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1195 status=8 sync=0
+1792312972.318 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=310 status=6 sync=0
+1792312972.319 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=27 status=8 sync=0
+1792312972.319 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=5 status=7 sync=0
+1792312972.319 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=13 reclaimed=64
+1792312972.319 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=217 status=6 sync=0
+1792312972.320 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=0 status=8 sync=0
+1792312972.320 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=209 status=6 sync=0
+1792312972.320 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=8 reclaimed=64
+1792312972.320 CP kcompactd0 pid=148 tid=148 cpu=9 us=25836 status=6 sync=1
+1792312972.320 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=223 status=5 sync=0
+1792312972.321 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=17 status=8 sync=0
+1792312972.321 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=202 status=6 sync=0
+1792312972.321 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=15 status=8 sync=0
+1792312972.322 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=414 status=6 sync=0
+1792312972.322 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=15 status=8 sync=0
+1792312972.322 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=17 status=7 sync=0
+1792312972.322 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=34 reclaimed=64
+1792312972.322 CP kcompactd0 pid=148 tid=148 cpu=19 us=421 status=6 sync=1
+1792312972.323 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=16 status=8 sync=0
+1792312972.325 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1 status=8 sync=0
+1792312972.326 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=269 status=6 sync=0
+1792312972.326 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=625 status=8 sync=0
+1792312972.327 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=4 status=7 sync=0
+1792312972.327 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=18 reclaimed=66
+1792312972.327 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=280 status=8 sync=0
+1792312972.328 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=210 status=6 sync=0
+1792312972.329 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=27 status=8 sync=0
+1792312972.329 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=14 status=7 sync=0
+1792312972.329 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=8 reclaimed=64
+1792312972.330 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=6 status=7 sync=0
+1792312972.330 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=10 reclaimed=64
+1792312972.342 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=10 status=8 sync=0
+1792312972.346 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=2545 status=8 sync=0
+1792312972.347 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1729 status=8 sync=0
+1792312972.348 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=254 status=6 sync=0
+1792312972.348 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=20 status=8 sync=0
+1792312972.349 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=878 status=8 sync=0
+1792312972.349 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=357 status=8 sync=0
+1792312972.351 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1137 status=8 sync=0
+1792312972.351 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=539 status=8 sync=0
+1792312972.352 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=887 status=8 sync=0
+1792312972.354 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1286 status=8 sync=0
+1792312972.354 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=229 status=6 sync=0
+1792312972.355 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=211 status=6 sync=0
+1792312972.356 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=236 status=5 sync=0
+1792312972.357 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=223 status=6 sync=0
+1792312972.357 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=16 status=7 sync=0
+1792312972.357 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=14 reclaimed=64
+1792312972.358 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=306 status=6 sync=0
+1792312972.358 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=19 status=8 sync=0
+1792312972.359 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=21 status=8 sync=0
+1792312972.360 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=11 status=7 sync=0
+1792312972.360 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=8 reclaimed=64
+1792312972.360 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=5 status=7 sync=0
+1792312972.360 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=23 reclaimed=64
+1792312972.360 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=6 status=7 sync=0
+1792312972.360 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=21 reclaimed=64
+1792312972.360 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=327 status=8 sync=0
+1792312972.361 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=690 status=8 sync=0
+1792312972.362 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=731 status=8 sync=0
+1792312972.362 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=6 status=7 sync=0
+1792312972.362 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=30 reclaimed=53
+1792312972.362 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=469 status=8 sync=0
+1792312972.363 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=417 status=8 sync=0
+1792312972.363 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=118 status=8 sync=0
+1792312972.363 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=16 status=7 sync=0
+1792312972.363 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=34 reclaimed=29
+1792312972.365 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=215 status=6 sync=0
+1792312972.365 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=816 status=7 sync=0
+1792312972.365 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=86 reclaimed=50
+1792312972.368 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=860 status=6 sync=1
+1792312972.368 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=93 reclaimed=51
+1792312972.368 CP kcompactd0 pid=148 tid=148 cpu=19 us=42036 status=5 sync=1
+1792312972.370 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=58 reclaimed=52
+1792312972.371 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=579 status=8 sync=1
+1792312972.372 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=1473 status=5 sync=0
+1792312972.372 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=51 reclaimed=52
+1792312972.375 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=683 status=5 sync=1
+1792312972.375 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=58 reclaimed=52
+1792312972.378 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=53 reclaimed=52
+1792312972.381 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=52 reclaimed=52
+1792312972.384 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=546 status=5 sync=1
+1792312972.385 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=55 reclaimed=52
+1792312972.387 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=48 reclaimed=52
+1792312972.390 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=47 reclaimed=53
+1792312972.392 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=78 reclaimed=53
+1792312972.395 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=97 reclaimed=53
+1792312972.397 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=54 reclaimed=53
+1792312972.399 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=52 reclaimed=52
+1792312972.401 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=45 status=7 sync=0
+1792312972.401 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=54 reclaimed=53
+1792312972.404 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=711 status=6 sync=1
+1792312972.404 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=42 reclaimed=53
+1792312972.407 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=50 reclaimed=53
+1792312972.410 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=47 reclaimed=53
+1792312972.412 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=52 reclaimed=53
+1792312972.415 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=47 reclaimed=53
+1792312972.418 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=119 reclaimed=53
+1792312972.419 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=98 reclaimed=53
+1792312972.421 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=56 reclaimed=53
+1792312972.423 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=54 reclaimed=53
+1792312972.424 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=91 reclaimed=53
+1792312972.427 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=35 status=7 sync=0
+1792312972.427 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=99 reclaimed=53
+1792312972.429 CP tensorfold pid=1241410 tid=1242271 cpu=15 us=720 status=6 sync=1
+1792312972.430 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=55 reclaimed=53
+1792312972.431 CP kcompactd0 pid=148 tid=148 cpu=6 us=1699 status=6 sync=1
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=138 reclaimed=53
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=99 reclaimed=53
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=87 reclaimed=53
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=88 reclaimed=52
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=487 reclaimed=52
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=99 reclaimed=52
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=132 reclaimed=52
+1792312972.433 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=87 reclaimed=52
+1792312972.435 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=48 reclaimed=52
+1792312972.437 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=55 reclaimed=52
+1792312972.439 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=91 reclaimed=52
+1792312972.442 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=53 reclaimed=52
+1792312972.444 DR tensorfold pid=1241410 tid=1242271 cpu=15 us=49 reclaimed=52
+1792312972.447 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=61 reclaimed=53
+1792312972.449 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=111 reclaimed=53
+1792312972.452 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=105 reclaimed=52
+1792312972.455 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=106 reclaimed=52
+1792312972.458 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=51 reclaimed=52
+1792312972.461 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=113 reclaimed=52
+1792312972.462 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=75 reclaimed=52
+1792312972.464 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=131 reclaimed=52
+1792312972.466 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=90 reclaimed=52
+1792312972.468 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=56 reclaimed=52
+1792312972.472 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=55 reclaimed=52
+1792312972.473 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=57 reclaimed=53
+1792312972.475 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=76 reclaimed=53
+1792312972.477 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=92 reclaimed=53
+1792312972.479 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=69 reclaimed=52
+1792312972.481 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1 status=8 sync=0
+1792312972.481 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=56 status=7 sync=0
+1792312972.481 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=71 reclaimed=52
+1792312972.483 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=83 status=8 sync=1
+1792312972.483 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=26 status=7 sync=0
+1792312972.483 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=66 reclaimed=52
+1792312972.486 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=46 status=7 sync=0
+1792312972.486 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=68 reclaimed=52
+1792312972.488 CP kcompactd0 pid=148 tid=148 cpu=11 us=7441 status=6 sync=1
+1792312972.489 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=17 status=7 sync=0
+1792312972.490 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=91 reclaimed=52
+1792312972.491 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1028 status=6 sync=1
+1792312972.491 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=10 status=7 sync=0
+1792312972.491 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=63 reclaimed=52
+1792312972.492 CP kcompactd0 pid=148 tid=148 cpu=11 us=1683 status=6 sync=1
+1792312972.494 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=8 status=8 sync=0
+1792312972.495 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=70 reclaimed=52
+1792312972.495 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=53 status=7 sync=0
+1792312972.495 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=69 reclaimed=52
+1792312972.496 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=38 status=7 sync=0
+1792312972.496 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=65 reclaimed=52
+1792312972.499 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=22 status=7 sync=0
+1792312972.499 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=49 reclaimed=52
+1792312972.501 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=13 status=7 sync=0
+1792312972.501 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=54 reclaimed=51
+1792312972.504 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=237 status=6 sync=0
+1792312972.504 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=13 status=7 sync=0
+1792312972.504 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=60 reclaimed=51
+1792312972.505 CP kcompactd0 pid=148 tid=148 cpu=11 us=6510 status=6 sync=1
+1792312972.508 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=18 status=7 sync=0
+1792312972.508 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=66 reclaimed=51
+1792312972.510 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1204 status=8 sync=1
+1792312972.510 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=5 status=7 sync=0
+1792312972.510 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=62 reclaimed=51
+1792312972.512 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=231 status=6 sync=0
+1792312972.513 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=238 status=5 sync=0
+1792312972.513 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=15 status=7 sync=0
+1792312972.513 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=72 reclaimed=51
+1792312972.513 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=218 status=6 sync=0
+1792312972.513 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=4 status=8 sync=0
+1792312972.513 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=26 status=7 sync=0
+1792312972.513 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=79 reclaimed=51
+1792312972.515 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=17 status=7 sync=0
+1792312972.515 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=65 reclaimed=51
+1792312972.515 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=12 status=7 sync=0
+1792312972.515 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=78 reclaimed=51
+1792312972.515 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=16 status=7 sync=0
+1792312972.515 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=80 reclaimed=51
+1792312972.515 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=11 status=7 sync=0
+1792312972.515 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=79 reclaimed=51
+1792312972.516 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=379 status=8 sync=0
+1792312972.516 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=22 status=8 sync=0
+1792312972.517 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1206 status=8 sync=0
+1792312972.692 CP kcompactd0 pid=148 tid=148 cpu=15 us=177392 status=6 sync=1
+1792312972.946 CP kcompactd0 pid=148 tid=148 cpu=15 us=2235 status=5 sync=1
+1792312972.986 CP kcompactd0 pid=148 tid=148 cpu=15 us=775 status=5 sync=1
+1792312973.168 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=251 status=5 sync=0
+1792312973.168 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=232 status=5 sync=0
+1792312973.168 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=26 status=7 sync=0
+1792312973.168 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=82 reclaimed=49
+1792312973.171 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1352 status=8 sync=0
+1792312973.172 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=823 status=8 sync=0
+1792312973.176 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=4114 status=8 sync=0
+1792312973.177 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=19 status=7 sync=0
+1792312973.177 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=108 reclaimed=48
+1792312973.177 CP kcompactd0 pid=148 tid=148 cpu=15 us=6691 status=6 sync=1
+1792312973.177 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=381 status=6 sync=0
+1792312973.178 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=669 status=8 sync=0
+1792312973.179 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=25 status=7 sync=0
+1792312973.179 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=69 reclaimed=47
+1792312973.179 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=362 status=8 sync=0
+1792312973.182 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2504 status=8 sync=0
+1792312973.186 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=3377 status=6 sync=0
+1792312973.187 CP kcompactd0 pid=148 tid=148 cpu=15 us=7214 status=6 sync=1
+1792312973.187 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=347 status=5 sync=0
+1792312973.189 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1852 status=8 sync=0
+1792312973.190 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=899 status=6 sync=0
+1792312973.191 CP kcompactd0 pid=148 tid=148 cpu=16 us=893 status=6 sync=1
+1792312973.191 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=420 status=5 sync=0
+1792312973.193 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1166 status=8 sync=0
+1792312973.193 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=448 status=6 sync=0
+1792312973.194 CP kcompactd0 pid=148 tid=148 cpu=16 us=589 status=5 sync=1
+1792312973.194 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=989 status=8 sync=0
+1792312973.196 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=836 status=8 sync=0
+1792312973.197 CP kcompactd0 pid=148 tid=148 cpu=16 us=2633 status=5 sync=1
+1792312973.198 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2207 status=8 sync=0
+1792312973.199 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=322 status=6 sync=0
+1792312973.199 CP kcompactd0 pid=148 tid=148 cpu=16 us=629 status=5 sync=1
+1792312973.200 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=692 status=8 sync=0
+1792312973.200 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=243 status=6 sync=0
+1792312973.201 CP kcompactd0 pid=148 tid=148 cpu=16 us=453 status=6 sync=1
+1792312973.203 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2379 status=8 sync=0
+1792312973.203 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=353 status=6 sync=0
+1792312973.203 CP kcompactd0 pid=148 tid=148 cpu=16 us=570 status=5 sync=1
+1792312973.205 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1670 status=8 sync=0
+1792312973.206 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=296 status=6 sync=0
+1792312973.206 CP kcompactd0 pid=148 tid=148 cpu=16 us=633 status=5 sync=1
+1792312973.207 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1681 status=8 sync=0
+1792312973.208 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=348 status=6 sync=0
+1792312973.208 CP kcompactd0 pid=148 tid=148 cpu=16 us=720 status=5 sync=1
+1792312973.209 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1241 status=8 sync=0
+1792312973.210 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1 status=8 sync=0
+1792312973.213 CP kcompactd0 pid=148 tid=148 cpu=16 us=3309 status=5 sync=1
+1792312973.214 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=4612 status=8 sync=0
+1792312973.215 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1089 status=8 sync=0
+1792312973.216 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1036 status=8 sync=0
+1792312973.217 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=688 status=8 sync=0
+1792312973.220 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2262 status=6 sync=0
+1792312973.220 CP kcompactd0 pid=148 tid=148 cpu=16 us=3482 status=5 sync=1
+1792312973.220 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=470 status=5 sync=0
+1792312973.222 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1324 status=8 sync=0
+1792312973.224 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1991 status=8 sync=0
+1792312973.225 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1142 status=8 sync=0
+1792312973.226 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=932 status=8 sync=0
+1792312973.227 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=293 status=8 sync=0
+1792312973.230 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=3359 status=8 sync=0
+1792312973.232 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2245 status=8 sync=0
+1792312973.235 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1932 status=8 sync=0
+1792312973.236 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1320 status=8 sync=0
+1792312973.237 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1369 status=8 sync=0
+1792312973.240 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2688 status=8 sync=0
+1792312973.240 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=12 status=8 sync=0
+1792312973.242 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2040 status=8 sync=0
+1792312973.246 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=3419 status=8 sync=0
+1792312973.246 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=19 status=7 sync=0
+1792312973.246 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=114 reclaimed=35
+1792312973.251 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=4384 status=8 sync=0
+1792312973.251 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=21 status=7 sync=0
+1792312973.251 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=94 reclaimed=35
+1792312973.254 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2672 status=8 sync=0
+1792312973.256 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2314 status=8 sync=0
+1792312973.260 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=3876 status=8 sync=0
+1792312973.262 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1860 status=8 sync=0
+1792312973.264 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=1599 status=8 sync=0
+1792312973.265 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=856 status=8 sync=0
+1792312973.268 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2513 status=8 sync=0
+1792312973.268 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=19 status=7 sync=0
+1792312973.268 DR tensorfold pid=1241410 tid=1242271 cpu=17 us=101 reclaimed=31
+1792312973.271 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2779 status=8 sync=0
+1792312973.277 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=5728 status=8 sync=0
+1792312973.280 CP tensorfold pid=1241410 tid=1242271 cpu=17 us=2757 status=8 sync=0
+1792312973.919 CP kcompactd0 pid=148 tid=148 cpu=16 us=696593 status=6 sync=1
+1792312974.048 CP kcompactd0 pid=148 tid=148 cpu=16 us=1246 status=5 sync=1
+1792312974.054 CP kcompactd0 pid=148 tid=148 cpu=7 us=576 status=5 sync=1
+1792312974.081 @dc[tensorfold, 4]: 346
+1792312974.081 @kswapd_wake: 1377
+1792312974.092 CP kcompactd0 pid=148 tid=148 cpu=13 us=4076 status=5 sync=1
+1792312974.153 CP kcompactd0 pid=148 tid=148 cpu=14 us=1101 status=5 sync=1
+1792312974.982 CP kcompactd0 pid=148 tid=148 cpu=11 us=1787 status=5 sync=1
+1792312976.953 CP kcompactd0 pid=148 tid=148 cpu=17 us=1022 status=5 sync=1
+1792312977.047 CP kcompactd0 pid=148 tid=148 cpu=7 us=5497 status=5 sync=1
+1792312977.101 CP kcompactd0 pid=148 tid=148 cpu=5 us=1784 status=5 sync=1
+1792312977.858 CP kcompactd0 pid=148 tid=148 cpu=6 us=1081 status=5 sync=1
+1792312978.792 CP kcompactd0 pid=148 tid=148 cpu=17 us=1920 status=5 sync=1
+1792312979.081 
+1792312979.081 @kswapd_wake: 512
+1792312980.380 CP kcompactd0 pid=148 tid=148 cpu=5 us=767 status=5 sync=1
+1792312980.744 CP kcompactd0 pid=148 tid=148 cpu=3 us=3973 status=5 sync=1
+1792312980.808 CP kcompactd0 pid=148 tid=148 cpu=1 us=1185 status=5 sync=1
+1792312980.864 CP kcompactd0 pid=148 tid=148 cpu=3 us=1621 status=5 sync=1
+1792312981.623 CP kcompactd0 pid=148 tid=148 cpu=11 us=1498 status=5 sync=1
+1792312982.535 CP kcompactd0 pid=148 tid=148 cpu=15 us=18697 status=5 sync=1
+1792312982.613 CP kcompactd0 pid=148 tid=148 cpu=7 us=787 status=5 sync=1
+1792312984.082 
+1792312984.082 @kswapd_wake: 505
+1792312984.581 CP kcompactd0 pid=148 tid=148 cpu=16 us=921 status=5 sync=1
+1792312984.675 CP kcompactd0 pid=148 tid=148 cpu=1 us=1797 status=5 sync=1
+1792312984.741 CP kcompactd0 pid=148 tid=148 cpu=4 us=1930 status=5 sync=1
+1792312984.800 CP kcompactd0 pid=148 tid=148 cpu=6 us=630 status=5 sync=1
+1792312986.425 CP kcompactd0 pid=148 tid=148 cpu=4 us=2583 status=5 sync=1
+1792312986.515 CP kcompactd0 pid=148 tid=148 cpu=7 us=591 status=5 sync=1
+1792312987.331 CP kcompactd0 pid=148 tid=148 cpu=18 us=3953 status=5 sync=1
+1792312988.272 CP kcompactd0 pid=148 tid=148 cpu=16 us=3943 status=5 sync=1
+1792312989.082 
+1792312989.082 @kswapd_wake: 600
+1792312989.160 CP kcompactd0 pid=148 tid=148 cpu=17 us=1675 status=5 sync=1
+1792312990.919 CP kcompactd0 pid=148 tid=148 cpu=17 us=1988 status=5 sync=1
+1792312991.877 CP kcompactd0 pid=148 tid=148 cpu=2 us=2214 status=5 sync=1
+1792312992.776 CP kcompactd0 pid=148 tid=148 cpu=11 us=1879 status=5 sync=1
+1792312993.673 CP kcompactd0 pid=148 tid=148 cpu=18 us=7044 status=5 sync=1
+1792312993.766 CP kcompactd0 pid=148 tid=148 cpu=11 us=1022 status=5 sync=1
+1792312994.082 
+1792312994.082 @kswapd_wake: 505
+1792312994.636 CP kcompactd0 pid=148 tid=148 cpu=6 us=933 status=5 sync=1
+1792312995.587 CP kcompactd0 pid=148 tid=148 cpu=9 us=900 status=5 sync=1
+1792312996.600 CP kcompactd0 pid=148 tid=148 cpu=16 us=2461 status=5 sync=1
+1792312997.491 CP kcompactd0 pid=148 tid=148 cpu=19 us=1673 status=5 sync=1
+1792312999.082 
+1792312999.082 @kswapd_wake: 280
+1792312999.835 CP kcompactd0 pid=148 tid=148 cpu=15 us=508 status=5 sync=1
+1792312999.929 CP kcompactd0 pid=148 tid=148 cpu=10 us=6010 status=5 sync=1
+1792313000.001 CP kcompactd0 pid=148 tid=148 cpu=9 us=715 status=5 sync=1
+1792313000.802 CP kcompactd0 pid=148 tid=148 cpu=16 us=761 status=5 sync=1
+1792313001.706 CP kcompactd0 pid=148 tid=148 cpu=12 us=2698 status=5 sync=1
+1792313003.484 CP kcompactd0 pid=148 tid=148 cpu=15 us=1062 status=5 sync=1
+1792313004.081 
+1792313004.081 @kswapd_wake: 571
+1792313004.268 CP kcompactd0 pid=148 tid=148 cpu=9 us=2278 status=5 sync=1
+1792313004.440 CP kcompactd0 pid=148 tid=148 cpu=16 us=8887 status=5 sync=1
+1792313005.317 CP kcompactd0 pid=148 tid=148 cpu=9 us=1197 status=5 sync=1
+1792313006.266 CP kcompactd0 pid=148 tid=148 cpu=10 us=5739 status=5 sync=1
+1792313007.180 CP kcompactd0 pid=148 tid=148 cpu=19 us=603 status=5 sync=1
+1792313008.101 CP kcompactd0 pid=148 tid=148 cpu=9 us=14179 status=5 sync=1
+1792313008.992 CP kcompactd0 pid=148 tid=148 cpu=19 us=14210 status=5 sync=1
+1792313009.082 
+1792313009.082 @kswapd_wake: 460
+1792313009.963 CP kcompactd0 pid=148 tid=148 cpu=7 us=2381 status=5 sync=1
+1792313011.762 CP kcompactd0 pid=148 tid=148 cpu=12 us=3411 status=5 sync=1
+1792313012.749 CP kcompactd0 pid=148 tid=148 cpu=19 us=3115 status=5 sync=1
+1792313013.695 CP kcompactd0 pid=148 tid=148 cpu=4 us=1864 status=5 sync=1
+1792313014.081 
+1792313014.081 @kswapd_wake: 326
+1792313014.691 CP kcompactd0 pid=148 tid=148 cpu=13 us=1577 status=5 sync=1
+1792313015.682 CP kcompactd0 pid=148 tid=148 cpu=7 us=492 status=5 sync=1
+1792313016.705 CP kcompactd0 pid=148 tid=148 cpu=17 us=4534 status=5 sync=1
+1792313018.490 CP kcompactd0 pid=148 tid=148 cpu=13 us=2111 status=5 sync=1
+1792313019.081 
+1792313019.081 @kswapd_wake: 260
+1792313019.566 CP kcompactd0 pid=148 tid=148 cpu=16 us=9263 status=5 sync=1
+1792313021.447 CP kcompactd0 pid=148 tid=148 cpu=6 us=739 status=5 sync=1
+1792313022.526 CP kcompactd0 pid=148 tid=148 cpu=5 us=1044 status=5 sync=1
+1792313024.081 
+1792313024.081 @kswapd_wake: 257
+1792313024.458 CP kcompactd0 pid=148 tid=148 cpu=19 us=663 status=5 sync=1
+1792313025.442 CP kcompactd0 pid=148 tid=148 cpu=1 us=2007 status=5 sync=1
+1792313026.475 CP kcompactd0 pid=148 tid=148 cpu=5 us=1904 status=5 sync=1
+1792313027.469 CP kcompactd0 pid=148 tid=148 cpu=4 us=1612 status=5 sync=1
+1792313028.562 CP kcompactd0 pid=148 tid=148 cpu=10 us=2493 status=5 sync=1
+1792313029.082 
+1792313029.082 @kswapd_wake: 390
+1792313031.708 CP kcompactd0 pid=148 tid=148 cpu=12 us=2147 status=5 sync=1
+1792313031.789 CP kcompactd0 pid=148 tid=148 cpu=4 us=1416 status=5 sync=1
+1792313031.843 CP kcompactd0 pid=148 tid=148 cpu=3 us=1175 status=5 sync=1
+1792313032.601 CP kcompactd0 pid=148 tid=148 cpu=14 us=2407 status=5 sync=1
+1792313033.176 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=3185 status=8 sync=0
+1792313033.176 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=742 status=8 sync=0
+1792313033.177 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=688 status=8 sync=0
+1792313033.177 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=366 status=8 sync=0
+1792313033.178 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=664 status=8 sync=0
+1792313033.179 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=844 status=8 sync=0
+1792313033.179 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=379 status=8 sync=0
+1792313033.180 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=818 status=8 sync=0
+1792313033.181 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=410 status=8 sync=0
+1792313033.181 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=443 status=6 sync=0
+1792313033.182 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=387 status=5 sync=0
+1792313033.183 DR tensorfold pid=1241410 tid=1242271 cpu=18 us=1665 reclaimed=38
+1792313033.186 CP kcompactd0 pid=148 tid=148 cpu=17 us=4752 status=6 sync=1
+1792313033.189 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2737 status=8 sync=0
+1792313033.198 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=9418 status=8 sync=0
+1792313033.205 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=6610 status=8 sync=0
+1792313033.207 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1792 status=8 sync=0
+1792313033.209 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=661 status=8 sync=0
+1792313033.217 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=7536 status=8 sync=0
+1792313033.223 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=5757 status=8 sync=0
+1792313033.226 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=3759 status=8 sync=0
+1792313033.226 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=61 status=8 sync=0
+1792313033.227 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=668 status=8 sync=0
+1792313033.228 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=886 status=8 sync=0
+1792313033.228 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=174 status=8 sync=0
+1792313033.228 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=238 status=8 sync=0
+1792313033.229 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=708 status=8 sync=0
+1792313033.229 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=383 status=8 sync=0
+1792313033.230 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=664 status=8 sync=0
+1792313033.232 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=673 status=8 sync=0
+1792313033.232 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=791 status=8 sync=0
+1792313033.232 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=472 status=8 sync=0
+1792313033.233 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=657 status=8 sync=0
+1792313033.233 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=231 status=8 sync=0
+1792313033.233 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=180 status=8 sync=0
+1792313033.234 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=369 status=8 sync=0
+1792313033.235 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1166 status=8 sync=0
+1792313033.236 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=942 status=8 sync=0
+1792313033.237 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=926 status=8 sync=0
+1792313033.237 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=187 status=8 sync=0
+1792313033.237 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=385 status=8 sync=0
+1792313033.238 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=513 status=8 sync=0
+1792313033.238 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=529 status=8 sync=0
+1792313033.239 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=366 status=8 sync=0
+1792313033.239 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=778 status=8 sync=0
+1792313033.241 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1158 status=8 sync=0
+1792313033.242 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1606 status=8 sync=0
+1792313033.243 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=687 status=8 sync=0
+1792313033.244 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=825 status=8 sync=0
+1792313033.245 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=841 status=8 sync=0
+1792313033.246 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=869 status=8 sync=0
+1792313033.246 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=719 status=8 sync=0
+1792313033.247 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=709 status=8 sync=0
+1792313033.248 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=881 status=8 sync=0
+1792313033.251 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2976 status=8 sync=0
+1792313033.253 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1377 status=8 sync=0
+1792313033.255 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2309 status=8 sync=0
+1792313033.255 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=127 status=8 sync=0
+1792313033.256 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=803 status=8 sync=0
+1792313033.269 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=13015 status=8 sync=0
+1792313033.270 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1087 status=8 sync=0
+1792313033.271 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1336 status=8 sync=0
+1792313033.272 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=762 status=8 sync=0
+1792313033.272 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=149 status=8 sync=0
+1792313033.274 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1685 status=8 sync=0
+1792313033.274 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=340 status=8 sync=0
+1792313033.275 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=976 status=8 sync=0
+1792313033.280 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=4902 status=8 sync=0
+1792313033.281 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1177 status=8 sync=0
+1792313033.285 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=3350 status=8 sync=0
+1792313033.287 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2060 status=8 sync=0
+1792313033.293 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=6046 status=8 sync=0
+1792313033.294 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=851 status=8 sync=0
+1792313033.294 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=639 status=8 sync=0
+1792313033.295 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=538 status=8 sync=0
+1792313033.295 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=516 status=8 sync=0
+1792313033.295 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=335 status=8 sync=0
+1792313033.296 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=283 status=8 sync=0
+1792313033.296 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=302 status=8 sync=0
+1792313033.297 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=700 status=8 sync=0
+1792313033.297 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=231 status=8 sync=0
+1792313033.298 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=780 status=8 sync=0
+1792313033.298 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=244 status=8 sync=0
+1792313033.299 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=404 status=8 sync=0
+1792313033.299 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=242 status=8 sync=0
+1792313033.299 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=381 status=8 sync=0
+1792313033.299 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=237 status=8 sync=0
+1792313033.300 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=396 status=8 sync=0
+1792313033.300 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=323 status=8 sync=0
+1792313033.302 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1477 status=8 sync=0
+1792313033.302 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=242 status=8 sync=0
+1792313033.304 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1777 status=8 sync=0
+1792313033.304 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=186 status=8 sync=0
+1792313033.305 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1069 status=8 sync=0
+1792313033.305 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=87 status=8 sync=0
+1792313033.305 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=107 status=8 sync=0
+1792313033.305 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=300 status=8 sync=0
+1792313033.305 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=308 status=8 sync=0
+1792313033.306 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=248 status=8 sync=0
+1792313033.306 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=134 status=8 sync=0
+1792313033.306 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=57 status=8 sync=0
+1792313033.306 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=234 status=8 sync=0
+1792313033.309 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2306 status=8 sync=0
+1792313033.309 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=284 status=8 sync=0
+1792313033.310 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=604 status=8 sync=0
+1792313033.310 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=223 status=8 sync=0
+1792313033.310 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=260 status=8 sync=0
+1792313033.312 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1832 status=8 sync=0
+1792313033.312 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=189 status=8 sync=0
+1792313033.312 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=100 status=8 sync=0
+1792313033.313 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=258 status=8 sync=0
+1792313033.313 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=329 status=8 sync=0
+1792313033.313 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=326 status=8 sync=0
+1792313033.313 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=403 status=8 sync=0
+1792313033.313 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=202 status=8 sync=0
+1792313033.314 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=335 status=8 sync=0
+1792313033.314 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=291 status=8 sync=0
+1792313033.314 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=114 status=8 sync=0
+1792313033.314 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=245 status=8 sync=0
+1792313033.315 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=147 status=8 sync=0
+1792313033.315 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=258 status=8 sync=0
+1792313033.315 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=459 status=8 sync=0
+1792313033.316 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=244 status=8 sync=0
+1792313033.316 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=500 status=8 sync=0
+1792313033.316 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=187 status=8 sync=0
+1792313033.316 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=43 status=8 sync=0
+1792313033.316 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=187 status=8 sync=0
+1792313033.317 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=255 status=8 sync=0
+1792313033.317 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=113 status=8 sync=0
+1792313033.317 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=185 status=8 sync=0
+1792313033.317 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=143 status=8 sync=0
+1792313033.317 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=254 status=8 sync=0
+1792313033.318 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=186 status=8 sync=0
+1792313033.318 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=254 status=8 sync=0
+1792313033.318 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=115 status=8 sync=0
+1792313033.318 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=142 status=8 sync=0
+1792313033.318 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=188 status=8 sync=0
+1792313033.318 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=57 status=8 sync=0
+1792313033.319 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=140 status=8 sync=0
+1792313033.319 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=244 status=8 sync=0
+1792313033.319 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=251 status=8 sync=0
+1792313033.319 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=161 status=8 sync=0
+1792313033.320 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=244 status=8 sync=0
+1792313033.320 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=178 status=8 sync=0
+1792313033.320 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=85 status=8 sync=0
+1792313033.320 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=252 status=8 sync=0
+1792313033.321 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=495 status=8 sync=0
+1792313033.321 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=241 status=8 sync=0
+1792313033.321 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=256 status=8 sync=0
+1792313033.322 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=206 status=8 sync=0
+1792313033.322 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=262 status=8 sync=0
+1792313033.322 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=236 status=8 sync=0
+1792313033.322 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=328 status=8 sync=0
+1792313033.323 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=181 status=8 sync=0
+1792313033.323 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=152 status=8 sync=0
+1792313033.323 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=242 status=8 sync=0
+1792313033.323 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=232 status=8 sync=0
+1792313033.323 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=422 status=8 sync=0
+1792313033.324 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=140 status=8 sync=0
+1792313033.324 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=372 status=8 sync=0
+1792313033.324 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=227 status=8 sync=0
+1792313033.324 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=182 status=8 sync=0
+1792313033.325 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=277 status=8 sync=0
+1792313033.325 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=243 status=8 sync=0
+1792313033.325 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=244 status=8 sync=0
+1792313033.325 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=250 status=8 sync=0
+1792313033.325 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=4 status=8 sync=0
+1792313033.326 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=311 status=8 sync=0
+1792313033.326 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=16 status=8 sync=0
+1792313033.326 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=194 status=8 sync=0
+1792313033.326 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=323 status=8 sync=0
+1792313033.327 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=233 status=8 sync=0
+1792313033.328 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=214 status=8 sync=0
+1792313033.328 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=186 status=8 sync=0
+1792313033.329 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=355 status=8 sync=0
+1792313033.331 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2020 status=8 sync=0
+1792313033.331 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=897 status=8 sync=0
+1792313033.332 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=652 status=8 sync=0
+1792313033.332 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=105 status=8 sync=0
+1792313033.332 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=251 status=8 sync=0
+1792313033.333 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=334 status=8 sync=0
+1792313033.333 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=508 status=8 sync=0
+1792313033.334 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=169 status=8 sync=0
+1792313033.334 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=189 status=8 sync=0
+1792313033.334 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=403 status=8 sync=0
+1792313033.335 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=499 status=8 sync=0
+1792313033.335 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=269 status=8 sync=0
+1792313033.338 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2804 status=8 sync=0
+1792313033.338 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=261 status=8 sync=0
+1792313033.338 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=260 status=8 sync=0
+1792313033.338 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=37 status=8 sync=0
+1792313033.339 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=254 status=8 sync=0
+1792313033.339 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=252 status=8 sync=0
+1792313033.339 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=177 status=8 sync=0
+1792313033.339 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=208 status=8 sync=0
+1792313033.340 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=216 status=8 sync=0
+1792313033.340 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=695 status=8 sync=0
+1792313033.340 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=312 status=8 sync=0
+1792313033.341 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=355 status=8 sync=0
+1792313033.341 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=119 status=8 sync=0
+1792313033.342 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=334 status=8 sync=0
+1792313033.342 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=326 status=8 sync=0
+1792313033.342 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=127 status=8 sync=0
+1792313033.342 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=325 status=8 sync=0
+1792313033.342 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=145 status=8 sync=0
+1792313033.343 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=487 status=8 sync=0
+1792313033.344 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1340 status=8 sync=0
+1792313033.345 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=980 status=8 sync=0
+1792313033.345 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=23 status=8 sync=0
+1792313033.345 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=222 status=8 sync=0
+1792313033.346 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=530 status=8 sync=0
+1792313033.346 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=238 status=8 sync=0
+1792313033.347 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=337 status=8 sync=0
+1792313033.347 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=44 status=8 sync=0
+1792313033.347 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=10 status=8 sync=0
+1792313033.347 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=309 status=8 sync=0
+1792313033.347 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=212 status=8 sync=0
+1792313033.348 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=176 status=8 sync=0
+1792313033.348 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=30 status=8 sync=0
+1792313033.348 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=348 status=8 sync=0
+1792313033.349 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=693 status=8 sync=0
+1792313033.349 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=278 status=8 sync=0
+1792313033.350 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=376 status=8 sync=0
+1792313033.350 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=393 status=8 sync=0
+1792313033.350 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=233 status=8 sync=0
+1792313033.351 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=477 status=7 sync=0
+1792313033.351 DR tensorfold pid=1241410 tid=1242271 cpu=18 us=37 reclaimed=64
+1792313033.352 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=865 status=8 sync=0
+1792313033.353 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=922 status=8 sync=0
+1792313033.353 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=849 status=8 sync=0
+1792313033.355 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=685 status=8 sync=0
+1792313033.355 CP kcompactd0 pid=148 tid=148 cpu=17 us=7474 status=8 sync=1
+1792313033.355 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=836 status=8 sync=0
+1792313033.356 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=261 status=8 sync=0
+1792313033.356 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=64 status=8 sync=0
+1792313033.356 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=64 status=8 sync=0
+1792313033.356 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=344 status=8 sync=0
+1792313033.356 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=34 status=8 sync=0
+1792313033.356 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=248 status=8 sync=0
+1792313033.357 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=488 status=8 sync=0
+1792313033.357 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=201 status=8 sync=0
+1792313033.357 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=98 status=8 sync=0
+1792313033.358 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=436 status=8 sync=0
+1792313033.358 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=362 status=8 sync=0
+1792313033.359 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=369 status=8 sync=0
+1792313033.360 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1026 status=8 sync=0
+1792313033.361 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=634 status=8 sync=0
+1792313033.361 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=446 status=8 sync=0
+1792313033.361 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=373 status=8 sync=0
+1792313033.361 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=79 status=8 sync=0
+1792313033.362 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=86 status=8 sync=0
+1792313033.362 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=114 status=8 sync=0
+1792313033.362 CP awk pid=1246499 tid=1246499 cpu=2 us=1067 status=6 sync=0
+1792313033.362 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=154 status=8 sync=0
+1792313033.362 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=421 status=8 sync=0
+1792313033.362 DR awk pid=1246499 tid=1246499 cpu=2 us=585 reclaimed=535
+1792313033.363 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=373 status=8 sync=0
+1792313033.363 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=601 status=8 sync=0
+1792313033.363 CP kcompactd0 pid=148 tid=148 cpu=17 us=6824 status=8 sync=1
+1792313033.363 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=168 status=8 sync=0
+1792313033.364 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=366 status=8 sync=0
+1792313033.364 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=240 status=8 sync=0
+1792313033.364 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=253 status=8 sync=0
+1792313033.364 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=61 status=8 sync=0
+1792313033.364 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=78 status=8 sync=0
+1792313033.365 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=94 status=8 sync=0
+1792313033.365 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=50 status=8 sync=0
+1792313033.365 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=167 status=8 sync=0
+1792313033.365 CP awk pid=1246499 tid=1246499 cpu=2 us=1155 status=6 sync=0
+1792313033.365 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=93 status=8 sync=0
+1792313033.365 DR awk pid=1246499 tid=1246499 cpu=2 us=197 reclaimed=522
+1792313033.366 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=395 status=8 sync=0
+1792313033.366 CP kcompactd0 pid=148 tid=148 cpu=17 us=1022 status=8 sync=1
+1792313033.366 CP kcompactd0 pid=148 tid=148 cpu=17 us=776 status=8 sync=1
+1792313033.366 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=809 status=8 sync=0
+1792313033.367 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=380 status=8 sync=0
+1792313033.368 CP awk pid=1246499 tid=1246499 cpu=2 us=1197 status=6 sync=0
+1792313033.369 CP kcompactd0 pid=148 tid=148 cpu=17 us=2705 status=8 sync=1
+1792313033.369 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=2377 status=8 sync=0
+1792313033.369 CP awk pid=1246499 tid=1246499 cpu=2 us=1175 status=6 sync=0
+1792313033.370 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=560 status=8 sync=0
+1792313033.370 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=1 status=8 sync=0
+1792313033.370 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=10 status=8 sync=0
+1792313033.371 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=170 status=8 sync=0
+1792313033.371 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=50 status=8 sync=0
+1792313033.371 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=127 status=8 sync=0
+1792313033.371 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=166 status=8 sync=0
+1792313033.371 CP awk pid=1246499 tid=1246499 cpu=2 us=1169 status=6 sync=0
+1792313033.371 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=156 status=8 sync=0
+1792313033.371 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=426 status=8 sync=0
+1792313033.372 CP tensorfold pid=1241410 tid=1242271 cpu=18 us=324 status=8 sync=0
+1792313033.372 CP kcompactd0 pid=148 tid=148 cpu=17 us=2462 status=8 sync=1
+1792313033.373 CP awk pid=1246499 tid=1246499 cpu=2 us=1083 status=6 sync=0
+1792313033.672 CP kcompactd0 pid=148 tid=148 cpu=17 us=758 status=5 sync=1
+1792313033.682 CP kcompactd0 pid=148 tid=148 cpu=5 us=1934 status=5 sync=1
+1792313033.705 CP kcompactd0 pid=148 tid=148 cpu=8 us=886 status=5 sync=1
+1792313033.748 CP kcompactd0 pid=148 tid=148 cpu=3 us=1148 status=5 sync=1
+1792313034.048 CP kcompactd0 pid=148 tid=148 cpu=6 us=683 status=5 sync=1
+1792313034.081 @dc[awk, 4]: 6
+1792313034.082 @dc[tensorfold, 4]: 276
+1792313034.082 @kswapd_wake: 468
+1792313034.552 CP kcompactd0 pid=148 tid=148 cpu=4 us=1895 status=5 sync=1
+1792313035.488 CP kcompactd0 pid=148 tid=148 cpu=17 us=1115 status=5 sync=1
+1792313036.484 CP kcompactd0 pid=148 tid=148 cpu=5 us=545 status=5 sync=1
+1792313038.277 CP kcompactd0 pid=148 tid=148 cpu=14 us=1824 status=5 sync=1
+1792313039.082 
+1792313039.082 @kswapd_wake: 296
+1792313039.195 CP kcompactd0 pid=148 tid=148 cpu=4 us=1895 status=5 sync=1
+1792313040.113 CP kcompactd0 pid=148 tid=148 cpu=17 us=948 status=5 sync=1
+1792313041.928 CP kcompactd0 pid=148 tid=148 cpu=19 us=3971 status=5 sync=1
+1792313042.965 CP kcompactd0 pid=148 tid=148 cpu=5 us=1943 status=5 sync=1
+1792313043.895 CP kcompactd0 pid=148 tid=148 cpu=3 us=2155 status=5 sync=1
+1792313044.081 
+1792313044.081 @kswapd_wake: 377
+1792313044.850 CP kcompactd0 pid=148 tid=148 cpu=2 us=2169 status=5 sync=1
+1792313046.710 CP kcompactd0 pid=148 tid=148 cpu=3 us=2106 status=5 sync=1
+1792313048.614 CP kcompactd0 pid=148 tid=148 cpu=16 us=445 status=5 sync=1
+1792313049.081 
+1792313049.081 @kswapd_wake: 278
+1792313049.628 CP kcompactd0 pid=148 tid=148 cpu=1 us=1588 status=5 sync=1
+1792313050.623 CP kcompactd0 pid=148 tid=148 cpu=0 us=7037 status=5 sync=1
+1792313051.668 CP kcompactd0 pid=148 tid=148 cpu=9 us=1012 status=5 sync=1
+1792313052.634 CP kcompactd0 pid=148 tid=148 cpu=4 us=1506 status=5 sync=1
+1792313053.657 CP kcompactd0 pid=148 tid=148 cpu=9 us=11374 status=5 sync=1
+1792313054.081 
+1792313054.082 @kswapd_wake: 359
+1792313054.626 CP kcompactd0 pid=148 tid=148 cpu=11 us=2000 status=5 sync=1
+1792313056.529 CP kcompactd0 pid=148 tid=148 cpu=5 us=1175 status=5 sync=1
+1792313057.628 CP kcompactd0 pid=148 tid=148 cpu=18 us=2415 status=5 sync=1
+1792313059.082 
+1792313059.082 @kswapd_wake: 276
+1792313059.609 CP kcompactd0 pid=148 tid=148 cpu=8 us=4102 status=5 sync=1
+1792313061.598 CP kcompactd0 pid=148 tid=148 cpu=3 us=1714 status=5 sync=1
+1792313062.689 CP kcompactd0 pid=148 tid=148 cpu=0 us=3278 status=5 sync=1
+1792313064.083 
+1792313064.083 @kswapd_wake: 302
+1792313064.740 CP kcompactd0 pid=148 tid=148 cpu=18 us=1258 status=5 sync=1
+1792313065.851 CP kcompactd0 pid=148 tid=148 cpu=19 us=1275 status=5 sync=1
+1792313067.903 CP kcompactd0 pid=148 tid=148 cpu=16 us=7221 status=5 sync=1
+1792313069.009 CP kcompactd0 pid=148 tid=148 cpu=6 us=893 status=5 sync=1
+1792313069.082 
+1792313069.082 @kswapd_wake: 266
+1792313070.072 CP kcompactd0 pid=148 tid=148 cpu=0 us=1851 status=5 sync=1
+1792313071.157 CP kcompactd0 pid=148 tid=148 cpu=19 us=2921 status=5 sync=1
+1792313073.200 CP kcompactd0 pid=148 tid=148 cpu=19 us=1116 status=5 sync=1
+1792313074.082 
+1792313074.082 @kswapd_wake: 303
+1792313075.348 CP kcompactd0 pid=148 tid=148 cpu=18 us=1092 status=5 sync=1
+1792313076.489 CP kcompactd0 pid=148 tid=148 cpu=2 us=2705 status=5 sync=1
+1792313078.609 CP kcompactd0 pid=148 tid=148 cpu=5 us=762 status=5 sync=1
+1792313079.082 
+1792313079.082 @kswapd_wake: 252
+1792313079.713 CP kcompactd0 pid=148 tid=148 cpu=15 us=3277 status=5 sync=1
+1792313079.731 CP tensorfold pid=1241410 tid=1242271 cpu=8 us=1669 status=8 sync=0
+1792313079.731 CP tensorfold pid=1241410 tid=1242271 cpu=8 us=455 status=8 sync=0
+1792313079.731 CP tensorfold pid=1241410 tid=1242271 cpu=8 us=74 status=8 sync=0
+1792313079.731 CP tensorfold pid=1241410 tid=1242271 cpu=8 us=303 status=8 sync=0
+1792313079.731 CP tensorfold pid=1241410 tid=1242271 cpu=8 us=9 status=7 sync=0
+1792313079.732 DR tensorfold pid=1241410 tid=1242271 cpu=8 us=125 reclaimed=527
+1792313080.708 CP kcompactd0 pid=148 tid=148 cpu=11 us=2301 status=6 sync=1
+1792313080.722 CP kcompactd0 pid=148 tid=148 cpu=11 us=1408 status=5 sync=1
+1792313080.735 CP kcompactd0 pid=148 tid=148 cpu=16 us=747 status=5 sync=1
+1792313080.768 CP kcompactd0 pid=148 tid=148 cpu=13 us=2613 status=5 sync=1
+1792313080.792 CP kcompactd0 pid=148 tid=148 cpu=5 us=1041 status=5 sync=1
+1792313081.783 CP kcompactd0 pid=148 tid=148 cpu=17 us=1468 status=5 sync=1
+1792313082.883 CP kcompactd0 pid=148 tid=148 cpu=12 us=2049 status=5 sync=1
+1792313084.058 CP kcompactd0 pid=148 tid=148 cpu=5 us=1425 status=5 sync=1
+1792313084.081 @dc[tensorfold, 4]: 5
+1792313084.081 @kswapd_wake: 319
+1792313086.182 CP kcompactd0 pid=148 tid=148 cpu=19 us=808 status=5 sync=1
+1792313087.392 CP kcompactd0 pid=148 tid=148 cpu=4 us=3755 status=5 sync=1
+1792313089.081 
+1792313089.082 @kswapd_wake: 183
+1792313089.525 CP kcompactd0 pid=148 tid=148 cpu=3 us=2178 status=5 sync=1
+1792313090.647 CP kcompactd0 pid=148 tid=148 cpu=16 us=820 status=5 sync=1
+1792313091.743 CP kcompactd0 pid=148 tid=148 cpu=12 us=3962 status=5 sync=1
+1792313093.776 CP kcompactd0 pid=148 tid=148 cpu=19 us=1390 status=5 sync=1
+1792313094.081 
+1792313094.081 @kswapd_wake: 304
+1792313095.031 CP kcompactd0 pid=148 tid=148 cpu=19 us=853 status=5 sync=1
+1792313096.222 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=748 status=8 sync=0
+1792313096.223 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=972 status=8 sync=0
+1792313096.223 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=433 status=8 sync=0
+1792313096.224 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=254 status=8 sync=0
+1792313096.224 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=262 status=8 sync=0
+1792313096.224 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=136 status=8 sync=0
+1792313096.224 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=209 status=8 sync=0
+1792313096.224 CP tensorfold pid=1241410 tid=1242271 cpu=6 us=194 status=8 sync=0
+1792313096.485 CP kcompactd0 pid=148 tid=148 cpu=8 us=249614 status=6 sync=1
+1792313097.949 CP kcompactd0 pid=148 tid=148 cpu=13 us=1409 status=5 sync=1
+1792313097.961 CP kcompactd0 pid=148 tid=148 cpu=19 us=404 status=5 sync=1
+1792313098.008 CP kcompactd0 pid=148 tid=148 cpu=11 us=2228 status=5 sync=1
+1792313098.069 CP kcompactd0 pid=148 tid=148 cpu=1 us=1129 status=5 sync=1
+1792313098.882 CP kcompactd0 pid=148 tid=148 cpu=13 us=1261 status=5 sync=1
+1792313099.082 @dc[tensorfold, 4]: 8
+1792313099.082 @kswapd_wake: 190
+1792313099.802 CP kcompactd0 pid=148 tid=148 cpu=3 us=1690 status=5 sync=1
+1792313101.941 CP kcompactd0 pid=148 tid=148 cpu=18 us=851 status=5 sync=1
+1792313102.818 CP kcompactd0 pid=148 tid=148 cpu=11 us=2030 status=5 sync=1
+1792313103.808 CP kcompactd0 pid=148 tid=148 cpu=15 us=1566 status=5 sync=1
+1792313104.082 
+1792313104.082 @kswapd_wake: 305
+1792313105.740 CP kcompactd0 pid=148 tid=148 cpu=5 us=549 status=5 sync=1
+1792313106.665 CP kcompactd0 pid=148 tid=148 cpu=3 us=1574 status=5 sync=1
+1792313109.081 
+1792313109.081 @kswapd_wake: 209
+1792313109.697 CP kcompactd0 pid=148 tid=148 cpu=14 us=753 status=5 sync=1
+1792313110.546 CP kcompactd0 pid=148 tid=148 cpu=16 us=561 status=5 sync=1
+1792313111.517 CP kcompactd0 pid=148 tid=148 cpu=14 us=1225 status=5 sync=1
+1792313112.440 CP kcompactd0 pid=148 tid=148 cpu=7 us=912 status=5 sync=1
+1792313113.421 CP kcompactd0 pid=148 tid=148 cpu=7 us=586 status=5 sync=1
+1792313114.081 
+1792313114.081 @kswapd_wake: 332
+1792313115.151 CP kcompactd0 pid=148 tid=148 cpu=11 us=7121 status=5 sync=1
+1792313116.137 CP kcompactd0 pid=148 tid=148 cpu=16 us=559 status=5 sync=1
+1792313117.908 CP kcompactd0 pid=148 tid=148 cpu=3 us=3243 status=5 sync=1
+1792313119.082 
+1792313119.082 @kswapd_wake: 294
+1792313119.787 CP kcompactd0 pid=148 tid=148 cpu=1 us=1347 status=5 sync=1
+1792313120.818 CP kcompactd0 pid=148 tid=148 cpu=11 us=2443 status=5 sync=1
+1792313121.793 CP kcompactd0 pid=148 tid=148 cpu=18 us=4327 status=5 sync=1
+1792313124.082 
+1792313124.082 @kswapd_wake: 203
+1792313125.135 CP kcompactd0 pid=148 tid=148 cpu=7 us=1060 status=5 sync=1
+1792313125.346 CP kcompactd0 pid=148 tid=148 cpu=2 us=1547 status=5 sync=1
+1792313127.054 CP kcompactd0 pid=148 tid=148 cpu=18 us=719 status=5 sync=1
+1792313127.956 CP kcompactd0 pid=148 tid=148 cpu=4 us=1741 status=5 sync=1
+1792313129.081 
+1792313129.081 @kswapd_wake: 299
+1792313129.738 CP kcompactd0 pid=148 tid=148 cpu=7 us=1666 status=5 sync=1
+1792313130.726 CP kcompactd0 pid=148 tid=148 cpu=11 us=7118 status=5 sync=1
+1792313132.465 CP kcompactd0 pid=148 tid=148 cpu=2 us=1562 status=5 sync=1
+1792313134.082 
+1792313134.082 @kswapd_wake: 247
+1792313134.338 CP kcompactd0 pid=148 tid=148 cpu=2 us=3255 status=5 sync=1
+1792313135.315 CP kcompactd0 pid=148 tid=148 cpu=13 us=1525 status=5 sync=1
+1792313137.141 CP kcompactd0 pid=148 tid=148 cpu=5 us=631 status=5 sync=1
+1792313138.177 CP kcompactd0 pid=148 tid=148 cpu=1 us=1536 status=5 sync=1
+1792313139.081 
+1792313139.081 @kswapd_wake: 299
+1792313140.014 CP kcompactd0 pid=148 tid=148 cpu=0 us=2398 status=5 sync=1
+1792313141.046 CP kcompactd0 pid=148 tid=148 cpu=13 us=1758 status=5 sync=1
+1792313142.958 CP kcompactd0 pid=148 tid=148 cpu=5 us=467 status=5 sync=1
+1792313143.984 CP kcompactd0 pid=148 tid=148 cpu=18 us=1954 status=5 sync=1
+1792313144.081 
+1792313144.082 @kswapd_wake: 289
+1792313145.879 CP kcompactd0 pid=148 tid=148 cpu=4 us=6057 status=5 sync=1
+1792313147.865 CP kcompactd0 pid=148 tid=148 cpu=1 us=20191 status=5 sync=1
+1792313148.917 CP kcompactd0 pid=148 tid=148 cpu=16 us=1527 status=5 sync=1
+1792313149.081 
+1792313149.081 @kswapd_wake: 239
+1792313149.957 CP kcompactd0 pid=148 tid=148 cpu=17 us=3753 status=5 sync=1
+1792313151.932 CP kcompactd0 pid=148 tid=148 cpu=9 us=2098 status=5 sync=1
+1792313153.921 CP kcompactd0 pid=148 tid=148 cpu=5 us=802 status=5 sync=1
+1792313154.082 
+1792313154.082 @kswapd_wake: 242
+1792313157.021 CP kcompactd0 pid=148 tid=148 cpu=10 us=1454 status=5 sync=1
+1792313157.930 CP kcompactd0 pid=148 tid=148 cpu=17 us=477 status=5 sync=1
+1792313158.949 CP kcompactd0 pid=148 tid=148 cpu=14 us=1711 status=5 sync=1
+1792313159.081 
+1792313159.081 @kswapd_wake: 207
+1792313159.839 CP kcompactd0 pid=148 tid=148 cpu=16 us=2005 status=5 sync=1
+1792313161.586 CP kcompactd0 pid=148 tid=148 cpu=5 us=529 status=5 sync=1
+1792313162.567 CP kcompactd0 pid=148 tid=148 cpu=3 us=1841 status=5 sync=1
+1792313163.488 CP kcompactd0 pid=148 tid=148 cpu=13 us=1922 status=5 sync=1
+1792313164.082 
+1792313164.082 @kswapd_wake: 289
+1792313165.258 CP kcompactd0 pid=148 tid=148 cpu=3 us=1843 status=5 sync=1
+1792313166.248 CP kcompactd0 pid=148 tid=148 cpu=3 us=1455 status=5 sync=1
+1792313168.056 CP kcompactd0 pid=148 tid=148 cpu=14 us=1095 status=5 sync=1
+1792313169.016 CP kcompactd0 pid=148 tid=148 cpu=15 us=596 status=5 sync=1
+1792313169.081 
+1792313169.081 @kswapd_wake: 351
+1792313170.019 CP kcompactd0 pid=148 tid=148 cpu=4 us=1033 status=5 sync=1
+1792313171.890 CP kcompactd0 pid=148 tid=148 cpu=16 us=6810 status=5 sync=1
+1792313172.879 CP kcompactd0 pid=148 tid=148 cpu=12 us=8231 status=5 sync=1
+1792313173.914 CP kcompactd0 pid=148 tid=148 cpu=13 us=4359 status=5 sync=1
+1792313174.082 
+1792313174.082 @kswapd_wake: 298
+1792313175.681 CP kcompactd0 pid=148 tid=148 cpu=8 us=1169 status=5 sync=1
+1792313175.841 CP kcompactd0 pid=148 tid=148 cpu=11 us=2672 status=5 sync=1
+1792313177.747 CP kcompactd0 pid=148 tid=148 cpu=14 us=1954 status=5 sync=1
+1792313178.740 CP kcompactd0 pid=148 tid=148 cpu=16 us=1417 status=5 sync=1
+1792313179.081 
+1792313179.081 @kswapd_wake: 309
+1792313179.777 CP kcompactd0 pid=148 tid=148 cpu=19 us=573 status=5 sync=1
+1792313181.786 CP kcompactd0 pid=148 tid=148 cpu=2 us=2146 status=5 sync=1
+1792313182.793 CP kcompactd0 pid=148 tid=148 cpu=16 us=1168 status=5 sync=1
+1792313184.081 
+1792313184.081 @kswapd_wake: 331
+1792313184.756 CP kcompactd0 pid=148 tid=148 cpu=17 us=4117 status=5 sync=1
+1792313185.821 CP kcompactd0 pid=148 tid=148 cpu=11 us=1111 status=5 sync=1
+1792313186.863 CP kcompactd0 pid=148 tid=148 cpu=10 us=2242 status=5 sync=1
+1792313188.455 CP kcompactd0 pid=148 tid=148 cpu=15 us=2325 status=5 sync=1
+1792313189.082 
+1792313189.082 @kswapd_wake: 303
+1792313189.506 CP kcompactd0 pid=148 tid=148 cpu=9 us=2377 status=5 sync=1
+1792313191.019 CP kcompactd0 pid=148 tid=148 cpu=1 us=1351 status=5 sync=1
+1792313192.118 CP kcompactd0 pid=148 tid=148 cpu=2 us=3305 status=5 sync=1
+1792313194.081 
+1792313194.081 @kswapd_wake: 182
+1792313194.131 CP kcompactd0 pid=148 tid=148 cpu=3 us=1553 status=5 sync=1
+1792313195.179 CP kcompactd0 pid=148 tid=148 cpu=15 us=1472 status=5 sync=1
+1792313195.299 CP kcompactd0 pid=148 tid=148 cpu=14 us=2378 status=5 sync=1
+1792313196.314 CP kcompactd0 pid=148 tid=148 cpu=17 us=643 status=5 sync=1
+1792313197.363 CP kcompactd0 pid=148 tid=148 cpu=9 us=2190 status=5 sync=1
+1792313198.482 CP kcompactd0 pid=148 tid=148 cpu=19 us=17627 status=5 sync=1
+1792313199.082 
+1792313199.082 @kswapd_wake: 416
+1792313200.521 CP kcompactd0 pid=148 tid=148 cpu=19 us=542 status=5 sync=1
+1792313201.687 CP kcompactd0 pid=148 tid=148 cpu=15 us=8247 status=5 sync=1
+1792313203.744 CP kcompactd0 pid=148 tid=148 cpu=9 us=8269 status=5 sync=1
+1792313204.081 
+1792313204.081 @kswapd_wake: 250
+1792313204.866 CP kcompactd0 pid=148 tid=148 cpu=1 us=1120 status=5 sync=1
+1792313206.978 CP kcompactd0 pid=148 tid=148 cpu=16 us=1447 status=5 sync=1
+1792313208.070 CP kcompactd0 pid=148 tid=148 cpu=9 us=1147 status=5 sync=1
+1792313209.081 
+1792313209.081 @kswapd_wake: 228
+1792313209.252 CP kcompactd0 pid=148 tid=148 cpu=19 us=935 status=5 sync=1
+1792313211.381 CP kcompactd0 pid=148 tid=148 cpu=15 us=5140 status=5 sync=1
+1792313213.567 CP kcompactd0 pid=148 tid=148 cpu=9 us=740 status=5 sync=1
+1792313213.639 CP tensorfold pid=1241410 tid=1242271 cpu=7 us=904 status=5 sync=0
+1792313213.639 DR tensorfold pid=1241410 tid=1242271 cpu=7 us=141 reclaimed=30
+1792313213.642 CP tensorfold pid=1241410 tid=1242271 cpu=7 us=60 status=7 sync=0
+1792313213.642 DR tensorfold pid=1241410 tid=1242271 cpu=7 us=48 reclaimed=25
+1792313213.645 CP tensorfold pid=1241410 tid=1242271 cpu=7 us=428 status=6 sync=1
+1792313214.081 @dc[tensorfold, 4]: 3
+1792313214.082 @kswapd_wake: 223
+1792313215.802 CP kcompactd0 pid=148 tid=148 cpu=13 us=11 status=6 sync=1
+1792313216.935 CP kcompactd0 pid=148 tid=148 cpu=3 us=3588 status=5 sync=1
+1792313219.081 
+1792313219.081 @kswapd_wake: 190
+1792313219.145 CP kcompactd0 pid=148 tid=148 cpu=3 us=1621 status=5 sync=1
+1792313220.232 CP kcompactd0 pid=148 tid=148 cpu=14 us=1859 status=5 sync=1
+1792313223.266 CP kcompactd0 pid=148 tid=148 cpu=19 us=1722 status=5 sync=1
+1792313224.078 CP kcompactd0 pid=148 tid=148 cpu=19 us=1284 status=5 sync=1
+1792313224.081 
+1792313224.081 @kswapd_wake: 260
+1792313225.053 CP kcompactd0 pid=148 tid=148 cpu=5 us=6544 status=5 sync=1
+1792313226.751 DR tensorfold pid=1241410 tid=1242271 cpu=7 us=91 reclaimed=27
+1792313227.279 CP kcompactd0 pid=148 tid=148 cpu=5 us=1841 status=5 sync=1
+1792313228.958 CP kcompactd0 pid=148 tid=148 cpu=17 us=1436 status=5 sync=1
+1792313229.081 @dc[tensorfold, 4]: 1
+1792313229.081 @kswapd_wake: 263
+1792313230.952 CP kcompactd0 pid=148 tid=148 cpu=5 us=559 status=5 sync=1
+1792313231.870 CP kcompactd0 pid=148 tid=148 cpu=0 us=2895 status=5 sync=1
+1792313232.861 CP kcompactd0 pid=148 tid=148 cpu=11 us=5428 status=5 sync=1
+1792313234.081 
+1792313234.081 @kswapd_wake: 239
+1792313234.983 CP kcompactd0 pid=148 tid=148 cpu=18 us=1594 status=5 sync=1
+1792313235.825 CP kcompactd0 pid=148 tid=148 cpu=9 us=649 status=5 sync=1
+1792313236.785 CP kcompactd0 pid=148 tid=148 cpu=9 us=976 status=5 sync=1
+1792313238.526 CP kcompactd0 pid=148 tid=148 cpu=7 us=1673 status=5 sync=1
+1792313239.082 
+1792313239.082 @kswapd_wake: 337
+1792313239.479 CP kcompactd0 pid=148 tid=148 cpu=13 us=2757 status=5 sync=1
+1792313240.454 CP kcompactd0 pid=148 tid=148 cpu=4 us=1305 status=5 sync=1
+1792313242.254 CP kcompactd0 pid=148 tid=148 cpu=0 us=1820 status=5 sync=1
+1792313244.073 CP kcompactd0 pid=148 tid=148 cpu=19 us=4451 status=5 sync=1
+1792313244.081 
+1792313244.081 @kswapd_wake: 318
+1792313245.921 CP kcompactd0 pid=148 tid=148 cpu=18 us=7414 status=5 sync=1
+1792313246.927 CP kcompactd0 pid=148 tid=148 cpu=16 us=6418 status=5 sync=1
+1792313248.273 CP kcompactd0 pid=148 tid=148 cpu=19 us=1130 status=5 sync=1
+1792313249.082 
+1792313249.082 @kswapd_wake: 221
+1792313250.358 CP kcompactd0 pid=148 tid=148 cpu=9 us=1135 status=5 sync=1
+1792313251.207 CP kcompactd0 pid=148 tid=148 cpu=19 us=773 status=5 sync=1
+1792313252.166 CP kcompactd0 pid=148 tid=148 cpu=3 us=1969 status=5 sync=1
+1792313253.906 CP kcompactd0 pid=148 tid=148 cpu=19 us=4585 status=5 sync=1
+1792313254.081 
+1792313254.081 @kswapd_wake: 334
+1792313254.825 CP kcompactd0 pid=148 tid=148 cpu=1 us=1750 status=5 sync=1
+1792313256.672 CP kcompactd0 pid=148 tid=148 cpu=11 us=5666 status=5 sync=1
+1792313257.613 CP kcompactd0 pid=148 tid=148 cpu=5 us=2547 status=5 sync=1
+1792313259.081 
+1792313259.081 @kswapd_wake: 270
+1792313259.445 CP kcompactd0 pid=148 tid=148 cpu=18 us=4380 status=5 sync=1
+1792313260.457 CP kcompactd0 pid=148 tid=148 cpu=9 us=2203 status=5 sync=1
+1792313261.797 CP kcompactd0 pid=148 tid=148 cpu=9 us=1477 status=5 sync=1
+1792313263.226 CP kcompactd0 pid=148 tid=148 cpu=13 us=3466 status=5 sync=1
+1792313264.081 
+1792313264.081 @kswapd_wake: 248
+1792313264.243 CP kcompactd0 pid=148 tid=148 cpu=15 us=1718 status=5 sync=1
+1792313266.133 CP kcompactd0 pid=148 tid=148 cpu=1 us=3357 status=5 sync=1
+1792313267.147 CP kcompactd0 pid=148 tid=148 cpu=5 us=896 status=5 sync=1
+1792313269.020 CP kcompactd0 pid=148 tid=148 cpu=1 us=7838 status=5 sync=1
+1792313269.081 
+1792313269.081 @kswapd_wake: 290
+1792313270.051 CP kcompactd0 pid=148 tid=148 cpu=17 us=15056 status=5 sync=1
+1792313271.077 CP kcompactd0 pid=148 tid=148 cpu=15 us=1301 status=5 sync=1
+1792313272.980 CP kcompactd0 pid=148 tid=148 cpu=17 us=1119 status=5 sync=1
+1792313274.081 CP kcompactd0 pid=148 tid=148 cpu=19 us=510 status=5 sync=1
+1792313274.081 
+1792313274.081 @kswapd_wake: 298
+1792313276.017 CP kcompactd0 pid=148 tid=148 cpu=0 us=4895 status=5 sync=1
+1792313277.063 CP kcompactd0 pid=148 tid=148 cpu=5 us=741 status=5 sync=1
+1792313279.038 CP kcompactd0 pid=148 tid=148 cpu=15 us=1328 status=5 sync=1
+1792313279.081 
+1792313279.081 @kswapd_wake: 276
+1792313282.069 CP kcompactd0 pid=148 tid=148 cpu=12 us=1306 status=5 sync=1
+1792313282.325 CP kcompactd0 pid=148 tid=148 cpu=1 us=2232 status=5 sync=1
+1792313283.985 CP kcompactd0 pid=148 tid=148 cpu=17 us=1441 status=5 sync=1
+1792313284.081 
+1792313284.081 @kswapd_wake: 239
+1792313284.880 CP kcompactd0 pid=148 tid=148 cpu=11 us=1169 status=5 sync=1
+1792313286.683 CP kcompactd0 pid=148 tid=148 cpu=14 us=2751 status=5 sync=1
+1792313287.696 CP kcompactd0 pid=148 tid=148 cpu=18 us=9522 status=5 sync=1
+1792313289.081 
+1792313289.081 @kswapd_wake: 249
+1792313289.469 CP kcompactd0 pid=148 tid=148 cpu=7 us=1816 status=5 sync=1
+1792313290.429 CP kcompactd0 pid=148 tid=148 cpu=0 us=2026 status=5 sync=1
+1792313292.259 CP kcompactd0 pid=148 tid=148 cpu=11 us=1847 status=5 sync=1
+1792313293.229 CP kcompactd0 pid=148 tid=148 cpu=5 us=2763 status=5 sync=1
+1792313294.081 
+1792313294.081 @kswapd_wake: 288
+1792313295.103 CP kcompactd0 pid=148 tid=148 cpu=4 us=1671 status=5 sync=1
+1792313296.097 CP kcompactd0 pid=148 tid=148 cpu=1 us=2085 status=5 sync=1
+1792313297.874 CP kcompactd0 pid=148 tid=148 cpu=17 us=730 status=5 sync=1
+1792313298.969 CP kcompactd0 pid=148 tid=148 cpu=11 us=1393 status=5 sync=1
+1792313299.081 
+1792313299.082 @kswapd_wake: 291
+1792313300.041 CP kcompactd0 pid=148 tid=148 cpu=4 us=1658 status=5 sync=1
+1792313301.898 CP kcompactd0 pid=148 tid=148 cpu=18 us=2008 status=5 sync=1
+1792313302.948 CP kcompactd0 pid=148 tid=148 cpu=5 us=7346 status=5 sync=1
+1792313303.944 CP kcompactd0 pid=148 tid=148 cpu=3 us=1549 status=5 sync=1
+1792313304.082 
+1792313304.082 @kswapd_wake: 271
+1792313305.880 CP kcompactd0 pid=148 tid=148 cpu=19 us=5366 status=5 sync=1
+1792313306.987 CP kcompactd0 pid=148 tid=148 cpu=5 us=4385 status=5 sync=1
+1792313308.906 CP kcompactd0 pid=148 tid=148 cpu=7 us=6058 status=5 sync=1
+1792313309.081 
+1792313309.081 @kswapd_wake: 226
+1792313309.991 CP kcompactd0 pid=148 tid=148 cpu=14 us=2155 status=5 sync=1
+1792313312.057 CP kcompactd0 pid=148 tid=148 cpu=15 us=1053 status=5 sync=1
+1792313314.058 CP kcompactd0 pid=148 tid=148 cpu=11 us=2484 status=5 sync=1
+1792313314.081 
+1792313314.081 @kswapd_wake: 229
+1792313315.407 CP kcompactd0 pid=148 tid=148 cpu=15 us=584 status=5 sync=1
+1792313317.298 CP kcompactd0 pid=148 tid=148 cpu=13 us=2118 status=5 sync=1
+1792313318.337 CP kcompactd0 pid=148 tid=148 cpu=1 us=3138 status=5 sync=1
+1792313319.081 
+1792313319.081 @kswapd_wake: 214
+1792313320.422 CP kcompactd0 pid=148 tid=148 cpu=18 us=8220 status=5 sync=1
+1792313321.560 CP kcompactd0 pid=148 tid=148 cpu=9 us=1860 status=5 sync=1
+1792313323.619 CP kcompactd0 pid=148 tid=148 cpu=18 us=6485 status=5 sync=1
+1792313324.082 
+1792313324.082 @kswapd_wake: 250
+1792313324.779 CP kcompactd0 pid=148 tid=148 cpu=15 us=2733 status=5 sync=1
+1792313326.833 CP kcompactd0 pid=148 tid=148 cpu=16 us=6741 status=5 sync=1
+1792313327.888 CP kcompactd0 pid=148 tid=148 cpu=9 us=2949 status=5 sync=1
+1792313328.993 CP kcompactd0 pid=148 tid=148 cpu=3 us=3746 status=5 sync=1
+1792313329.081 
+1792313329.081 @kswapd_wake: 267
+1792313330.163 CP kcompactd0 pid=148 tid=148 cpu=5 us=563 status=5 sync=1
+1792313332.267 CP kcompactd0 pid=148 tid=148 cpu=2 us=2595 status=5 sync=1
+1792313333.407 CP kcompactd0 pid=148 tid=148 cpu=15 us=1014 status=5 sync=1
+1792313334.081 
+1792313334.081 @kswapd_wake: 268
+1792313334.506 CP kcompactd0 pid=148 tid=148 cpu=8 us=1976 status=5 sync=1
+1792313336.712 CP kcompactd0 pid=148 tid=148 cpu=16 us=1973 status=5 sync=1
+1792313337.833 CP kcompactd0 pid=148 tid=148 cpu=1 us=4574 status=5 sync=1
+1792313338.936 CP kcompactd0 pid=148 tid=148 cpu=5 us=1100 status=5 sync=1
+1792313339.081 
+1792313339.081 @kswapd_wake: 284
+1792313340.945 CP kcompactd0 pid=148 tid=148 cpu=3 us=1921 status=5 sync=1
+1792313341.128 CP kcompactd0 pid=148 tid=148 cpu=9 us=863 status=5 sync=1
+1792313343.282 CP kcompactd0 pid=148 tid=148 cpu=8 us=1545 status=5 sync=1
+1792313344.081 
+1792313344.081 @kswapd_wake: 239
+1792313344.504 CP kcompactd0 pid=148 tid=148 cpu=10 us=2211 status=5 sync=1
+1792313348.242 CP kcompactd0 pid=148 tid=148 cpu=6 us=461 status=5 sync=1

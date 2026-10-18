@@ -1,0 +1,15 @@
+## base
+   pf-base1-8k.json 8K=1898 8K=2024
+   pf-base1-long.json 32K=1756 64K=1492 128K=1901
+   pf-base2-8k.json 8K=1304 8K=1644
+   pf-base2-long.json 32K=1769 64K=1747 128K=1900
+   pf-base3-8k.json 8K=1141 8K=2136
+   pf-base3-long.json 32K=1746 64K=1524 128K=1971
+   rank 0: 383 chunks, median 0.99s, slow 19 (3.46, 2.59, 2.28, 2.27, 2.17, 2.13)
+     DR: 6725 events, 5345 ms total, max 27.2 ms; in slow chunks 6221 (5242 ms)
+     CP: 1367 events, 59468 ms total, max 2373.4 ms; in slow chunks 314 (55012 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%
+   rank 1: 384 chunks, median 0.99s, slow 19 (3.46, 2.58, 2.27, 2.27, 2.18, 2.12)
+     DR: 2009 events, 1902 ms total, max 61.0 ms; in slow chunks 1729 (1851 ms)
+     CP: 632 events, 3157 ms total, max 402.6 ms; in slow chunks 0 (0 ms)
+     busiest thread on an A725 core: slow chunks 0%, normal chunks 0%

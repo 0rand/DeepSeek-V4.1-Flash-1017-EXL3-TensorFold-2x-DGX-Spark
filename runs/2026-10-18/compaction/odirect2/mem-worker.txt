@@ -1,0 +1,652 @@
+1792314183.915 Attaching 8 probes...
+1792314188.922 
+1792314188.922 @kswapd_wake: 0
+1792314191.798 CP kcompactd0 pid=148 tid=148 cpu=19 us=756 status=6 sync=1
+1792314191.868 CP kcompactd0 pid=148 tid=148 cpu=5 us=59481 status=5 sync=1
+1792314191.874 DR tensorfold pid=883126 tid=883126 cpu=16 us=51502 reclaimed=67
+1792314191.874 DR tensorfold pid=883126 tid=883126 cpu=16 us=59 reclaimed=77
+1792314191.874 DR tensorfold pid=883126 tid=888562 cpu=5 us=101 reclaimed=64
+1792314191.875 DR tensorfold pid=883126 tid=883126 cpu=16 us=267 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888486 cpu=3 us=58 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888484 cpu=12 us=53 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888528 cpu=0 us=85 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888525 cpu=7 us=93 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888484 cpu=12 us=37 reclaimed=37
+1792314191.876 DR tensorfold pid=883126 tid=888545 cpu=8 us=129 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=883126 cpu=16 us=58 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888460 cpu=10 us=104 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888525 cpu=7 us=38 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888460 cpu=10 us=34 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=883126 cpu=16 us=166 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888525 cpu=7 us=150 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888545 cpu=8 us=220 reclaimed=72
+1792314191.876 DR tensorfold pid=883126 tid=888528 cpu=0 us=234 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888484 cpu=12 us=229 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888460 cpu=10 us=213 reclaimed=72
+1792314191.876 DR tensorfold pid=883126 tid=888532 cpu=6 us=415 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888522 cpu=1 us=376 reclaimed=77
+1792314191.876 DR tensorfold pid=883126 tid=888520 cpu=4 us=419 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888477 cpu=5 us=446 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888561 cpu=17 us=231 reclaimed=80
+1792314191.876 DR tensorfold pid=883126 tid=888545 cpu=8 us=87 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=883126 cpu=16 us=202 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888504 cpu=11 us=436 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888525 cpu=7 us=211 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888468 cpu=2 us=406 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888460 cpu=10 us=154 reclaimed=68
+1792314191.876 DR tensorfold pid=883126 tid=888528 cpu=0 us=192 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888532 cpu=6 us=153 reclaimed=71
+1792314191.876 DR tensorfold pid=883126 tid=888553 cpu=14 us=54140 reclaimed=68
+1792314191.876 DR tensorfold pid=883126 tid=888484 cpu=12 us=217 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888525 cpu=7 us=112 reclaimed=68
+1792314191.876 DR tensorfold pid=883126 tid=888451 cpu=9 us=401 reclaimed=66
+1792314191.876 DR tensorfold pid=883126 tid=888477 cpu=5 us=294 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888468 cpu=2 us=187 reclaimed=64
+1792314191.876 DR tensorfold pid=883126 tid=888545 cpu=8 us=436 reclaimed=84
+1792314191.876 DR tensorfold pid=883126 tid=888486 cpu=3 us=255 reclaimed=78
+1792314191.877 DR tensorfold pid=883126 tid=888561 cpu=17 us=924 reclaimed=64
+1792314191.877 DR tensorfold pid=883126 tid=888484 cpu=12 us=845 reclaimed=66
+1792314191.877 DR tensorfold pid=883126 tid=888520 cpu=4 us=1005 reclaimed=64
+1792314191.877 DR tensorfold pid=883126 tid=888464 cpu=1 us=1027 reclaimed=64
+1792314191.877 DR tensorfold pid=883126 tid=888460 cpu=10 us=923 reclaimed=64
+1792314191.877 DR tensorfold pid=883126 tid=888504 cpu=11 us=962 reclaimed=64
+1792314191.877 DR tensorfold pid=883126 tid=888528 cpu=0 us=941 reclaimed=64
+1792314191.877 DR tensorfold pid=883126 tid=883126 cpu=16 us=994 reclaimed=65
+1792314191.877 DR tensorfold pid=883126 tid=888532 cpu=6 us=972 reclaimed=67
+1792314191.877 DR tensorfold pid=883126 tid=888556 cpu=5 us=110 reclaimed=64
+1792314191.877 DR tensorfold pid=883126 tid=888553 cpu=14 us=1196 reclaimed=77
+1792314191.877 DR tensorfold pid=883126 tid=883126 cpu=16 us=149 reclaimed=64
+1792314191.878 DR tensorfold pid=883126 tid=888565 cpu=5 us=52 reclaimed=64
+1792314191.878 DR tensorfold pid=883126 tid=888469 cpu=14 us=25 reclaimed=64
+1792314191.878 DR tensorfold pid=883126 tid=888457 cpu=19 us=66 reclaimed=92
+1792314191.878 DR tensorfold pid=883126 tid=883126 cpu=16 us=78 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888493 cpu=5 us=138 reclaimed=85
+1792314191.879 DR tensorfold pid=883126 tid=888447 cpu=2 us=182 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888481 cpu=14 us=306 reclaimed=68
+1792314191.879 DR tensorfold pid=883126 tid=888504 cpu=11 us=282 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888465 cpu=12 us=331 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=883126 cpu=16 us=359 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888501 cpu=0 us=429 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888509 cpu=3 us=420 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888475 cpu=5 us=55 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888468 cpu=2 us=50 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888570 cpu=12 us=62 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888532 cpu=6 us=76 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888547 cpu=7 us=80 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888502 cpu=9 us=99 reclaimed=65
+1792314191.879 DR tensorfold pid=883126 tid=888468 cpu=2 us=75 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888483 cpu=10 us=94 reclaimed=67
+1792314191.879 DR tensorfold pid=883126 tid=888522 cpu=1 us=85 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888570 cpu=12 us=90 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888532 cpu=6 us=71 reclaimed=71
+1792314191.879 DR tensorfold pid=883126 tid=888502 cpu=9 us=41 reclaimed=72
+1792314191.879 DR tensorfold pid=883126 tid=888560 cpu=14 us=132 reclaimed=64
+1792314191.879 DR tensorfold pid=883126 tid=888470 cpu=19 us=57748 reclaimed=64
+1792314191.881 DR tensorfold pid=883126 tid=883126 cpu=16 us=44 reclaimed=64
+1792314191.881 DR tensorfold pid=883126 tid=883126 cpu=16 us=52 reclaimed=64
+1792314191.881 DR tensorfold pid=883126 tid=888536 cpu=19 us=75 reclaimed=65
+1792314191.881 DR tensorfold pid=883126 tid=888553 cpu=5 us=102 reclaimed=64
+1792314191.881 DR tensorfold pid=883126 tid=888481 cpu=14 us=105 reclaimed=67
+1792314191.881 DR tensorfold pid=883126 tid=883126 cpu=16 us=59 reclaimed=64
+1792314191.881 DR tensorfold pid=883126 tid=888474 cpu=19 us=60 reclaimed=64
+1792314191.881 DR tensorfold pid=883126 tid=888511 cpu=5 us=68 reclaimed=64
+1792314191.881 DR tensorfold pid=883126 tid=888568 cpu=14 us=86 reclaimed=67
+1792314191.882 DR tensorfold pid=883126 tid=888548 cpu=6 us=103 reclaimed=65
+1792314191.882 DR 60-nvidia-healt pid=894455 tid=894455 cpu=17 us=59653 reclaimed=72
+1792314191.882 DR tensorfold pid=883126 tid=888556 cpu=5 us=154 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888456 cpu=9 us=154 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888497 cpu=2 us=155 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888547 cpu=7 us=151 reclaimed=66
+1792314191.882 DR tensorfold pid=883126 tid=888471 cpu=19 us=152 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888554 cpu=8 us=156 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=883126 cpu=16 us=114 reclaimed=67
+1792314191.882 DR tensorfold pid=883126 tid=888570 cpu=12 us=159 reclaimed=66
+1792314191.882 DR tensorfold pid=883126 tid=888522 cpu=1 us=159 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888539 cpu=13 us=59687 reclaimed=70
+1792314191.882 DR tensorfold pid=883126 tid=888451 cpu=14 us=201 reclaimed=67
+1792314191.882 DR tensorfold pid=883126 tid=888504 cpu=11 us=173 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888460 cpu=10 us=197 reclaimed=76
+1792314191.882 DR tensorfold pid=883126 tid=888486 cpu=3 us=164 reclaimed=65
+1792314191.882 DR tensorfold pid=883126 tid=888569 cpu=0 us=157 reclaimed=67
+1792314191.882 DR tensorfold pid=883126 tid=888569 cpu=0 us=58 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888491 cpu=4 us=249 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=883126 cpu=16 us=71 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888546 cpu=5 us=73 reclaimed=64
+1792314191.882 DR tensorfold pid=883126 tid=888507 cpu=14 us=80 reclaimed=68
+1792314191.882 DR tensorfold pid=883126 tid=888532 cpu=19 us=74 reclaimed=68
+1792314191.882 DR tensorfold pid=883126 tid=888509 cpu=3 us=70 reclaimed=64
+1792314191.882 DR 60-nvidia-healt pid=894455 tid=894455 cpu=17 us=156 reclaimed=67
+1792314191.882 DR tensorfold pid=883126 tid=888472 cpu=13 us=194 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888501 cpu=19 us=15 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888507 cpu=17 us=20 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=883126 cpu=16 us=15 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888566 cpu=5 us=28 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888460 cpu=10 us=26 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888465 cpu=12 us=41 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888523 cpu=11 us=48 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888497 cpu=2 us=47 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888507 cpu=17 us=41 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=883126 cpu=16 us=72 reclaimed=64
+1792314191.884 DR tensorfold pid=883126 tid=888566 cpu=5 us=69 reclaimed=64
+1792314191.887 DR tensorfold pid=883126 tid=888510 cpu=13 us=62 reclaimed=67
+1792314191.887 DR jq pid=894457 tid=894457 cpu=5 us=71 reclaimed=66
+1792314191.887 DR tensorfold pid=883126 tid=888487 cpu=3 us=65134 reclaimed=85
+1792314191.887 DR tensorfold pid=883126 tid=888571 cpu=12 us=99 reclaimed=69
+1792314191.887 DR tensorfold pid=883126 tid=888540 cpu=17 us=140 reclaimed=84
+1792314191.887 DR tensorfold pid=883126 tid=888510 cpu=13 us=81 reclaimed=66
+1792314191.887 DR tensorfold pid=883126 tid=888461 cpu=14 us=163 reclaimed=66
+1792314191.887 DR tensorfold pid=883126 tid=888487 cpu=3 us=82 reclaimed=73
+1792314191.887 DR tensorfold pid=883126 tid=883126 cpu=16 us=116 reclaimed=77
+1792314191.887 DR tensorfold pid=883126 tid=888569 cpu=19 us=246 reclaimed=73
+1792314191.888 DR tensorfold pid=883126 tid=883126 cpu=16 us=46 reclaimed=64
+1792314191.888 DR tensorfold pid=883126 tid=888465 cpu=14 us=72 reclaimed=65
+1792314191.888 DR tensorfold pid=883126 tid=888521 cpu=17 us=97 reclaimed=64
+1792314191.888 DR tensorfold pid=883126 tid=888552 cpu=19 us=108 reclaimed=83
+1792314191.888 DR tensorfold pid=883126 tid=888491 cpu=13 us=107 reclaimed=77
+1792314191.888 DR tensorfold pid=883126 tid=888498 cpu=3 us=165 reclaimed=64
+1792314191.888 DR tensorfold pid=883126 tid=883126 cpu=16 us=127 reclaimed=83
+1792314191.888 DR tensorfold pid=883126 tid=888543 cpu=6 us=66584 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888518 cpu=4 us=66661 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888559 cpu=13 us=114 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=883126 cpu=16 us=167 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888543 cpu=6 us=68 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888463 cpu=9 us=97 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888559 cpu=13 us=138 reclaimed=85
+1792314191.889 DR tensorfold pid=883126 tid=888519 cpu=14 us=324 reclaimed=73
+1792314191.889 DR tensorfold pid=883126 tid=888464 cpu=1 us=150 reclaimed=82
+1792314191.889 DR tensorfold pid=883126 tid=888558 cpu=19 us=43 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888449 cpu=2 us=148 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888552 cpu=17 us=48 reclaimed=65
+1792314191.889 DR tensorfold pid=883126 tid=888461 cpu=12 us=62 reclaimed=65
+1792314191.889 DR tensorfold pid=883126 tid=888551 cpu=0 us=333 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888547 cpu=3 us=165 reclaimed=86
+1792314191.889 DR tensorfold pid=883126 tid=888463 cpu=9 us=69 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=883126 cpu=16 us=78 reclaimed=69
+1792314191.889 DR tensorfold pid=883126 tid=888519 cpu=14 us=65 reclaimed=71
+1792314191.889 DR tensorfold pid=883126 tid=888500 cpu=5 us=381 reclaimed=86
+1792314191.889 DR tensorfold pid=883126 tid=888464 cpu=1 us=80 reclaimed=70
+1792314191.889 DR tensorfold pid=883126 tid=888558 cpu=19 us=117 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888449 cpu=2 us=124 reclaimed=84
+1792314191.889 DR tensorfold pid=883126 tid=888519 cpu=14 us=111 reclaimed=80
+1792314191.889 DR tensorfold pid=883126 tid=888463 cpu=9 us=115 reclaimed=80
+1792314191.889 DR tensorfold pid=883126 tid=888500 cpu=5 us=102 reclaimed=77
+1792314191.889 DR tensorfold pid=883126 tid=888552 cpu=17 us=164 reclaimed=93
+1792314191.889 DR tensorfold pid=883126 tid=888461 cpu=12 us=155 reclaimed=77
+1792314191.889 DR tensorfold pid=883126 tid=888559 cpu=13 us=185 reclaimed=72
+1792314191.889 DR tensorfold pid=883126 tid=888460 cpu=10 us=450 reclaimed=93
+1792314191.889 DR tensorfold pid=883126 tid=888551 cpu=0 us=162 reclaimed=90
+1792314191.889 DR tensorfold pid=883126 tid=883126 cpu=16 us=124 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888464 cpu=1 us=115 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888547 cpu=3 us=216 reclaimed=67
+1792314191.889 DR tensorfold pid=883126 tid=888558 cpu=19 us=127 reclaimed=65
+1792314191.889 DR tensorfold pid=883126 tid=888447 cpu=6 us=125 reclaimed=75
+1792314191.889 DR tensorfold pid=883126 tid=888501 cpu=17 us=18 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888539 cpu=5 us=19 reclaimed=70
+1792314191.889 DR tensorfold pid=883126 tid=888449 cpu=2 us=114 reclaimed=75
+1792314191.889 DR perl pid=892229 tid=892229 cpu=13 us=24 reclaimed=80
+1792314191.889 DR tensorfold pid=883126 tid=883126 cpu=16 us=43 reclaimed=75
+1792314191.889 DR tensorfold pid=883126 tid=888567 cpu=12 us=42 reclaimed=75
+1792314191.889 DR tensorfold pid=883126 tid=888566 cpu=5 us=45 reclaimed=73
+1792314191.889 DR tensorfold pid=883126 tid=888540 cpu=17 us=49 reclaimed=73
+1792314191.889 DR tensorfold pid=883126 tid=888535 cpu=14 us=47 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=883126 cpu=16 us=132 reclaimed=65
+1792314191.889 DR tensorfold pid=883126 tid=888492 cpu=6 us=135 reclaimed=91
+1792314191.889 DR tensorfold pid=883126 tid=888522 cpu=3 us=126 reclaimed=68
+1792314191.889 DR tensorfold pid=883126 tid=888540 cpu=17 us=85 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888512 cpu=19 us=141 reclaimed=94
+1792314191.889 DR tensorfold pid=883126 tid=888455 cpu=12 us=147 reclaimed=70
+1792314191.889 DR tensorfold pid=883126 tid=888488 cpu=19 us=67 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888509 cpu=6 us=68 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888573 cpu=12 us=67 reclaimed=67
+1792314191.889 DR tensorfold pid=883126 tid=888540 cpu=3 us=62 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888537 cpu=7 us=67683 reclaimed=66
+1792314191.889 DR tensorfold pid=883126 tid=883126 cpu=16 us=102 reclaimed=85
+1792314191.889 DR tensorfold pid=883126 tid=888551 cpu=0 us=93 reclaimed=64
+1792314191.889 DR tensorfold pid=883126 tid=888473 cpu=17 us=133 reclaimed=91
+1792314191.889 DR tensorfold pid=883126 tid=888487 cpu=2 us=140 reclaimed=72
+1792314191.889 DR tensorfold pid=883126 tid=888496 cpu=4 us=140 reclaimed=76
+1792314191.889 DR tensorfold pid=883126 tid=888504 cpu=14 us=151 reclaimed=91
+1792314191.889 DR tensorfold pid=883126 tid=888515 cpu=4 us=400 reclaimed=66
+1792314191.889 DR tensorfold pid=883126 tid=888452 cpu=8 us=278 reclaimed=67
+1792314191.890 DR tensorfold pid=883126 tid=888530 cpu=8 us=68022 reclaimed=64
+1792314191.890 DR tensorfold pid=883126 tid=888536 cpu=6 us=64 reclaimed=69
+1792314191.890 DR tensorfold pid=883126 tid=888566 cpu=7 us=64 reclaimed=65
+1792314191.890 DR tensorfold pid=883126 tid=888525 cpu=5 us=84 reclaimed=70
+1792314191.890 DR tensorfold pid=883126 tid=888521 cpu=8 us=103 reclaimed=70
+1792314191.890 DR tensorfold pid=883126 tid=888521 cpu=8 us=96 reclaimed=68
+1792314191.890 DR tensorfold pid=883126 tid=883126 cpu=16 us=155 reclaimed=64
+1792314191.890 DR tensorfold pid=883126 tid=888531 cpu=13 us=195 reclaimed=72
+1792314191.890 DR tensorfold pid=883126 tid=888480 cpu=19 us=192 reclaimed=65
+1792314191.890 DR tensorfold pid=883126 tid=888560 cpu=14 us=191 reclaimed=64
+1792314191.890 DR tensorfold pid=883126 tid=888525 cpu=5 us=225 reclaimed=64
+1792314191.890 DR tensorfold pid=883126 tid=888566 cpu=7 us=248 reclaimed=67
+1792314191.890 DR tensorfold pid=883126 tid=888467 cpu=17 us=309 reclaimed=65
+1792314191.890 DR tensorfold pid=883126 tid=888534 cpu=3 us=311 reclaimed=77
+1792314191.890 DR tensorfold pid=883126 tid=888565 cpu=4 us=328 reclaimed=90
+1792314191.892 DR tensorfold pid=883126 tid=889659 cpu=0 us=69722 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888479 cpu=9 us=71051 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888550 cpu=11 us=71322 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888468 cpu=17 us=239 reclaimed=88
+1792314191.893 DR cat pid=894461 tid=894461 cpu=19 us=110 reclaimed=76
+1792314191.893 DR cat pid=894461 tid=894461 cpu=19 us=60 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888526 cpu=1 us=71776 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888541 cpu=10 us=71777 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888527 cpu=2 us=307 reclaimed=83
+1792314191.893 DR tensorfold pid=883126 tid=888533 cpu=14 us=366 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888455 cpu=4 us=377 reclaimed=94
+1792314191.893 DR tensorfold pid=883126 tid=888464 cpu=0 us=373 reclaimed=69
+1792314191.893 DR tensorfold pid=883126 tid=888566 cpu=5 us=472 reclaimed=64
+1792314191.893 DR tensorfold pid=883126 tid=888488 cpu=8 us=498 reclaimed=59
+1792314191.893 DR tensorfold pid=883126 tid=888454 cpu=3 us=470 reclaimed=66
+1792314191.894 DR tensorfold pid=883126 tid=888481 cpu=9 us=548 reclaimed=68
+1792314191.894 DR tensorfold pid=883126 tid=888537 cpu=6 us=550 reclaimed=64
+1792314191.894 DR tensorfold pid=883126 tid=888526 cpu=1 us=262 reclaimed=64
+1792314191.894 DR tensorfold pid=883126 tid=888522 cpu=12 us=550 reclaimed=67
+1792314191.894 DR tensorfold pid=883126 tid=888484 cpu=7 us=584 reclaimed=87
+1792314191.894 DR tensorfold pid=883126 tid=888491 cpu=3 us=587 reclaimed=85
+1792314191.894 DR tensorfold pid=883126 tid=888541 cpu=10 us=270 reclaimed=64
+1792314191.894 DR cat pid=894461 tid=894461 cpu=19 us=291 reclaimed=93
+1792314191.894 DR tensorfold pid=883126 tid=888477 cpu=13 us=614 reclaimed=95
+1792314191.894 DR tensorfold pid=883126 tid=888508 cpu=11 us=638 reclaimed=67
+1792314191.894 DR tensorfold pid=883126 tid=888499 cpu=2 us=72421 reclaimed=64
+1792314191.894 DR tensorfold pid=883126 tid=888542 cpu=12 us=72715 reclaimed=88
+1792314191.903 DR tensorfold pid=883126 tid=883126 cpu=16 us=68 reclaimed=64
+1792314191.903 DR tensorfold pid=883126 tid=888466 cpu=6 us=110 reclaimed=80
+1792314191.903 DR tensorfold pid=883126 tid=888476 cpu=13 us=150 reclaimed=56
+1792314191.903 DR tensorfold pid=883126 tid=888495 cpu=4 us=201 reclaimed=64
+1792314191.903 DR tensorfold pid=883126 tid=888557 cpu=2 us=224 reclaimed=86
+1792314191.903 DR tensorfold pid=883126 tid=888461 cpu=11 us=330 reclaimed=64
+1792314191.903 DR tensorfold pid=883126 tid=888571 cpu=12 us=224 reclaimed=76
+1792314191.903 DR tensorfold pid=883126 tid=883126 cpu=16 us=251 reclaimed=79
+1792314191.903 DR tensorfold pid=883126 tid=888555 cpu=5 us=375 reclaimed=79
+1792314191.903 DR tensorfold pid=883126 tid=888570 cpu=1 us=377 reclaimed=60
+1792314191.903 DR tensorfold pid=883126 tid=888491 cpu=3 us=375 reclaimed=64
+1792314191.903 DR tensorfold pid=883126 tid=888511 cpu=9 us=390 reclaimed=65
+1792314191.903 DR tensorfold pid=883126 tid=888502 cpu=7 us=404 reclaimed=64
+1792314191.903 DR tensorfold pid=883126 tid=888454 cpu=8 us=507 reclaimed=64
+1792314191.906 DR tensorfold pid=883126 tid=883126 cpu=16 us=129 reclaimed=84
+1792314191.906 DR tensorfold pid=883126 tid=888520 cpu=8 us=151 reclaimed=72
+1792314191.906 DR tensorfold pid=883126 tid=888485 cpu=2 us=416 reclaimed=76
+1792314191.906 DR 60-nvidia-healt pid=894470 tid=894470 cpu=3 us=376 reclaimed=64
+1792314191.906 DR tensorfold pid=883126 tid=888479 cpu=12 us=426 reclaimed=88
+1792314191.906 DR tensorfold pid=883126 tid=888557 cpu=5 us=426 reclaimed=64
+1792314191.906 DR tensorfold pid=883126 tid=888464 cpu=10 us=479 reclaimed=77
+1792314191.906 DR tensorfold pid=883126 tid=888555 cpu=7 us=517 reclaimed=66
+1792314191.906 DR tensorfold pid=883126 tid=888483 cpu=17 us=533 reclaimed=64
+1792314191.906 DR tensorfold pid=883126 tid=888478 cpu=13 us=536 reclaimed=93
+1792314191.906 DR tensorfold pid=883126 tid=888482 cpu=1 us=620 reclaimed=64
+1792314191.906 DR tensorfold pid=883126 tid=888466 cpu=0 us=669 reclaimed=64
+1792314191.906 DR tensorfold pid=883126 tid=888471 cpu=4 us=666 reclaimed=65
+1792314191.906 DR tensorfold pid=883126 tid=888476 cpu=6 us=670 reclaimed=64
+1792314191.906 DR tensorfold pid=883126 tid=888453 cpu=9 us=674 reclaimed=65
+1792314191.906 DR tensorfold pid=883126 tid=888475 cpu=11 us=681 reclaimed=66
+1792314191.906 DR tensorfold pid=883126 tid=888520 cpu=8 us=534 reclaimed=65
+1792314191.906 DR tensorfold pid=883126 tid=888451 cpu=14 us=681 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888560 cpu=9 us=109 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=883126 cpu=16 us=134 reclaimed=62
+1792314191.907 DR tensorfold pid=883126 tid=888525 cpu=17 us=146 reclaimed=50
+1792314191.907 DR tensorfold pid=883126 tid=888486 cpu=6 us=152 reclaimed=80
+1792314191.907 DR tensorfold pid=883126 tid=888541 cpu=4 us=173 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888510 cpu=14 us=171 reclaimed=86
+1792314191.907 DR tensorfold pid=883126 tid=888493 cpu=8 us=273 reclaimed=56
+1792314191.907 DR tensorfold pid=883126 tid=888507 cpu=5 us=283 reclaimed=81
+1792314191.907 DR tensorfold pid=883126 tid=888544 cpu=13 us=289 reclaimed=80
+1792314191.907 DR 60-nvidia-healt pid=894471 tid=894471 cpu=3 us=378 reclaimed=66
+1792314191.907 DR tensorfold pid=883126 tid=888571 cpu=1 us=398 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888562 cpu=11 us=433 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=883126 cpu=16 us=98 reclaimed=66
+1792314191.907 DR tensorfold pid=883126 tid=888566 cpu=7 us=92 reclaimed=53
+1792314191.907 DR tensorfold pid=883126 tid=888467 cpu=11 us=107 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888457 cpu=17 us=109 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888463 cpu=13 us=107 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888493 cpu=6 us=129 reclaimed=66
+1792314191.907 DR tensorfold pid=883126 tid=888566 cpu=7 us=38 reclaimed=50
+1792314191.907 DR tensorfold pid=883126 tid=888530 cpu=8 us=169 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888517 cpu=5 us=236 reclaimed=76
+1792314191.907 DR tensorfold pid=883126 tid=888488 cpu=9 us=363 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888491 cpu=7 us=838 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888535 cpu=10 us=362 reclaimed=53
+1792314191.907 DR tensorfold pid=883126 tid=888519 cpu=2 us=371 reclaimed=67
+1792314191.907 DR 60-nvidia-healt pid=894471 tid=894471 cpu=3 us=400 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888564 cpu=0 us=425 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888510 cpu=1 us=429 reclaimed=64
+1792314191.907 DR 60-nvidia-healt pid=894472 tid=894472 cpu=2 us=921 reclaimed=64
+1792314191.907 DR tensorfold pid=883126 tid=888504 cpu=12 us=478 reclaimed=64
+1792314191.908 DR tensorfold pid=883126 tid=888540 cpu=14 us=500 reclaimed=64
+1792314191.908 DR tensorfold pid=883126 tid=888563 cpu=10 us=958 reclaimed=66
+1792314191.908 DR tensorfold pid=883126 tid=883126 cpu=16 us=210 reclaimed=67
+1792314191.908 DR tensorfold pid=883126 tid=888454 cpu=0 us=992 reclaimed=67
+1792314191.908 DR tensorfold pid=883126 tid=888550 cpu=12 us=1057 reclaimed=66
+1792314191.908 DR tensorfold pid=883126 tid=888488 cpu=8 us=95 reclaimed=67
+1792314191.908 DR 60-nvidia-healt pid=894472 tid=894472 cpu=2 us=105 reclaimed=82
+1792314191.908 DR tensorfold pid=883126 tid=888497 cpu=14 us=114 reclaimed=64
+1792314191.908 DR tensorfold pid=883126 tid=883126 cpu=16 us=19 reclaimed=64
+1792314191.908 DR tensorfold pid=883126 tid=888479 cpu=1 us=150 reclaimed=88
+1792314191.908 DR 60-nvidia-healt pid=894472 tid=894472 cpu=2 us=87 reclaimed=69
+1792314191.908 DR tensorfold pid=883126 tid=888518 cpu=7 us=199 reclaimed=73
+1792314191.908 DR tensorfold pid=883126 tid=888551 cpu=5 us=229 reclaimed=94
+1792314191.908 DR tensorfold pid=883126 tid=888527 cpu=6 us=214 reclaimed=73
+1792314191.908 DR tensorfold pid=883126 tid=888567 cpu=11 us=257 reclaimed=53
+1792314191.908 DR tensorfold pid=883126 tid=888503 cpu=8 us=149 reclaimed=66
+1792314191.908 DR tensorfold pid=883126 tid=883126 cpu=16 us=155 reclaimed=65
+1792314191.908 DR tensorfold pid=883126 tid=888524 cpu=4 us=296 reclaimed=71
+1792314191.908 DR tensorfold pid=883126 tid=888533 cpu=0 us=299 reclaimed=70
+1792314191.908 DR tensorfold pid=883126 tid=888491 cpu=13 us=322 reclaimed=70
+1792314191.908 DR tensorfold pid=883126 tid=888449 cpu=9 us=327 reclaimed=64
+1792314191.908 DR tensorfold pid=883126 tid=888550 cpu=12 us=330 reclaimed=77
+1792314191.908 DR tensorfold pid=883126 tid=888505 cpu=10 us=330 reclaimed=86
+1792314191.908 DR tensorfold pid=883126 tid=888549 cpu=3 us=327 reclaimed=64
+1792314191.908 DR cat pid=894471 tid=894471 cpu=17 us=30 reclaimed=67
+1792314191.908 DR tensorfold pid=883126 tid=883126 cpu=16 us=38 reclaimed=88
+1792314191.908 DR cat pid=894471 tid=894471 cpu=17 us=43 reclaimed=66
+1792314191.909 DR tensorfold pid=883126 tid=883126 cpu=16 us=63 reclaimed=64
+1792314191.909 DR tensorfold pid=883126 tid=888526 cpu=5 us=74 reclaimed=68
+1792314191.909 DR tensorfold pid=883126 tid=888470 cpu=17 us=82 reclaimed=68
+1792314191.909 DR tensorfold pid=883126 tid=888568 cpu=11 us=80 reclaimed=80
+1792314191.909 DR tensorfold pid=883126 tid=888490 cpu=9 us=122 reclaimed=88
+1792314191.909 DR tensorfold pid=883126 tid=883126 cpu=16 us=40 reclaimed=81
+1792314191.909 DR tensorfold pid=883126 tid=888552 cpu=12 us=191 reclaimed=76
+1792314191.909 DR tensorfold pid=883126 tid=888466 cpu=8 us=278 reclaimed=68
+1792314191.909 DR tensorfold pid=883126 tid=888560 cpu=6 us=216 reclaimed=93
+1792314191.909 DR tensorfold pid=883126 tid=888568 cpu=11 us=211 reclaimed=95
+1792314191.909 DR tensorfold pid=883126 tid=888555 cpu=10 us=295 reclaimed=64
+1792314191.909 DR tensorfold pid=883126 tid=888485 cpu=5 us=227 reclaimed=95
+1792314191.909 DR jq pid=894472 tid=894472 cpu=1 us=290 reclaimed=64
+1792314191.909 DR tensorfold pid=883126 tid=888471 cpu=2 us=380 reclaimed=73
+1792314191.909 DR tensorfold pid=883126 tid=888550 cpu=13 us=384 reclaimed=82
+1792314191.909 DR tensorfold pid=883126 tid=888506 cpu=0 us=393 reclaimed=61
+1792314191.909 DR tensorfold pid=883126 tid=888553 cpu=10 us=221 reclaimed=68
+1792314191.909 DR tensorfold pid=883126 tid=888493 cpu=3 us=224 reclaimed=75
+1792314191.909 DR jq pid=894472 tid=894472 cpu=1 us=107 reclaimed=80
+1792314191.909 DR tensorfold pid=883126 tid=888485 cpu=4 us=331 reclaimed=91
+1792314191.909 DR tensorfold pid=883126 tid=888513 cpu=14 us=298 reclaimed=68
+1792314191.909 DR tensorfold pid=883126 tid=888572 cpu=0 us=353 reclaimed=77
+1792314191.909 DR tensorfold pid=883126 tid=888487 cpu=12 us=280 reclaimed=87
+1792314191.909 DR tensorfold pid=883126 tid=888557 cpu=2 us=285 reclaimed=66
+1792314191.909 DR tensorfold pid=883126 tid=888573 cpu=13 us=392 reclaimed=66
+1792314191.909 DR tensorfold pid=883126 tid=888531 cpu=11 us=461 reclaimed=79
+1792314191.909 DR tensorfold pid=883126 tid=888492 cpu=17 us=426 reclaimed=64
+1792314191.909 DR tensorfold pid=883126 tid=888522 cpu=9 us=357 reclaimed=64
+1792314191.909 DR tensorfold pid=883126 tid=888480 cpu=8 us=485 reclaimed=95
+1792314191.909 DR tensorfold pid=883126 tid=888489 cpu=7 us=496 reclaimed=64
+1792314191.909 DR tensorfold pid=883126 tid=883126 cpu=16 us=502 reclaimed=64
+1792314191.910 DR tensorfold pid=883126 tid=888550 cpu=5 us=495 reclaimed=85
+1792314191.910 DR tensorfold pid=883126 tid=888526 cpu=6 us=537 reclaimed=56
+1792314191.910 DR tensorfold pid=883126 tid=888465 cpu=13 us=577 reclaimed=64
+1792314191.910 DR tensorfold pid=883126 tid=888505 cpu=6 us=63 reclaimed=81
+1792314191.910 DR tensorfold pid=883126 tid=888535 cpu=14 us=91 reclaimed=64
+1792314191.910 DR tensorfold pid=883126 tid=888521 cpu=3 us=126 reclaimed=69
+1792314191.910 DR tensorfold pid=883126 tid=888566 cpu=7 us=159 reclaimed=69
+1792314191.910 DR tensorfold pid=883126 tid=888560 cpu=5 us=157 reclaimed=72
+1792314191.910 DR tensorfold pid=883126 tid=888524 cpu=4 us=160 reclaimed=85
+1792314191.910 DR tensorfold pid=883126 tid=888520 cpu=8 us=162 reclaimed=79
+1792314191.910 DR tensorfold pid=883126 tid=888474 cpu=9 us=242 reclaimed=79
+1792314191.910 DR tensorfold pid=883126 tid=888551 cpu=11 us=201 reclaimed=66
+1792314191.910 DR tensorfold pid=883126 tid=888456 cpu=12 us=214 reclaimed=65
+1792314191.910 DR tensorfold pid=883126 tid=883126 cpu=16 us=295 reclaimed=93
+1792314191.910 DR tensorfold pid=883126 tid=888483 cpu=2 us=833 reclaimed=65
+1792314191.910 DR tensorfold pid=883126 tid=888542 cpu=0 us=297 reclaimed=64
+1792314191.910 DR jq pid=894472 tid=894472 cpu=1 us=293 reclaimed=65
+1792314191.910 DR tensorfold pid=883126 tid=888499 cpu=17 us=847 reclaimed=64
+1792314191.910 DR tensorfold pid=883126 tid=888463 cpu=10 us=256 reclaimed=79
+1792314191.910 DR tensorfold pid=883126 tid=888518 cpu=9 us=868 reclaimed=65
+1792314191.910 DR tensorfold pid=883126 tid=888505 cpu=6 us=274 reclaimed=60
+1792314191.910 DR tensorfold pid=883126 tid=888509 cpu=8 us=84 reclaimed=64
+1792314191.910 DR jq pid=894472 tid=894472 cpu=1 us=112 reclaimed=76
+1792314191.910 DR tensorfold pid=883126 tid=888570 cpu=6 us=123 reclaimed=89
+1792314191.910 DR tensorfold pid=883126 tid=888559 cpu=17 us=126 reclaimed=79
+1792314191.910 DR tensorfold pid=883126 tid=888541 cpu=13 us=125 reclaimed=64
+1792314191.910 DR tensorfold pid=883126 tid=888548 cpu=11 us=127 reclaimed=65
+1792314191.910 DR tensorfold pid=883126 tid=883126 cpu=16 us=137 reclaimed=65
+1792314191.910 DR tensorfold pid=883126 tid=888525 cpu=5 us=140 reclaimed=64
+1792314191.910 DR tensorfold pid=883126 tid=888484 cpu=3 us=140 reclaimed=69
+1792314191.910 DR tensorfold pid=883126 tid=888567 cpu=0 us=221 reclaimed=74
+1792314191.910 DR tensorfold pid=883126 tid=888562 cpu=14 us=237 reclaimed=86
+1792314191.910 DR tensorfold pid=883126 tid=888490 cpu=7 us=241 reclaimed=65
+1792314191.910 DR tensorfold pid=883126 tid=888492 cpu=2 us=242 reclaimed=64
+1792314191.910 DR tensorfold pid=883126 tid=888552 cpu=9 us=294 reclaimed=76
+1792314191.910 DR tensorfold pid=883126 tid=888451 cpu=12 us=288 reclaimed=66
+1792314191.911 DR tensorfold pid=883126 tid=888556 cpu=10 us=286 reclaimed=64
+1792314191.911 DR tensorfold pid=883126 tid=888568 cpu=4 us=307 reclaimed=87
+1792314191.911 DR tensorfold pid=883126 tid=888525 cpu=5 us=41 reclaimed=64
+1792314191.911 DR tensorfold pid=883126 tid=888447 cpu=7 us=75 reclaimed=64
+1792314191.911 DR tensorfold pid=883126 tid=883126 cpu=16 us=76 reclaimed=64
+1792314191.911 DR tensorfold pid=883126 tid=888554 cpu=6 us=84 reclaimed=64
+1792314191.911 DR tensorfold pid=883126 tid=888509 cpu=8 us=93 reclaimed=64
+1792314191.911 DR tensorfold pid=883126 tid=888490 cpu=11 us=99 reclaimed=64
+1792314191.911 DR jq pid=894472 tid=894472 cpu=1 us=140 reclaimed=88
+1792314191.911 DR tensorfold pid=883126 tid=888487 cpu=12 us=228 reclaimed=72
+1792314191.911 DR tensorfold pid=883126 tid=888563 cpu=10 us=257 reclaimed=66
+1792314191.911 DR tensorfold pid=883126 tid=888573 cpu=13 us=273 reclaimed=79
+1792314191.911 DR tensorfold pid=883126 tid=888523 cpu=17 us=289 reclaimed=81
+1792314191.911 DR tensorfold pid=883126 tid=888467 cpu=2 us=301 reclaimed=64
+1792314191.911 DR tensorfold pid=883126 tid=888531 cpu=4 us=326 reclaimed=68
+1792314191.911 DR tensorfold pid=883126 tid=883126 cpu=16 us=179 reclaimed=65
+1792314191.911 DR tensorfold pid=883126 tid=888482 cpu=18 us=414 reclaimed=72
+1792314191.911 DR tensorfold pid=883126 tid=888556 cpu=3 us=468 reclaimed=73
+1792314191.912 DR tensorfold pid=883126 tid=888450 cpu=4 us=90 reclaimed=47
+1792314191.912 DR tensorfold pid=883126 tid=888551 cpu=12 us=99 reclaimed=57
+1792314191.912 DR tensorfold pid=883126 tid=888453 cpu=7 us=104 reclaimed=65
+1792314191.912 DR tensorfold pid=883126 tid=888452 cpu=9 us=126 reclaimed=47
+1792314191.912 DR tensorfold pid=883126 tid=888562 cpu=11 us=140 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888544 cpu=18 us=173 reclaimed=56
+1792314191.912 DR tensorfold pid=883126 tid=888516 cpu=0 us=117 reclaimed=59
+1792314191.912 DR tensorfold pid=883126 tid=888527 cpu=8 us=171 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888537 cpu=5 us=227 reclaimed=53
+1792314191.912 DR tensorfold pid=883126 tid=888556 cpu=3 us=222 reclaimed=47
+1792314191.912 DR tensorfold pid=883126 tid=888527 cpu=8 us=36 reclaimed=68
+1792314191.912 DR tensorfold pid=883126 tid=888450 cpu=4 us=155 reclaimed=66
+1792314191.912 DR tensorfold pid=883126 tid=888457 cpu=10 us=248 reclaimed=47
+1792314191.912 DR tensorfold pid=883126 tid=883126 cpu=16 us=205 reclaimed=47
+1792314191.912 DR tensorfold pid=883126 tid=888569 cpu=14 us=246 reclaimed=47
+1792314191.912 DR tensorfold pid=883126 tid=888556 cpu=3 us=141 reclaimed=76
+1792314191.912 DR tensorfold pid=883126 tid=888502 cpu=2 us=329 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888551 cpu=12 us=324 reclaimed=93
+1792314191.912 DR tensorfold pid=883126 tid=888502 cpu=2 us=22 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888544 cpu=18 us=316 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888562 cpu=11 us=352 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888488 cpu=13 us=469 reclaimed=89
+1792314191.912 DR tensorfold pid=883126 tid=888502 cpu=2 us=76 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888450 cpu=4 us=294 reclaimed=67
+1792314191.912 DR tensorfold pid=883126 tid=888537 cpu=5 us=322 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888504 cpu=17 us=489 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888457 cpu=10 us=313 reclaimed=91
+1792314191.912 DR tensorfold pid=883126 tid=888551 cpu=12 us=146 reclaimed=82
+1792314191.912 DR tensorfold pid=883126 tid=888461 cpu=7 us=491 reclaimed=65
+1792314191.912 DR tensorfold pid=883126 tid=888477 cpu=7 us=1089 reclaimed=68
+1792314191.912 DR tensorfold pid=883126 tid=883126 cpu=16 us=397 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888569 cpu=14 us=416 reclaimed=93
+1792314191.912 DR tensorfold pid=883126 tid=888527 cpu=8 us=439 reclaimed=85
+1792314191.912 DR tensorfold pid=883126 tid=888556 cpu=3 us=294 reclaimed=71
+1792314191.912 DR tensorfold pid=883126 tid=888450 cpu=4 us=174 reclaimed=89
+1792314191.912 DR jq pid=894472 tid=894472 cpu=1 us=206 reclaimed=87
+1792314191.912 DR tensorfold pid=883126 tid=888516 cpu=0 us=582 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888488 cpu=13 us=261 reclaimed=67
+1792314191.912 DR tensorfold pid=883126 tid=888452 cpu=9 us=665 reclaimed=62
+1792314191.912 DR tensorfold pid=883126 tid=888544 cpu=18 us=307 reclaimed=64
+1792314191.912 DR tensorfold pid=883126 tid=888562 cpu=11 us=302 reclaimed=70
+1792314191.912 DR tensorfold pid=883126 tid=888494 cpu=6 us=600 reclaimed=50
+1792314191.912 DR tensorfold pid=883126 tid=888502 cpu=2 us=316 reclaimed=85
+1792314191.912 DR tensorfold pid=883126 tid=888499 cpu=9 us=1295 reclaimed=71
+1792314191.915 DR tensorfold pid=883126 tid=888459 cpu=6 us=33 reclaimed=69
+1792314191.915 DR tensorfold pid=883126 tid=888514 cpu=9 us=84 reclaimed=64
+1792314191.915 DR tensorfold pid=883126 tid=888466 cpu=18 us=95 reclaimed=64
+1792314191.915 DR 60-nvidia-healt pid=894475 tid=894475 cpu=13 us=93 reclaimed=76
+1792314191.915 DR tensorfold pid=883126 tid=888480 cpu=5 us=115 reclaimed=72
+1792314191.915 DR tensorfold pid=883126 tid=888484 cpu=1 us=194 reclaimed=72
+1792314191.915 DR tensorfold pid=883126 tid=888519 cpu=14 us=201 reclaimed=64
+1792314191.915 DR tensorfold pid=883126 tid=888471 cpu=3 us=212 reclaimed=80
+1792314191.915 DR tensorfold pid=883126 tid=888568 cpu=11 us=222 reclaimed=93
+1792314191.915 DR tensorfold pid=883126 tid=888490 cpu=7 us=256 reclaimed=88
+1792314191.915 DR tensorfold pid=883126 tid=888506 cpu=12 us=254 reclaimed=64
+1792314191.915 DR tensorfold pid=883126 tid=888509 cpu=8 us=285 reclaimed=83
+1792314191.915 DR tensorfold pid=883126 tid=888545 cpu=10 us=316 reclaimed=78
+1792314191.915 DR tensorfold pid=883126 tid=888513 cpu=4 us=305 reclaimed=53
+1792314191.915 DR tensorfold pid=883126 tid=888533 cpu=2 us=285 reclaimed=68
+1792314191.915 DR tensorfold pid=883126 tid=888469 cpu=0 us=525 reclaimed=93
+1792314193.922 @dc[tensorfold, 4]: 45
+1792314193.923 @kswapd_wake: 41
+1792314198.922 
+1792314198.922 @kswapd_wake: 2
+1792314203.922 
+1792314203.922 @kswapd_wake: 0
+1792314208.922 
+1792314208.922 @kswapd_wake: 0
+1792314213.922 
+1792314213.922 @kswapd_wake: 1
+1792314218.922 
+1792314218.922 @kswapd_wake: 0
+1792314222.099 CP kcompactd0 pid=148 tid=148 cpu=8 us=30260 status=5 sync=1
+1792314223.922 
+1792314223.922 @kswapd_wake: 26
+1792314224.265 CP kcompactd0 pid=148 tid=148 cpu=8 us=4065 status=5 sync=1
+1792314224.290 CP kcompactd0 pid=148 tid=148 cpu=8 us=1099 status=5 sync=1
+1792314224.292 CP kcompactd0 pid=148 tid=148 cpu=8 us=886 status=5 sync=1
+1792314228.922 
+1792314228.922 @kswapd_wake: 409
+1792314233.922 
+1792314233.922 @kswapd_wake: 3
+1792314238.923 
+1792314238.923 @kswapd_wake: 6
+1792314243.922 
+1792314243.922 @kswapd_wake: 1
+1792314248.922 
+1792314248.923 @kswapd_wake: 2
+1792314253.922 
+1792314253.922 @kswapd_wake: 3
+1792314254.863 CP kcompactd0 pid=148 tid=148 cpu=12 us=10287 status=5 sync=1
+1792314258.922 
+1792314258.922 @kswapd_wake: 54
+1792314263.922 
+1792314263.922 @kswapd_wake: 12
+1792314268.922 
+1792314268.922 @kswapd_wake: 4
+1792314273.922 
+1792314273.922 @kswapd_wake: 1
+1792314278.922 
+1792314278.922 @kswapd_wake: 1
+1792314283.922 
+1792314283.922 @kswapd_wake: 9
+1792314288.922 
+1792314288.922 @kswapd_wake: 3
+1792314293.922 
+1792314293.923 @kswapd_wake: 0
+1792314298.922 
+1792314298.922 @kswapd_wake: 1
+1792314303.923 
+1792314303.923 @kswapd_wake: 10
+1792314308.922 
+1792314308.922 @kswapd_wake: 1
+1792314313.922 
+1792314313.923 @kswapd_wake: 0
+1792314318.922 
+1792314318.922 @kswapd_wake: 2
+1792314320.727 CP kcompactd0 pid=148 tid=148 cpu=12 us=596 status=5 sync=1
+1792314323.922 
+1792314323.922 @kswapd_wake: 37
+1792314328.922 
+1792314328.922 @kswapd_wake: 52
+1792314331.126 CP kcompactd0 pid=148 tid=148 cpu=6 us=10172 status=5 sync=1
+1792314333.922 
+1792314333.922 @kswapd_wake: 59
+1792314338.922 
+1792314338.922 @kswapd_wake: 0
+1792314343.922 
+1792314343.922 @kswapd_wake: 1
+1792314347.930 CP kcompactd0 pid=148 tid=148 cpu=19 us=1918 status=5 sync=1
+1792314348.922 
+1792314348.922 @kswapd_wake: 31
+1792314353.922 
+1792314353.922 @kswapd_wake: 0
+1792314358.922 
+1792314358.922 @kswapd_wake: 0
+1792314363.922 
+1792314363.922 @kswapd_wake: 8
+1792314368.922 
+1792314368.922 @kswapd_wake: 1
+1792314373.922 
+1792314373.922 @kswapd_wake: 1
+1792314378.922 
+1792314378.922 @kswapd_wake: 2
+1792314379.881 CP kcompactd0 pid=148 tid=148 cpu=12 us=4773 status=5 sync=1
+1792314383.922 
+1792314383.922 @kswapd_wake: 39
+1792314388.922 
+1792314388.922 @kswapd_wake: 0
+1792314393.922 
+1792314393.922 @kswapd_wake: 1
+1792314398.922 
+1792314398.922 @kswapd_wake: 0
+1792314403.922 
+1792314403.922 @kswapd_wake: 1
+1792314408.922 
+1792314408.922 @kswapd_wake: 6
+1792314413.922 
+1792314413.922 @kswapd_wake: 6
+1792314418.922 
+1792314418.922 @kswapd_wake: 1
+1792314423.922 
+1792314423.922 @kswapd_wake: 1
+1792314428.922 
+1792314428.922 @kswapd_wake: 1
+1792314433.922 
+1792314433.922 @kswapd_wake: 0
+1792314438.922 
+1792314438.922 @kswapd_wake: 6
+1792314443.922 
+1792314443.922 @kswapd_wake: 1
+1792314448.922 
+1792314448.923 @kswapd_wake: 31
+1792314450.320 CP kcompactd0 pid=148 tid=148 cpu=2 us=1029 status=5 sync=1
+1792314453.922 
+1792314453.922 @kswapd_wake: 25
+1792314458.138 CP kcompactd0 pid=148 tid=148 cpu=19 us=2035 status=5 sync=1
+1792314458.922 
+1792314458.922 @kswapd_wake: 53
+1792314463.922 
+1792314463.922 @kswapd_wake: 3
+1792314468.922 
+1792314468.922 @kswapd_wake: 0
+1792314473.922 
+1792314473.922 @kswapd_wake: 39
+1792314478.922 
+1792314478.922 @kswapd_wake: 0
+1792314483.922 
+1792314483.922 @kswapd_wake: 0
+1792314488.922 
+1792314488.922 @kswapd_wake: 0
+1792314493.923 
+1792314493.923 @kswapd_wake: 0
+1792314498.922 
+1792314498.922 @kswapd_wake: 0
+1792314503.922 
+1792314503.922 @kswapd_wake: 0
+1792314505.417 CP kcompactd0 pid=148 tid=148 cpu=1 us=1627 status=5 sync=1
+1792314508.922 
+1792314508.922 @kswapd_wake: 24
+1792314513.922 
+1792314513.923 @kswapd_wake: 2
+1792314518.922 
+1792314518.922 @kswapd_wake: 0
+1792314523.922 
+1792314523.922 @kswapd_wake: 0
+1792314528.922 
+1792314528.922 @kswapd_wake: 1
+1792314533.922 
+1792314533.922 @kswapd_wake: 1
+1792314538.922 
+1792314538.922 @kswapd_wake: 0
+1792314543.922 
+1792314543.923 @kswapd_wake: 0
+1792314548.922 
+1792314548.922 @kswapd_wake: 0
+1792314553.922 
+1792314553.922 @kswapd_wake: 1
+1792314558.922 
+1792314558.922 @kswapd_wake: 0
+1792314563.923 
+1792314563.923 @kswapd_wake: 0
+1792314568.922 
+1792314568.922 @kswapd_wake: 0
+1792314573.922 
+1792314573.922 @kswapd_wake: 0

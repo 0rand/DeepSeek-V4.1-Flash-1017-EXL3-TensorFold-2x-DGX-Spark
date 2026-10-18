@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # tests/host_tuning_test.sh [SCRIPT]: runs the node script of host_tuning.sh against stub sysctl/systemctl and temp paths.
-# Checks: the first apply saves the live values; a second apply keeps them; --undo restores them and removes the
+# Checks: the first apply saves the live values and the huge page modes; a second apply keeps them; --undo restores them and removes the
 # file; --undo with no saved file falls back to kernel defaults plus "sysctl --system"; a missing or dead earlyoom
 # stops the apply, a failed apply rolls the node back, --check changes nothing, and --undo puts back the boot and
 # run state of earlyoom.
@@ -8,7 +8,9 @@ set -euo pipefail
 src=${1:-$(dirname "$0")/../scripts/host_tuning.sh}
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
-mkdir -p "$T/bin" "$T/etc/systemd/system" "$T/etc/sysctl.d" "$T/etc/default" "$T/var/lib"
+mkdir -p "$T/bin" "$T/etc/systemd/system" "$T/etc/sysctl.d" "$T/etc/default" "$T/var/lib" "$T/thp"
+printf 'always [madvise] never\n' > "$T/thp/enabled"
+printf 'always defer defer+madvise [madvise] never\n' > "$T/thp/defrag"
 printf 'EARLYOOM_ARGS="-r 3600"\n' > "$T/etc/default/earlyoom"
 printf '%s\n' "vm.swappiness=33" "vm.compaction_proactiveness=7" "vm.extfrag_threshold=444" \
   "vm.min_free_kbytes=67584" "vm.watermark_scale_factor=12" > "$T/state"
@@ -42,7 +44,8 @@ printf '#!/bin/sh\n' > "$T/bin/earlyoom"
 chmod +x "$T/bin/sysctl" "$T/bin/systemctl" "$T/bin/earlyoom"
 awk '/^  cat <<'"'"'EOF'"'"'$/ {on=1; next} on && /^EOF$/ {exit} on' "$src" \
   | sed -e "s#/etc/systemd/system#$T/etc/systemd/system#g" -e "s#/etc/sysctl.d#$T/etc/sysctl.d#g" \
-        -e "s#/var/lib/#$T/var/lib/#g" -e "s#/etc/default/earlyoom#$T/etc/default/earlyoom#g" > "$T/node.sh"
+        -e "s#/var/lib/#$T/var/lib/#g" -e "s#/etc/default/earlyoom#$T/etc/default/earlyoom#g" \
+        -e "s#/sys/kernel/mm/transparent_hugepage#$T/thp#g" > "$T/node.sh"
 run() { PATH="$T/bin:$PATH" bash "$T/node.sh" "$@" >/dev/null; }
 check() { if eval "$2"; then echo "PASS $1"; else echo "FAIL $1"; cat "$T/state"; exit 1; fi; }
 b="$T/var/lib/tensorfold-host-tuning/sysctl.before"
@@ -53,9 +56,17 @@ check "first apply sets the tuned values" "grep -q '^vm.swappiness=10$' '$T/stat
 args_line=$(grep '^EARLYOOM_ARGS=' "$T/etc/default/earlyoom")
 case "$args_line" in *"'"*) noq=no ;; *"--prefer ^tensorfold --avoid ^("*) noq=yes ;; *) noq=no ;; esac
 check "first apply writes the earlyoom args without quotes" "[ $noq = yes ]"
+tb="$T/var/lib/tensorfold-host-tuning/thp.before"
+tu="$T/etc/systemd/system/tensorfold-thp.service"
+check "first apply turns huge pages off now and at boot" "grep -qx never '$T/thp/enabled' && grep -qx never '$T/thp/defrag' \
+  && grep -q '^ExecStart=.*never' '$tu' && grep -q 'systemctl enable -q tensorfold-thp.service' '$T/log'"
+check "first apply saves the huge page modes" "grep -qx 'madvise madvise' '$tb'"
 run
-check "second apply keeps the saved values" "grep -q 'vm.swappiness = 33' '$b'"
+check "second apply keeps the saved values" "grep -q 'vm.swappiness = 33' '$b' && grep -qx 'madvise madvise' '$tb'"
 run --undo
+check "undo restores the huge page modes and removes the unit" "grep -qx madvise '$T/thp/enabled' \
+  && grep -qx madvise '$T/thp/defrag' && [ ! -f '$tu' ] && [ ! -f '$tb' ] \
+  && grep -q 'systemctl disable -q tensorfold-thp.service' '$T/log'"
 check "undo restores all five values" "grep -q '^vm.swappiness=33$' '$T/state' && grep -q '^vm.compaction_proactiveness=7$' '$T/state' && grep -q '^vm.extfrag_threshold=444$' '$T/state' && grep -q '^vm.min_free_kbytes=67584$' '$T/state' && grep -q '^vm.watermark_scale_factor=12$' '$T/state'"
 check "undo removes the saved file and the conf" "[ ! -f '$b' ] && [ ! -f '$T/etc/sysctl.d/99-tensorfold.conf' ]"
 check "undo restores the earlyoom file" "grep -q '^EARLYOOM_ARGS=\"-r 3600\"$' '$T/etc/default/earlyoom' && [ ! -f '$T/etc/default/earlyoom.pre-tensorfold' ]"
@@ -73,7 +84,8 @@ check "apply without earlyoom changes nothing" "[ ! -f '$T/etc/sysctl.d/99-tenso
 mv "$T/eo.keep" "$T/etc/default/earlyoom"
 rolled_back="[ ! -f '$T/etc/sysctl.d/99-tensorfold.conf' ] && [ ! -f '$T/etc/systemd/system/tensorfold.slice' ] \
   && [ ! -f '$b' ] && grep -q '^vm.swappiness=60$' '$T/state' && grep -q '^vm.watermark_scale_factor=10$' '$T/state' \
-  && grep -q '^EARLYOOM_ARGS=\"-r 3600\"$' '$T/etc/default/earlyoom' && [ ! -f '$T/etc/default/earlyoom.pre-tensorfold' ]"
+  && grep -q '^EARLYOOM_ARGS=\"-r 3600\"$' '$T/etc/default/earlyoom' && [ ! -f '$T/etc/default/earlyoom.pre-tensorfold' ] \
+  && grep -qx madvise '$T/thp/enabled' && [ ! -f '$T/etc/systemd/system/tensorfold-thp.service' ]"
 touch "$T/inactive"
 if PATH="$T/bin:$PATH" bash "$T/node.sh" >/dev/null 2>"$T/err"; then echo "FAIL apply with a dead earlyoom must fail"; exit 1; fi
 check "apply fails when earlyoom does not start" "grep -q 'earlyoom did not start' '$T/err'"

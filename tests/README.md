@@ -5,7 +5,7 @@ Run all of them with one command, or run each test alone.
 
 ## Script check (no server needed)
 
-`bash tests/host_tuning_test.sh` runs the node part of `scripts/host_tuning.sh` in a temporary folder, with stub `sysctl` and `systemctl` commands. It changes nothing on the node. It checks that the first run keeps the old sysctl values, that `--undo` puts them back, that a missing or stopped earlyoom stops the setup, and that a failed setup puts the node back.
+`bash tests/host_tuning_test.sh` runs the node part of `scripts/host_tuning.sh` in a temporary folder, with stub `sysctl` and `systemctl` commands. It changes nothing on the node. It checks that the first run keeps the old sysctl values, that `--undo` puts them back, that a missing or stopped earlyoom stops the setup, that a failed setup puts the node back, and that transparent huge pages go off with a systemd unit and come back on with `--undo`.
 
 ## Run everything
 

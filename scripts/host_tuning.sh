@@ -21,9 +21,15 @@
 #      gave 2 (both at 1.31 s) and 128K prompts at 1,986 and 1,981 tokens/s (runs/2026-10-18/INDEX.md).
 #   3. earlyoom (required; the script stops if it is missing) stops the engine, not the node, when memory runs
 #      out. It sends SIGTERM to the process named "tensorfold" below 1 GiB available and SIGKILL below 0.5 GiB.
-#      It ignores swap, because the engine cannot use swap. The engine stops its own growth at 2 GiB available
-#      (TF_DS_MEM_FLOOR_GIB), and a 1M-token prompt took the head down to 1.7 GiB, so a healthy engine is not
+#      It ignores swap, because the engine cannot use swap. The engine stops its own growth at 1.5 GiB available
+#      (TF_DS_MEM_FLOOR_GIB in start.sh), and a 1M-token prompt took the head down to 1.7 GiB, so a healthy engine is not
 #      stopped. Your old file stays as /etc/default/earlyoom.pre-tensorfold.
+#   4. Transparent huge pages off (enabled and defrag set to "never"), now and at each boot
+#      (/etc/systemd/system/tensorfold-thp.service). The GPU reads host memory through the SMMU, so when the kernel
+#      moves pages to make a huge page (compaction), the GPU waits. A Docker healthcheck that started Python every
+#      10 s, and khugepaged, made 2-5 s compactions that matched the slowest prompt chunks. With THP off, 3 bench
+#      runs gave 1 slow chunk (1.31 s) instead of 10, and 32K-128K prompts ran within 1% of each other
+#      (runs/2026-10-18/INDEX.md). The engine does not use huge pages. --undo puts back the modes from before.
 set -euo pipefail
 # shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
@@ -36,11 +42,22 @@ conf=/etc/sysctl.d/99-tensorfold.conf
 slice=/etc/systemd/system/tensorfold.slice
 before=/var/lib/tensorfold-host-tuning/sysctl.before
 eostate=/var/lib/tensorfold-host-tuning/earlyoom.before
+thp=/sys/kernel/mm/transparent_hugepage
+thpunit=/etc/systemd/system/tensorfold-thp.service
+thpstate=/var/lib/tensorfold-host-tuning/thp.before
 keys="vm.swappiness vm.compaction_proactiveness vm.extfrag_threshold vm.min_free_kbytes vm.watermark_scale_factor"
+mode() { local m; m=$(sed -n 's/.*\[\(.*\)\].*/\1/p' "$1"); echo "${m:-$(cat "$1")}"; }  # the [selected] word
 
 undo() {  # puts the node back to its state before the first run
-  rm -f "$slice" "$conf"
+  if [ -f "$thpunit" ]; then systemctl disable -q tensorfold-thp.service || true; fi
+  rm -f "$slice" "$conf" "$thpunit"
   systemctl daemon-reload
+  if [ -f "$thp/enabled" ]; then
+    thp_enabled=madvise; thp_defrag=madvise              # the DGX OS defaults, when nothing was saved
+    if [ -f "$thpstate" ]; then read -r thp_enabled thp_defrag < "$thpstate"; fi
+    echo "$thp_enabled" > "$thp/enabled"; echo "$thp_defrag" > "$thp/defrag"
+  fi
+  rm -f "$thpstate"
   if [ -f "$before" ]; then
     sysctl -q -p "$before"
     rm -f "$before"
@@ -85,6 +102,11 @@ if [ ! -f "$eo.pre-tensorfold" ] && [ ! -f "$eostate" ]; then
   mkdir -p "${eostate%/*}"
   echo "$(systemctl is-enabled earlyoom 2>/dev/null || true) $(systemctl is-active earlyoom 2>/dev/null || true)" > "$eostate"
 fi
+# And the huge page modes, the same way.
+if [ -f "$thp/enabled" ] && [ ! -f "$thpunit" ] && [ ! -f "$thpstate" ]; then
+  mkdir -p "${thpstate%/*}"
+  echo "$(mode "$thp/enabled") $(mode "$thp/defrag")" > "$thpstate"
+fi
 # From here on, a failure puts the node back to its state before the first run, so it is never left half tuned.
 rollback() {
   local rc=$?
@@ -101,6 +123,15 @@ systemctl start tensorfold.slice
 printf '%s\n' "vm.swappiness = 10" "vm.compaction_proactiveness = 0" "vm.extfrag_threshold = 500" \
   "vm.min_free_kbytes = 1048576" "vm.watermark_scale_factor = 50" > "$conf"
 sysctl -q -p "$conf"
+if [ -f "$thp/enabled" ]; then
+  printf '%s\n' "[Unit]" "Description=TensorFold: transparent huge pages off (compaction stalls the GB10 GPU)" \
+    "DefaultDependencies=no" "After=sysinit.target" "Before=docker.service" "" "[Service]" "Type=oneshot" \
+    "RemainAfterExit=yes" "ExecStart=/bin/sh -c 'echo never > $thp/enabled; echo never > $thp/defrag'" "" \
+    "[Install]" "WantedBy=multi-user.target" > "$thpunit"
+  systemctl daemon-reload
+  systemctl enable -q tensorfold-thp.service
+  echo never > "$thp/enabled"; echo never > "$thp/defrag"
+fi
 # -M: SIGTERM / SIGKILL limits in KiB of MemAvailable. -s 100,100: both signals also when swap is free. -p: earlyoom
 # runs first. No quotes: the init script passes these words to earlyoom as they are (systemd removes quotes).
 args="-r 3600 -p -M 1048576,524288 -s 100,100 --prefer ^tensorfold --avoid ^(systemd|sshd|dockerd|containerd|dbus-daemon|NetworkManager|gdm|Xorg|nvidia)"
@@ -118,6 +149,7 @@ trap - EXIT
 echo "$(hostname): swappiness $(cat /proc/sys/vm/swappiness), compaction_proactiveness" \
   "$(cat /proc/sys/vm/compaction_proactiveness), min_free_kbytes $(cat /proc/sys/vm/min_free_kbytes)," \
   "tensorfold.slice swap $(systemctl show -p MemorySwapMax --value tensorfold.slice)," \
+  "huge pages $( [ -f "$thp/enabled" ] && mode "$thp/enabled" || echo n/a)," \
   "earlyoom $(systemctl is-active earlyoom 2>/dev/null || true)"
 EOF
 }

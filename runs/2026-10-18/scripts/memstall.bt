@@ -1,0 +1,8 @@
+// memstall.bt: who enters a PSI memory stall, and for how long (kernel stack), printed per second.
+kprobe:psi_memstall_enter { @t[tid] = nsecs; @k[tid] = kstack(perf, 10); }
+kprobe:psi_memstall_leave /@t[tid]/ {
+  @ms[comm, @k[tid]] = sum((nsecs - @t[tid]) / 1000);
+  delete(@t[tid]); delete(@k[tid]);
+}
+interval:s:1 { time("== %H:%M:%S\n"); print(@ms, 3); clear(@ms); }
+END { clear(@t); clear(@k); }
