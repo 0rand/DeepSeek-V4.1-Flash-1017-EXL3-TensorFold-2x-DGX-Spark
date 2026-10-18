@@ -11,21 +11,26 @@ Each item was checked against the files in this repo. The file that supports the
    - Not measured: image decode speed, two requests with images at the same time, many images in one request.
 2. **vLLM under concurrency.** The vLLM kit ran with `MAX_NUM_SEQS=1` (`runs/2026-10-17/PROVENANCE.md`, section 4). It serves one request at a time. No vLLM result exists for 2 to 4 streams, so the TensorFold concurrency tables have no baseline.
 3. **KV cache bytes per token.** The run files do not hold the KV pool size in tokens, for either engine. See [BENCHMARKS.md](BENCHMARKS.md).
-4. **Context above 200K tokens.**
+4. **Context near 1M tokens.**
    - The server is set to 1,048,576 tokens (`--context 1048576`).
-   - The longest measured prompt is the 200K needle test (200,030 tokens). No test reaches 1M tokens.
+   - One needle test reached 1,034,753 tokens and found the needle (830 s to the first token, [runs/2026-10-18](../runs/2026-10-18/INDEX.md)). It ran once, with one needle at 63% depth, on image `fd2365042f56`.
+   - Not measured near 1M: answer quality beyond one fact, decode speed, two long prompts at the same time.
    - The vLLM baseline was set to 262,144 tokens (`MAX_MODEL_LEN`).
 5. **Output quality.** The repo has no perplexity or accuracy test. The suite checks a few fixed tasks. No test compares TensorFold output with vLLM output. The perplexity numbers on the model card are for the weights, not for this engine.
 
 More that is not measured:
 
 - **Replies under load.** bertholomus's release gates check that a reply under `--parallel 4` equals its solo reply. No test in this repo repeats that check.
-- **Long-prompt prefill is slower than bertholomus's published numbers.** With their own client, this recipe gives 1,707 / 1,457 / 1,420 tok/s at 32K / 64K / 128K; their Python engine published 2,421 / 2,363 / 2,242 ([runs/.../16_*](../runs/2026-10-17/16_kit-bench-bertholomus_tensorfold-fd2365042f56/)). The weights differ (1017 vs the original V4.1), and so do the nodes. The cause is not known.
+- **Long-prompt prefill is still below bertholomus's published numbers, and it varies.** With their client, the final setup gives 2,179 / 2,165 / 2,037 / 1,961 tok/s at 8K / 32K / 64K / 128K (middle of 5 runs; 64K ranged 1,836-2,119); their Python engine published 2,387 / 2,421 / 2,363 / 2,242 on other nodes with the original V4.1 weights. On 17 October this recipe gave 2,190 / 1,707 / 1,457 / 1,420.
+   - Fixed: swap, kernel compaction and Engram page-cache reclaim caused most of the 1.3-3.8 s chunk stalls. The final memory settings made 128K steady (1,851-1,986 instead of 1,202-1,988) ([runs/2026-10-18](../runs/2026-10-18/INDEX.md)).
+   - Fixed: a fresh 64K prompt froze the head when memory ran out. Now earlyoom stops the engine first, and the gate's fresh 64K and 200K needles pass.
+   - Still open: for some runs, prompts and replies are 10-20% slower. One 64K run gave 1,836 tok/s, and 1 of 3 greedy code replies ran at 69-71 tok/s instead of 85, with the same text and the same number of steps. A possible cause: the GB10 CPU has 10 fast cores (Cortex-X925, 3.9 GHz) and 10 slow cores (Cortex-A725, 2.8 GHz), and the engine's main thread can move to a slow core. This is not tested yet.
+   - Still open: the attention of the ratio-2 layers grows with position (68 ms a chunk at the start, 195 ms at 61K). Their per-section numbers are not published, so this cannot be compared yet.
 - **More than four streams.** The benchmark stops at four streams, which is the `--parallel` setting.
 - **Prefix-cache use in the speed rows.** The suite does not record `cached_tokens`, so a cache hit in the 32K prefill and the 200K needle rows cannot be ruled out. See "Prefill" in [BENCHMARKS.md](BENCHMARKS.md).
 - **GPU clock and link state.** No run file records the GPU clock or the link bandwidth before a run.
-- **The conformance and differential tests.** No stored output of `tests/v41_conformance.py` or `tests/v41_differential.py` exists in `runs/` (`PROVENANCE.md`, section 7). The "12/12" and "3/3" results in `WHAT-I-CHANGED.md` have no log in this repo.
-- **Measured on one pair only.** All results come from one pair of DGX Spark, on one day.
+- **The conformance and differential tests.** Their outputs are in `runs/2026-10-17/18_*` (3/3 and 12/12), measured on `fd2365042f56`.
+- **Measured on one pair only.** All results come from one pair of DGX Spark, on 17 and 18 October.
 
 ## Not supported and not shipped
 

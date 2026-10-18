@@ -35,6 +35,10 @@ avail=\$(awk '/MemAvailable/ {print int(\$2/1048576)}' /proc/meminfo); [ "\$avai
 mkdir -p "$CACHE_DIR"; free=\$(df -BG --output=avail "$CACHE_DIR" | tail -1 | tr -dc 0-9)
 [ -d "$CACHE_DIR/tf-ds-rank" ] && need=5 || need=110
 [ "\$free" -ge "\$need" ] && echo "OK \$free GiB free for the cache" || echo "FAIL \$free GiB free in $CACHE_DIR (need \$need)"
+[ -z "${CGROUP_PARENT-tensorfold.slice}" ] || [ "\$(systemctl show -p MemorySwapMax --value ${CGROUP_PARENT-tensorfold.slice} 2>/dev/null)" = 0 ] \
+  && echo "OK no swap for the engine" || echo "FAIL ${CGROUP_PARENT-tensorfold.slice} has swap or is missing: run scripts/host_tuning.sh"
+[ "\$(cat /proc/sys/vm/compaction_proactiveness)" = 0 ] && [ "\$(cat /proc/sys/vm/min_free_kbytes)" -ge 1048576 ] \
+  && echo "OK memory settings of scripts/host_tuning.sh" || echo "FAIL memory settings not set: run scripts/host_tuning.sh"
 docker ps --format '{{.Names}}' | grep -q '^tfv41-r' && echo "FAIL a tfv41 rank already runs: ./stop.sh first" || true
 EOF
 )

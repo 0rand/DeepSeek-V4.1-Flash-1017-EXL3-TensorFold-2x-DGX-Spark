@@ -9,8 +9,9 @@ You can set up and run this recipe for a user. Follow these steps in this order.
 3. `scripts/download.sh` (~400 GB; resumable: run it again after a break). If a download needs a Hugging Face login, ask the user to run `hf auth login`. Never type a token yourself.
 4. `scripts/patch_template.py --worker`
 5. `docker/build.sh`
-6. `./start.sh` (it runs `scripts/preflight.sh` first; fix each `[FAIL]` line it prints). The first start takes ~15 min.
-7. `./verify.sh` must print PASS for all five checks. Only a real reply proves that both nodes work; `/health` alone does not.
+6. `scripts/host_tuning.sh` (once; it needs sudo on both nodes, so the user types the password). It turns swap off for the engine, sets the kernel memory values and makes earlyoom stop the engine (not the node) when memory runs out; preflight fails without it. Restart the server after it, because the engine sizes its memory at start.
+7. `./start.sh` (it runs `scripts/preflight.sh` first; fix each `[FAIL]` line it prints). The first start takes ~15 min.
+8. `./verify.sh` must print PASS for all five checks. Only a real reply proves that both nodes work; `/health` alone does not.
 
 Then give the user the three client settings from [docs/CONNECT.md](docs/CONNECT.md).
 

@@ -2,9 +2,9 @@
 
 **Run DeepSeek's V4.1 Flash model on two NVIDIA DGX Spark computers, twice as fast as the standard setup, and ready for AI agents.**
 
-Also on Hugging Face: [Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark](https://huggingface.co/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark).
+Also on Hugging Face: [Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster](https://huggingface.co/Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster). The engine is [my TensorFold fork](https://github.com/Elevatormusic/TensorFold) (branch `deepseek-v41-tp2`).
 
-Measured on 17 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run in [`runs/`](runs/2026-10-17/INDEX.md).
+Measured on 17 and 18 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run in [`runs/`](runs/2026-10-17/INDEX.md) ([long prompts and 1M](runs/2026-10-18/INDEX.md)).
 
 ---
 
@@ -15,10 +15,18 @@ Measured on 17 October 2026 on one pair of DGX Spark. Every number on this page 
 | Writing speed, text | 27 tokens/s | **57 tokens/s** | **2.1× faster** |
 | Writing speed, code | 40 tokens/s | **92 tokens/s** | **2.3× faster** |
 | Find one fact in a 64,000-token document | 80 s | **36 s** | **2.2× faster** |
+| Reading speed, 32,000-token document | 925 tokens/s | **2,165 tokens/s** | **2.3× faster** |
+| Longest document, as each setup ships | 262,144 tokens | **1,048,576 tokens** | **4× longer** |
 
 A *token* is a piece of a word. 100 tokens are about 75 English words.
 
-Both setups ran on the same two computers, with the same model files and the same prompts, on the same day.
+Both setups ran on the same two computers, with the same model files. The reading speed of this recipe is the middle of 5 runs with new prompts each time (no cache); it ranges from 2,065 to 2,201 tokens/s. The vLLM reading speed comes from the test suite's 32K prompt, which can include a cache hit; that would favor vLLM. In a 1,034,753-token document, the model found the one fact it was asked for; reading the document took 13.8 minutes.
+
+Reading speed with new prompts (bertholomus's benchmark client, middle of 5 runs):
+
+| Document length | 8,000 tokens | 32,000 | 64,000 | 128,000 | 1,034,753 |
+|---|---:|---:|---:|---:|---:|
+| Tokens per second | 2,179 | 2,165 | 2,037 | 1,961 | 1,246 (1 run) |
 
 ---
 
@@ -29,7 +37,8 @@ Both setups ran on the same two computers, with the same model files and the sam
 - **Four conversations at once.** Up to 4 requests share the two computers. Together they reach 140 tokens/s on code.
 - **It remembers long documents.** Ask a second question about the same long document and the reply starts in about 1 second instead of 13. After a restart, it starts in about 3 seconds.
 - **It keeps running.** One bad request ends only that request, not the whole server.
-- **A very long memory.** The model can read up to 1 million tokens in one conversation.
+- **Fast reading.** Long documents load at about 2,100 to 2,200 tokens per second, up to 64,000 tokens.
+- **A very long memory.** The model can read up to 1 million tokens in one conversation. In a test with 1,034,753 tokens, it found the one fact it was asked for.
 
 ---
 
@@ -70,19 +79,25 @@ scripts/download.sh
 scripts/patch_template.py --worker
 ```
 
-**4. Build the engine.** This step builds the server software and copies it to the worker.
+**4. Build the engine.** This step builds the server software from [my TensorFold fork](https://github.com/Elevatormusic/TensorFold) and copies it to the worker. The fork is bertholomus's engine plus the changes in [What I changed](#what-i-changed-to-make-it-work).
 
 ```bash
 docker/build.sh
 ```
 
-**5. Start the server.** It checks your setup first. The first start takes about 15 minutes. Later starts take 2 to 4 minutes.
+**5. Tune the memory settings (once).** This keeps the model out of swap and stops memory stalls while it reads long documents, on both computers. If memory runs out, it stops the model, not the computer. It asks for your password on each computer. `scripts/host_tuning.sh --undo` removes it.
+
+```bash
+scripts/host_tuning.sh
+```
+
+**6. Start the server.** It checks your setup first. The first start takes about 15 minutes. Later starts take 2 to 4 minutes.
 
 ```bash
 ./start.sh
 ```
 
-**6. Check that it works.** This sends five real requests and shows the result of each.
+**7. Check that it works.** This sends five real requests and shows the result of each.
 
 ```bash
 ./verify.sh
@@ -129,15 +144,17 @@ The fast engine for this model was written by [bertholomus](https://github.com/b
 2. **Prompts exactly as DeepSeek writes them.** Every prompt now matches DeepSeek's own reference, byte for byte.
 3. **Replies in an exact format.** The model can now follow a JSON schema, a pattern, or a list of choices. This works while it uses its speed tricks, and for 4 requests at once.
 4. **One error no longer stops the server.** Before, one failed request stopped all requests until a manual restart. Now it ends only that request.
+5. **Long documents load faster.** The server now keeps the computer's memory free while it reads a long prompt. Before, the memory filled up and parts of the reading stalled for 1 to 4 seconds.
 
-[Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2) and [#3](https://github.com/Elevatormusic/TensorFold/pull/3).
+[Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2), [#3](https://github.com/Elevatormusic/TensorFold/pull/3) and [#4](https://github.com/Elevatormusic/TensorFold/pull/4).
 
 ---
 
 ## Good to know
 
-- **The first long question after a start is slower.** It takes about 6 seconds more. Later questions do not.
-- **Long documents load slower than bertholomus reports.** With 32,000 tokens or more, this setup reads text 30 to 37% slower than their published numbers. The cause is not known yet.
+- **The first long question after a start is a little slower.** It takes about 1 to 2 seconds more. Later questions do not.
+- **Long documents load a little slower than bertholomus reports.** At 32,000 tokens this setup reads 2,165 tokens/s; they publish 2,421 on different computers and the original V4.1 weights. The speed also changes from run to run (at 64,000 tokens: 1,840 to 2,120 tokens/s).
+- **A 1-million-token document takes time.** Reading it takes about 14 minutes before the first word of the reply.
 - **The standard setup was tested one request at a time only.** So the "four at once" numbers have no vLLM comparison.
 - **Living Weights is not available.** That TensorFold feature works only with a different model on one computer.
 
@@ -192,10 +209,12 @@ bertholomus's own benchmark client ([`kit_bench.py`](runs/2026-10-17/16_kit-benc
 | Writing, set b: code / text / structured | 103.1 / 64.1 / 143.2 | 101.5 / 63.4 / 143.4 | 95.1 / 57.7 / 140.6 |
 | 2 / 4 requests at once, total | 83.1 / 118.9 | 79.8 / 113.0 | 81.5 / 116.7 |
 | 4 requests for 90 s, total | 142.0 | 125.3 | 120.0 |
-| Read a prompt, no cache: 8K / 32K / 64K / 128K | 2,433 / 2,495 / 2,461 / 2,354 | 2,387 / 2,421 / 2,363 / 2,242 | 2,190 / 1,707 / 1,457 / 1,420 |
+| Read a prompt, no cache: 8K / 32K / 64K / 128K | 2,433 / 2,495 / 2,461 / 2,354 | 2,387 / 2,421 / 2,363 / 2,242 | 2,179 / 2,165 / 2,037 / 1,961 (\*\*) |
 | Writing after a 128K prompt | 100.1 | 49.8 | 61.8 (52-73, 3 runs) |
 
 Their Zig engine does not have the agent features above (forced tool calls and exact formats return an error there).
+
+(\*\*) Middle of 5 runs on 18 October with the final setup (fork PR #4 and `scripts/host_tuning.sh`); ranges 2,174-2,223 / 2,065-2,201 / 1,836-2,119 / 1,851-1,986. On 17 October, before those changes: 2,190 / 1,707 / 1,457 / 1,420. How each change was found: [runs/2026-10-18](runs/2026-10-18/INDEX.md).
 
 #### Several requests at once (released engine)
 
@@ -220,7 +239,7 @@ Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 |---|---|
 | Model weights | `LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-2.9bpw` @ `afc7aa0a` (43 files) |
 | Engram tables | `deepseek-ai/DeepSeek-V4.1-Flash-1017` @ `1bae0e10`, files 47 and 48 |
-| Engine | [Elevatormusic/TensorFold](https://github.com/Elevatormusic/TensorFold) @ `fd2365042f56` (TensorFold 0.6.6 + bertholomus's V4.1 engine + PRs #1-#3) |
+| Engine | [Elevatormusic/TensorFold](https://github.com/Elevatormusic/TensorFold) @ `92aa710b533d` (TensorFold 0.6.6 + bertholomus's V4.1 engine + PRs #1-#4) |
 | Base image | `nvcr.io/nvidia/pytorch:26.07-py3` |
 | Chat template | MiaAI kit `files/chat_template.jinja` @ `6f7d1590` + [our patch](runs/2026-10-17/template-patch.diff) |
 | vLLM comparison | MiaAI kit @ `6f7d1590`, image `sha256:2f0cf3ad...` |
