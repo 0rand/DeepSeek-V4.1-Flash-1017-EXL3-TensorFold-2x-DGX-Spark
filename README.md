@@ -194,7 +194,7 @@ vLLM: 1 run. This recipe: 6 runs (6 engine builds of the same day, the last is t
 | Needle test, 200K tokens (\*) | 216.9 s | 109.8 (103.6-126.9) s | 2.0× |
 | Prefill, 8K prompt, first after a start | 789 tok/s | 562 (427-958) tok/s | 0.7× |
 
-- Decode speed counts the completion tokens the server reports, per second after the first token. Prose and code are shown apart, because code has a higher draft acceptance rate with speculative decoding (greedy: 3.6 tokens per step on code, 2.0 on prose; [counters](runs/2026-10-18/logs/r0-decode-done-ht.log)).
+- Decode speed counts the completion tokens the server reports, per second after the first token. Prose and code are shown apart, because code has a higher draft acceptance rate with speculative decoding (greedy: 3.6 tokens per step on code, 2.0 on prose; [counters](runs/2026-10-18/kitbench-decode/r0-done-ht.log)).
 - (\*) These two rows can include prefix-cache hits, on both engines. The suite's 32K prompt starts with its 8K prompt, and the 200K prompt starts like the 64K one.
 - The 8K row is slow because it is the first long prompt after each start. A longer warm-up list does not fix it ([tuning notes](runs/2026-10-17/17_tuning_warmup-spill-drafts/NOTES.md)). The likely cause is cold reads of the Engram tables from disk.
 - Both engines use speculative decoding (vLLM: DSpark, 3 drafts; this recipe: DSpark, 5 drafts; 4 drafts measured slower).
