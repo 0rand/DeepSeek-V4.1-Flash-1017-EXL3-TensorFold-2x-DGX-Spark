@@ -4,7 +4,7 @@ The two Sparks run one model with tensor parallelism (TP=2). Every layer exchang
 
 ## What you need
 
-- **Cable.** One QSFP cable between the Sparks (the setup in NVIDIA's "connect two Sparks" playbook). The recipe was measured with both CX7 ports active.
+- **Cable.** One QSFP cable between the Sparks (the setup in NVIDIA's [Connect Two Sparks](https://build.nvidia.com/spark/connect-two-sparks) playbook; do it first). The recipe was measured with both CX7 ports active.
 - **Addresses.** Static IPv4 addresses on the CX7 netdev, one subnet, for example `10.100.80.1/24` (head) and `10.100.80.2/24` (worker). Put them in `.env` as `HEAD_IP` and `WORKER_IP`.
 - **ssh.** Key-based ssh from the head to the worker (`WORKER_SSH`). `docker/build.sh`, `start.sh` and `stop.sh` use it.
 - **RDMA devices.** The RDMA device names and the netdev name for `.env`:

@@ -2,6 +2,8 @@
 
 **Run DeepSeek's V4.1 Flash model on two NVIDIA DGX Spark computers, twice as fast as the standard setup, and ready for AI agents.**
 
+Also on Hugging Face: [Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark](https://huggingface.co/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark).
+
 Measured on 17 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run in [`runs/`](runs/2026-10-17/INDEX.md).
 
 ---
@@ -35,10 +37,11 @@ Both setups ran on the same two computers, with the same model files and the sam
 
 You need:
 
-- **Two NVIDIA DGX Spark**, joined by one QSFP cable between their ConnectX-7 network ports.
+- **Two NVIDIA DGX Spark**, joined by one QSFP cable between their ConnectX-7 network ports. NVIDIA's [Connect Two Sparks](https://build.nvidia.com/spark/connect-two-sparks) guide shows how to cable them, set fixed addresses, and set up ssh.
 - **About 500 GB of free disk on each computer.** The model files use 385 GB. The first start uses 110 GB more.
 - **About 100 GB of free memory on each computer.** Close other AI programs first.
-- **A network setup** with fixed addresses on the cable link and ssh from the first computer to the second. [The network guide](docs/NETWORK.md) shows each step.
+- **A network setup** with fixed addresses on the cable link and ssh from the first computer to the second. Do NVIDIA's guide first, then read [our network notes](docs/NETWORK.md).
+- **Software on the head:** Docker with GPU support (DGX OS has it), Python 3, `curl`, `rsync`, and the [Hugging Face CLI](https://huggingface.co/docs/huggingface_hub/guides/cli) (`hf`). The worker needs Docker and `rsync`.
 - **Time.** Most of the first setup is the 400 GB download. It takes a few hours on a fast internet link.
 
 In this guide, the *head* is the computer where you type the commands. The *worker* is the second computer.
@@ -86,6 +89,22 @@ docker/build.sh
 ```
 
 Your server is ready at `http://127.0.0.1:8888/v1`. It works with any app that supports the OpenAI API. The model name is `DeepSeek-V4.1-Flash-1017`.
+
+---
+
+## Connect your app
+
+Use these three settings in any app that supports a custom OpenAI endpoint:
+
+| Setting | Value |
+|---|---|
+| Base URL | `http://127.0.0.1:8888/v1` |
+| Model | `DeepSeek-V4.1-Flash-1017` |
+| API key | any text (or your key, if you set one) |
+
+Thinking is off by default. Turn it on per request with `"reasoning_effort": "high"`.
+
+[The connection guide](docs/CONNECT.md) covers thinking levels, tool calls, exact formats, and use from other computers.
 
 ---
 
@@ -221,7 +240,7 @@ Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROV
 | `docker/` | the engine build |
 | `tests/` | the 32 agent tests, the format check, the benchmark, the prompt tests, the Hermes test ([guide](tests/README.md)) |
 | `runs/2026-10-17/` | every log and result behind this page |
-| `docs/` | the full story, benchmarks, network, operations, known limits |
+| `docs/` | how to connect your app, the full story, benchmarks, network, operations, known limits |
 
 </details>
 

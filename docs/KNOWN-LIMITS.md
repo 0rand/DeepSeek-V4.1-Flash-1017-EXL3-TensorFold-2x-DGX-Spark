@@ -25,7 +25,6 @@ More that is not measured:
 - **Prefix-cache use in the speed rows.** The suite does not record `cached_tokens`, so a cache hit in the 32K prefill and the 200K needle rows cannot be ruled out. See "Prefill" in [BENCHMARKS.md](BENCHMARKS.md).
 - **GPU clock and link state.** No run file records the GPU clock or the link bandwidth before a run.
 - **The conformance and differential tests.** No stored output of `tests/v41_conformance.py` or `tests/v41_differential.py` exists in `runs/` (`PROVENANCE.md`, section 7). The "12/12" and "3/3" results in `WHAT-I-CHANGED.md` have no log in this repo.
-- **The thinking switch of the benchmark.** The suite sends `chat_template_kwargs.thinking`. The benchmark, the grammar check and `verify.sh` send `chat_template_kwargs.enable_thinking`. The chat template reads the variable `thinking` (`runs/2026-10-17/template-patch.diff`). The run files do not show that the engine maps `enable_thinking` to it.
 - **Measured on one pair only.** All results come from one pair of DGX Spark, on one day.
 
 ## Not supported and not shipped
