@@ -63,9 +63,11 @@ reboot it must be repeated with ranks stopped, followed by integrity probes.
   out. Missing or unknown encoder state fails closed.
 - Move mapped cache rows using bounded GPU-kernel copies, including overlaps.
   Do not route them through copy engines or CPU reads.
-- Disable disk prompt spill in the experimental bundle. Its display-mapping
-  transfers are not validated yet. In-memory prefix reuse remains enabled and
-  must be tested. The ordinary recipe and its disk spill are unchanged.
+- Disk prompt spill uses the reused GLM tier's bounded CUDA staging path for
+  mapped rows, never CPU reads or copy engines. `SPILL_GIB` is inherited from
+  `.env`; a nonzero value enables per-rank SSD storage, and both ranks must
+  independently write and restore. In-memory prefix reuse remains enabled and
+  must be tested. Queued writes are drained on SIGTERM before exit.
 
 The display reservation is outside normal PyTorch allocator accounting. It does
 not add to `nvidia-smi`'s memory total. Existing host memory guards remain enabled.
@@ -127,10 +129,11 @@ python3 experiments/display-kv/prepare.py experiments/display-kv/bundle
 ```
 
 The bundle snapshots the current recipe scripts and `.env`, substituting only
-the experimental image, `SPILL_GIB=0`, `PREFILL_CHUNK=512`, the display environment
-and DRM device passthrough. It has its own logs and is not used by the normal
-launcher. Treat it as a snapshot: recreate it under a new name after relevant
-recipe changes. It reuses model and compiled-kernel/rank-cache paths.
+the experimental image, `PREFILL_CHUNK=512`, the display environment and DRM
+device passthrough; `SPILL_GIB` is inherited from `.env`, and a nonzero value
+enables the display-safe SSD spill tier. It has its own logs and is not used by
+the normal launcher. Treat it as a snapshot: recreate it under a new name after
+relevant recipe changes. It reuses model and compiled-kernel/rank-cache paths.
 
 ## Deferred Cutover
 
@@ -169,10 +172,13 @@ bash experiments/display-kv/bundle/start.sh
    overlapping in-memory prefix reuse, and concurrent streams with nonzero
    extent bases. Confirm a request cannot exceed 1M even though the shared pool
    is larger. Measure headroom on both hosts, not only CUDA's free-memory count.
+   Exercise SSD spill with a nonzero `SPILL_GIB`: write, eviction, restore,
+   CRC-failure handling and two-rank agreement.
 6. Compare equivalent workloads with the ordinary baseline. Full-window,
    near-full-pool, image input and long mixed-concurrency tests are required
-   before calling this production-ready. Disk spill is deliberately unsupported
-   in this first stage, not silently falling back to an untested path.
+   before calling this production-ready. Disk spill is enabled through the
+   reused GLM tier; validate it on both ranks rather than assuming the ordinary
+   recipe's behavior carries over.
 
 No build, transfer, DRM preparation, probe, or experimental startup is performed
 by `prepare.py` or the CPU tests.

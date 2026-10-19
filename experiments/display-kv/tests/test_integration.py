@@ -209,6 +209,52 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         self.assertEqual(cache.tokens.origin, "ordinary")
         self.assertEqual(sum(value.fill == 127 for value in arena.calls), len(cfg.index_sources))
 
+    def test_shutdown_drain_hook_is_installed(self):
+        relative, text = self.source("app.py")
+        changed = apply.transform(relative, text)
+        self.assertIn("self.on_exit = self._flush_spill", changed)
+        self.assertIn("def _flush_spill(self)", changed)
+        relative = Path("src/tensorfold/cuda/http.py")
+        changed = apply.transform(relative, (SOURCE / relative).read_text())
+        self.assertIn('hook = getattr(app, "on_exit", None)', changed)
+        self.assertIn("hook()", changed)
+
+    def test_shutdown_drain_waits_for_queued_writes(self):
+        relative, text = self.source("app.py")
+        tree = ast.parse(apply.transform(relative, text), filename=str(relative))
+        app = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "DsApp")
+        method = next(node for node in app.body if isinstance(node, ast.FunctionDef) and node.name == "_flush_spill")
+        method.decorator_list, method.returns = [], None
+        for arg in [*method.args.posonlyargs, *method.args.args, *method.args.kwonlyargs]:
+            arg.annotation = None
+        namespace = {"time": types.SimpleNamespace(perf_counter=lambda: 0.0)}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "_flush_spill", "exec"),
+             namespace)
+
+        class Spill:
+            def __init__(self):
+                self.calls = []
+
+            def drain(self, timeout):
+                self.calls.append(timeout)
+                return True
+
+        class Engine:
+            def __init__(self):
+                self.multi = types.SimpleNamespace(spill=Spill())
+
+        class App:
+            _flush_spill = namespace["_flush_spill"]
+
+        app = App()
+        app.engine = Engine()
+        with mock.patch("builtins.print"):
+            app._flush_spill()
+        self.assertEqual(app.engine.multi.spill.calls, [55.0])
+        app.engine.multi = None
+        with mock.patch("builtins.print"):
+            app._flush_spill()
+
     def test_install_transforms_minimal_checkout_and_refuses_reinstall(self):
         with tempfile.TemporaryDirectory() as directory:
             checkout = Path(directory)

@@ -382,8 +382,27 @@ def transform(relative: str | Path, text: str) -> str:
             "            if src is not None:\n                self._release_rows(src.base, 0)\n                self.extents.give(src.base, src.size)\n", name)
         return text
     if name == "app.py":
-        return _replace_once(text, 'class DsApp(App):\n    reads_ignore_eos = True\n',
+        text = _replace_once(text, 'class DsApp(App):\n    reads_ignore_eos = True\n',
             'class DsApp(App):\n    reads_ignore_eos = True\n    strict_tool_output = True\n', name)
+        text = _replace_once(text, 'import dataclasses\n', 'import dataclasses\nimport time\n', name)
+        text = _replace_once(text, '        template.render = render_effort\n',
+            '        template.render = render_effort\n'
+            '        self.on_exit = self._flush_spill\n', name)
+        text = _replace_once(text, '    @staticmethod\n    def _response_format(',
+            '    def _flush_spill(self) -> None:\n'
+            '        """Wait for queued spill writes before the process exits (docker stop sends SIGTERM)."""\n'
+            '\n'
+            '        multi = getattr(self.engine, "multi", None)\n'
+            '        spill = getattr(multi, "spill", None)\n'
+            '        if spill is None:\n'
+            '            return\n'
+            '        t = time.perf_counter()\n'
+            '        ok = spill.drain(55.0)\n'
+            '        print(f"[tensorfold] spill: shutdown drain {\'done\' if ok else \'not finished\'} "\n'
+            '              f"in {time.perf_counter() - t:.1f}s", flush=True)\n'
+            '\n'
+            '    @staticmethod\n    def _response_format(', name)
+        return text
     if name == "server.py":
         text = _replace_once(text, 'from tensorfold.cuda.turns import Turns, Yield\n',
             'from tensorfold.cuda.turns import Turns, Yield\nfrom tensorfold.cuda.tool_output import ToolOutputGuard\n', name)
@@ -407,6 +426,16 @@ def transform(relative: str | Path, text: str) -> str:
         text = _replace_once(text,
             '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except RequestCancelled:\n',
             '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except ModelOutputError as exc:\n                print(f"[tensorfold] model output rejected: {exc.code}", flush=True)\n                return self._json(500, {"error": exc.error})\n            except RequestCancelled:\n', name)
+        text = _replace_once(text,
+            '    except KeyboardInterrupt:\n        pass\n    finally:\n        server.server_close()\n',
+            '    except KeyboardInterrupt:\n'
+            '        hook = getattr(app, "on_exit", None)\n'
+            '        if hook is not None:\n'
+            '            try:\n'
+            '                hook()\n'
+            '            except Exception as exc:\n'
+            '                print(f"[tensorfold] shutdown hook failed: {exc!r}", flush=True)\n'
+            '    finally:\n        server.server_close()\n', name)
         return text
     if name == "health.py":
         return _replace_once(text, '        return body\n',

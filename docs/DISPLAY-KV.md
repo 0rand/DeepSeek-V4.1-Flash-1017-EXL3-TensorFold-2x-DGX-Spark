@@ -50,7 +50,8 @@ The startup sequence is:
    `experiments/display-kv/bundle-launch-*` and start it with ordinary preflight.
 
 Generated snapshots preserve the latest recipe settings but select the variant
-image, native packed KV, 512-token prefill chunks and `SPILL_GIB=0`. No stale
+image, native packed KV, 512-token prefill chunks and inherit `SPILL_GIB` from
+`.env`; a nonzero value enables the display-safe SSD spill tier. No stale
 previous bundle or configuration snapshot is reused. Each bundle has its own
 startup/build logs. `./stop.sh` still stops both rank container names and saves
 their logs in the root recipe's `logs/` directory.
@@ -122,11 +123,26 @@ DeepSeek app: an unoffered tool call becomes an explicit model-output error,
 without retries or tool permission changes. Read its streaming tradeoff before
 deploying the new image.
 
-Disk prompt spill is deliberately disabled until mapped transfer paths are
-validated. In-memory prefix reuse is enabled. Two-node integrity, basic
-inference, 24K-prefix reuse, four concurrent 32K+ requests and a depth-65536
-benchmark have passed. Full-window, near-full-pool and sustained-load operation
-are not yet established as production-safe.
+Disk prompt spill is enabled through the reused GLM spill tier. Mapped rows move
+through the tier's bounded CUDA staging path (`_by_kernel`), never through CPU
+reads or copy engines. `SPILL_GIB` is inherited from `.env`; a nonzero value
+enables per-rank SSD storage, and both ranks must independently write and
+restore. Queued writes are drained on SIGTERM before exit. In-memory prefix
+reuse is enabled. Two-node integrity, basic inference, 24K-prefix reuse, four
+concurrent 32K+ requests and a depth-65536 benchmark have passed. Full-window,
+near-full-pool, SSD restore and sustained-load operation are not yet established
+as production-safe.
+
+## Disk Spill
+
+The display-safe tier stores kept prompts under `TF_DS_SPILL_DIR` (default
+`~/.cache/tensorfold`) up to `SPILL_GIB` per rank. `TF_DS_SPILL_HIGHWATER`,
+`TF_DS_SPILL_MIN`, `TF_DS_SPILL_MIN_FREE_GIB`, `TF_DS_SPILL_KEEP_BUILDS`,
+`TF_SPILL_WRITERS`, `TF_SPILL_DIRECT` and `TF_SPILL_FLUSH_S` tune background
+writes. `/health["spill"]` and the `spill_*` Prometheus families expose entries,
+bytes, write/load counters, restore latency, failures and free disk. A restart
+keeps only prompts whose writes reached disk; `docker stop` sends SIGTERM, and
+the shutdown hook waits up to 55 seconds for queued writes (inside `docker stop -t 60`).
 
 ## Live Memory Guard
 
