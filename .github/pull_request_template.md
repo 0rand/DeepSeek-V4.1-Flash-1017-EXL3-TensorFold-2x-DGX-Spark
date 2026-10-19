@@ -50,6 +50,7 @@ Write "no performance claim" if this pull request has none.
 | `TF_DS_PREFILL_CHUNK` | | |
 | `SPILL_GIB` | | |
 | `CONTEXT` / `PARALLEL` / `MTP_DRAFTS` | | |
+| `MEM_FLOOR_GIB` | | |
 | Host tuning (`scripts/host_tuning.sh`) | | |
 | Prompt lengths, runs per side, prefix cache cold or warm | | |
 | Result (median and range; prefill tok/s, decode tok/s or TTFT) | | |
