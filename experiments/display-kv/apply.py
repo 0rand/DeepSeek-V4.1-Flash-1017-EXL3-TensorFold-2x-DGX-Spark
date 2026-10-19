@@ -19,6 +19,7 @@ FILES = {
     FAMILY / "model.py": "a5a2d643970856e662a04eabe665994696084d80bbfcd30b9b253ebe18abf843",
     FAMILY / "engine.py": "019f616166d3ed72f117461e4978df37d36c85c28cef9c7f42a51b5a3824fee5",
     FAMILY / "multi.py": "0e19663c2b2f994ef7c160d21fa444624af012c3f756a9265fae5a082c24213d",
+    FAMILY / "kernels.py": "1db323f4553f729b5a7281990dc6086fbcf1503921a6bdf30e6218e71d178367",
     Path("src/tensorfold/cuda/health.py"): "3f5befbbef7764c420209a9f1b29f2d2d28ea98af51d8e5b31e92f131f2c8851",
     Path("src/tensorfold/server/metrics.py"): "a3b7956c3b82513006c6631b58df9aac8516cec140984b28c77bf53ed2036881",
     FAMILY / "app.py": "426b9463b5a254d96895a8c38f2f7cb5cc6c949bc8b607326e09af3a28d1de33",
@@ -41,6 +42,15 @@ def transform(relative: str | Path, text: str) -> str:
     name = Path(relative).name
     if "display_arena" in text or "TF_DS_DISPLAY_KV_MIB" in text:
         raise ValueError(f"{relative}: display-KV appears to be installed already")
+    if name == "kernels.py":
+        return _replace_once(text,
+            '    bits = (score + 0.0).view(torch.int32)                       # + 0.0: -0 becomes +0\n'
+            '    ordered = torch.where(bits < 0, bits ^ 0x7FFFFFFF, bits).to(torch.int64)\n'
+            '    keys = (ordered << 32) | (0xFFFFFFFF - torch.arange(score.shape[-1], device=score.device, dtype=torch.int64))\n'
+            '    top = keys.topk(k, dim=-1, sorted=False).values\n'
+            '    return (0xFFFFFFFF - (top & 0xFFFFFFFF)).sort(dim=-1).values\n',
+            '    from .bounded_topk import topk_indices as bounded_topk\n\n'
+            '    return bounded_topk(score, k)\n', name)
     if name == "model.py":
         text = _replace_once(text, "from . import kernels as K\n", "from . import display_kv\nfrom . import kernels as K\n", name)
         text = _replace_once(text, "    ring_size: int = 0\n\n\n@dataclass\nclass PoolCache:",
@@ -68,10 +78,27 @@ def transform(relative: str | Path, text: str) -> str:
             "return self.rope.cs(self.cfg.compress_ratios[layer] > 0,\n                                  getattr(self, \"rope_cap\", 0) if getattr(self, \"display_arena\", None) is not None\n                                  else max(sc.cap, getattr(self, \"rope_cap\", 0)))", name)
         return text
     if name == "engine.py":
+        start = text.index("    def _memory_ceiling(self) -> None:\n")
+        end = text.index("    def warm(self) -> None:\n", start)
+        text = _replace_once(text, text[start:end],
+            '    def _memory_ceiling(self) -> None:\n'
+            '        from .memory_guard import MemoryGuard\n\n'
+            '        self.memory_guard = MemoryGuard(torch, rank=self.rank,\n'
+            '                                        floor_gib=float(os.environ.get("TF_DS_MEM_FLOOR_GIB") or 2.0))\n'
+            '        self.memory_guard.refresh()\n\n', name)
+        text = _replace_once(text, "        for s in range(start, len(prompt), PREFILL_CHUNK):\n",
+            '        for s in range(start, len(prompt), PREFILL_CHUNK):\n'
+            '            guard = getattr(self, "memory_guard", None)\n'
+            '            if guard is not None:\n'
+            '                guard.refresh()\n', name)
+        text = _replace_once(text, "            if e < len(prompt):\n                yield e\n",
+            '            if guard is not None:\n'
+            '                guard.refresh()\n'
+            '            if e < len(prompt):\n                yield e\n', name)
         text = _replace_once(text, "    def _memory_ceiling(self) -> None:\n",
             '    def cache_metrics_snapshot(self) -> dict:\n        """Read local cache metadata without allocating or synchronizing the GPU."""\n        from .cache_metrics import snapshot\n\n        return snapshot(self)\n\n    def _memory_ceiling(self) -> None:\n', name)
         text = _replace_once(text, "        self.model_dir = Path(model_dir)                 # (multi's spilled kept prompts: part of their engine identity)\n",
-            "        self.model_dir = Path(model_dir)                 # (multi's spilled kept prompts: part of their engine identity)\n        from . import display_kv\n        self.display_bytes = display_kv.enabled_bytes()\n        if self.display_bytes:\n            if int(parallel) <= 1:\n                raise ValueError(\"display KV requires --parallel greater than 1 before weights load\")\n            if os.environ.get(\"TF_DS_KV\", \"native\") != \"native\":\n                raise ValueError(\"display KV requires TF_DS_KV=native packed storage\")\n            if float(os.environ.get(\"TF_DS_SPILL_GIB\") or 0) > 0:\n                raise ValueError(\"display-only KV staging requires TF_DS_SPILL_GIB=0; mapped spill transfers are not validated\")\n", name)
+            "        self.model_dir = Path(model_dir)                 # (multi's spilled kept prompts: part of their engine identity)\n        from . import display_kv\n        self.display_bytes = display_kv.enabled_bytes()\n        if self.display_bytes:\n            if int(parallel) <= 1:\n                raise ValueError(\"display KV requires --parallel greater than 1 before weights load\")\n            if os.environ.get(\"TF_DS_KV\", \"native\") != \"native\":\n                raise ValueError(\"display KV requires TF_DS_KV=native packed storage\")\n", name)
         text = _replace_once(text, "        self.limit = int(context or 65536)\n        self.max_rows = drafts + 1\n", "", name)
         text = _replace_once(text, "        cfg = self.w.cfg\n", "        cfg = self.w.cfg\n        self.limit = int(context or 65536)\n        self.max_rows = drafts + 1\n        self.display_pool_cap = (display_kv.pool_capacity(cfg, self.display_bytes, max_rows=0)\n                                 if self.display_bytes else 0)\n        if self.display_bytes and self.display_pool_cap < self.limit + self.max_rows + 8:\n            raise ValueError(\"display KV pool is smaller than the requested context plus decode scratch rows\")\n", name)
         text = _replace_once(text, "mine = torch.tensor([int(self.vcfg is not None), int(parallel), int(markov.ON), int(markov.SPLIT)],",
@@ -86,6 +113,22 @@ def transform(relative: str | Path, text: str) -> str:
             "tokens{f'; per-request context {self.limit}' if self.display_bytes else ' (an extent each)'}\", flush=True)", name)
         return text
     if name == "multi.py":
+        text = _replace_once(text,
+            '        why = f"a step failed on rank {self.e.rank} ({type(exc).__name__}: {str(exc)[:160]})"\n',
+            '        guard = getattr(self.e, "memory_guard", None)\n'
+            '        if guard is not None:\n'
+            '            print(f"[tensorfold] rank {self.e.rank}: last allocator budget {guard.last}", flush=True)\n'
+            '        why = f"a step failed on rank {self.e.rank} ({type(exc).__name__}: {str(exc)[:160]})"\n', name)
+        text = _replace_once(text, "        e = self.e\n        t0 = time.perf_counter()\n        self._step(True)\n",
+            '        e = self.e\n'
+            '        guard = getattr(e, "memory_guard", None)\n'
+            '        if guard is not None:\n'
+            '            guard.refresh()\n'
+            '        t0 = time.perf_counter()\n        self._step(True)\n', name)
+        text = _replace_once(text, "            self.round_end = time.perf_counter()\n            return done\n",
+            '            if guard is not None:\n'
+            '                guard.refresh()\n'
+            '            self.round_end = time.perf_counter()\n            return done\n', name)
         text = _replace_once(text, "from . import constrain\n", "from . import constrain\nfrom . import display_kv\n", name)
         text = _replace_once(text, "        self.m, self.cap = m, int(cap)\n        self.pool = m.new_pool(slots, self.cap)\n",
             "        self.m, self.cap = m, int(cap)\n"
@@ -443,7 +486,7 @@ def install(checkout: Path) -> None:
     if _git_head(checkout) != REVISION:
         raise ValueError(f"checkout HEAD must be {REVISION}")
     overlays = {checkout / FAMILY / name: (HERE / "overlay" / name).read_text()
-                for name in ("display_kv.py", "cache_metrics.py")}
+                for name in ("display_kv.py", "cache_metrics.py", "memory_guard.py", "bounded_topk.py")}
     overlays[checkout / "src/tensorfold/cuda/tool_output.py"] = (HERE / "overlay/tool_output.py").read_text()
     overlays[checkout / "src/tensorfold/cuda/spill.py"] = (HERE / "overlay/spill_tier.py").read_text()
     source = {path: (checkout / path).read_text() for path in FILES}

@@ -48,7 +48,7 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         self.assertIn("display_kv.pool_capacity(cfg, self.display_bytes, max_rows=0)", changed)
         self.assertIn("self.display_pool_cap < self.limit + self.max_rows + 8", changed)
         self.assertIn("display KV requires --parallel greater than 1 before weights load", changed)
-        self.assertIn("display-only KV staging requires TF_DS_SPILL_GIB=0", changed)
+        self.assertNotIn("display-only KV staging requires TF_DS_SPILL_GIB=0", changed)
         self.assertIn("display KV requires TF_DS_KV=native packed storage", changed)
         self.assertIn("world * 7", changed)
         self.assertIn("self.display_bytes, self.display_pool_cap, self.limit", changed)

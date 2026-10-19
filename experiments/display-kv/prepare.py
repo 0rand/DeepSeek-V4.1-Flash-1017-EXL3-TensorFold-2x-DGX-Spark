@@ -46,7 +46,8 @@ fi
     config = (ROOT / ".env").read_text()
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/:@-]*", image):
         raise ValueError("invalid experimental image reference")
-    for key, value in (("IMAGE", image), ("SPILL_GIB", "0"), ("PREFILL_CHUNK", "512")):
+    # SPILL_GIB is inherited from .env: the display-safe tier supports it now.
+    for key, value in (("IMAGE", image), ("PREFILL_CHUNK", "512")):
         config, count = re.subn(rf"(?m)^{key}=.*$", f"{key}={value}", config)
         if count == 0 and key == "PREFILL_CHUNK":
             config = config.rstrip() + f"\n{key}={value}\n"

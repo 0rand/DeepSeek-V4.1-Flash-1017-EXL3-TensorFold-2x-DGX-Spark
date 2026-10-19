@@ -196,7 +196,7 @@ class DisplayBundleThinkingSettingsTest(unittest.TestCase):
             self.assertIn('--reasoning-effort ${REASONING_EFFORT:-high}', start)
             self.assertNotIn('--no-thinking --reasoning-effort low', start)
             self.assertEqual(config["IMAGE"], "fixture:display-kv")
-            self.assertEqual(config["SPILL_GIB"], "0")
+            self.assertEqual(config["SPILL_GIB"], "64")
             self.assertEqual(config["PREFILL_CHUNK"], "512")
             self.assertEqual(config["THINKING"], "0")
             self.assertEqual(config["REASONING_EFFORT"], "low")

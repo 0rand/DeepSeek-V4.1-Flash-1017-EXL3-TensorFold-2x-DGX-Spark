@@ -128,6 +128,34 @@ inference, 24K-prefix reuse, four concurrent 32K+ requests and a depth-65536
 benchmark have passed. Full-window, near-full-pool and sustained-load operation
 are not yet established as production-safe.
 
+## Live Memory Guard
+
+Updated display images replace the upstream allocator cap frozen after warm-up
+with a live budget, refreshed before and after each prefill chunk and parallel
+decode round on both ranks. The budget is current PyTorch reserved bytes plus
+host `MemAvailable` minus `MEM_FLOOR_GIB`, capped at the CUDA device total.
+Reclaimed host RAM therefore becomes usable without restarting the engine.
+Near the floor, unused PyTorch cache blocks are returned to the host rather
+than retaining a prefill peak until earlyoom kills the process.
+
+Positive floors below 1.5 GiB are raised to 1.5 GiB: earlyoom sends SIGTERM at
+1 GiB, so a 0.5 GiB reserve cannot protect the engine. An explicit zero still
+disables the guard and is unsafe on these unified-memory nodes. The guard is
+not a reservation against other processes or non-PyTorch allocations, and
+genuine memory exhaustion can still break the distributed lane. Startup logs
+identify the live guard; a broken step logs its last budget in bytes.
+
+Long-context attention indexing now tiles its packed ordering keys (16 MiB
+per key tile, or one complete row if larger) and builds them in place. This
+preserves the original score ordering and lower-index tie rule. The tile limit
+does not include the input scores, output, index vector or sorting workspace.
+A GPU regression case with 512 x 32768 scores and k=256 reduced incremental
+peak allocated scratch from 448.2 MiB to 35.2 MiB, with identical indices.
+
+Existing saved images do not acquire source changes automatically. With both
+ranks stopped, run `./start-display-kv.sh --build-only` to build/copy the new
+image, then `./start-display-kv.sh` to launch it. A regular start never rebuilds.
+
 ## Offline Tests
 
 No live Docker, SSH, sudo or DRM operations occur in these launcher/helper tests:
@@ -138,7 +166,9 @@ PYTHONDONTWRITEBYTECODE=1 python3 tests/start_display_kv_test.py
 ```
 
 Engine-patch and telemetry checks need a pristine checkout of the pinned
-TensorFold revision. They use fake tensors and do not load the GPU runtime:
+TensorFold revision. Most use fake tensors. Top-k equivalence tests use CPU
+PyTorch when installed; CUDA equivalence, graph capture and peak-memory tests
+run only when CUDA is available. No model weights are loaded:
 
 ```bash
 TF_DISPLAY_SOURCE=/path/to/TensorFold PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/display-kv/tests -v
