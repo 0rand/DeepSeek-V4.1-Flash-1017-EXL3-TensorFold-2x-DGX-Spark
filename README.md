@@ -105,12 +105,13 @@ scripts/host_tuning.sh
 
 Your server is ready at `http://127.0.0.1:8888/v1`. It works with any app that supports the OpenAI API. The model name is `DeepSeek-V4.1-Flash-1017`.
 
-### Optional Display-Backed KV
+### Display-Backed KV (current baseline)
 
-On DGX Spark, the experimental display-only variant uses 1792 MiB of the NVIDIA
-display reservation per node for compressed KV and indexer storage. With this
-model it provides a 2,109,440-position shared pool while keeping the 1,048,576-token
-per-request context limit. It also exposes live pool metrics to EngineMetrics.
+On DGX Spark, the display-backed variant uses 1792 MiB of the NVIDIA display
+reservation per node for compressed KV and indexer storage. With this model it
+provides a 2,109,440-position shared pool while keeping the 1,048,576-token
+per-request context limit. It also exposes live pool and SSD spill metrics to
+EngineMetrics.
 
 Stop the current engine before switching, then run the self-contained launcher:
 
@@ -129,10 +130,11 @@ for sudo and the worker needs passwordless sudo. Active NVIDIA scanout, GPU
 compute processes and DRM clients prevent preparation; an unrelated framebuffer
 TTY or a connected-but-disabled output does not.
 
-The normal `.env` and `start.sh` are not changed. Disk prompt spill is off in
-this experimental variant; in-memory prefix reuse remains on. DRM changes are
+The normal `.env` and `start.sh` are not changed. Disk prompt spill is enabled
+through the reused GLM tier when `SPILL_GIB` is nonzero (32 GiB per rank in the
+current baseline); in-memory prefix reuse remains on. DRM changes are
 runtime-only and the launcher prepares them again after a reboot. Full-window
-and sustained-load validation remain open. See [Display KV](docs/DISPLAY-KV.md)
+and near-full-pool validation remain open. See [Display KV](docs/DISPLAY-KV.md)
 for checks, rollback and tests.
 
 ---
@@ -165,6 +167,29 @@ override them. Use `THINKING=0` for a non-thinking default.
 | Install a new engine version safely | `scripts/deploy_gate.sh <new> <old>` |
 
 If something goes wrong, read [Operations](docs/OPERATIONS.md). It covers restarts, logs, and what to avoid on DGX Spark.
+
+---
+
+## EngineMetrics
+
+[EngineMetrics](https://github.com/0rand/EngineMetrics) is a zero-dependency
+terminal dashboard for TensorFold (and vLLM, mlx-serve and oMLX). Its TensorFold
+adapter supports this recipe's display-backed pool and SSD spill tier, and this
+recipe's `/health` and `/metrics` endpoints were extended to match the fields
+EngineMetrics reads.
+
+```bash
+git clone https://github.com/0rand/EngineMetrics.git
+cd EngineMetrics
+python3 engine_metrics.py --host 127.0.0.1 --port 8100 --interval 2
+```
+
+Use `--port 8888` for the ordinary recipe. The dashboard shows live prefill and
+decode rates, stream states, pool occupancy, kept prompts, MTP acceptance,
+TTFT/latency averages, cache hits and the SSD spill tier (stored/written/loaded,
+restore latency, failures and disk free). Current engines report their configured
+capacity as `spill.gib` in `/health`; `--spill-cap GIB` is a fallback for older
+engines.
 
 ---
 
