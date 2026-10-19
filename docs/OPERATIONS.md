@@ -2,6 +2,11 @@
 
 ## Start, stop, check
 
+The optional self-contained display-memory variant is launched with
+`./start-display-kv.sh` after `./stop.sh`. See [Display KV](DISPLAY-KV.md) for
+sudo requirements, safety guards, probes, metrics and rollback. The ordinary
+launcher below does not enable display-backed KV.
+
 ```bash
 ./start.sh
 ```
@@ -44,6 +49,7 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   - The simplest supervisor is a systemd unit on the head that runs `./start.sh`, with `ExecStop=./stop.sh` and `Restart=on-failure`, and that checks `./status.sh`.
   - `RESTART_POLICY=on-failure` in `.env` (docker's own restart) restarts each container alone. It works when rank 0 comes back first, but no tool enforces that order.
 - **Out of memory.** With `scripts/host_tuning.sh`, earlyoom stops the engine when a node has less than 1 GiB available, so the node stays reachable by ssh. `journalctl -u earlyoom` shows when it did. Then restart by hand as above.
+- **CUDA OOM with free memory.** The engine sets a fixed PyTorch allocator ceiling after warm-up, leaving `MEM_FLOOR_GIB` available to the host. Long prompts can exceed that ceiling in temporary Engram/prefill buffers even while CUDA reports free memory. Set `PREFILL_CHUNK=512` in `.env` (default 2048) and restart both ranks to reduce these buffers. Keep the memory floor: disabling it risks a host OOM. Smaller chunks can reduce prefill throughput; the configured context is not a guarantee that every workload fits.
 - **Boot.** Do not let a second server also start at boot (a vLLM unit, another model). Both servers want port 8888 and ~100 GB per node, and the second one fails or runs a node out of memory.
 
 ## Things that hurt on DGX Spark

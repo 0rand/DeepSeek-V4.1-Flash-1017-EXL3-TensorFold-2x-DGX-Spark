@@ -5,6 +5,11 @@ Run all of them with one command, or run each test alone.
 
 ## Script check (no server needed)
 
+`python3 tests/display_drm_test.py` and `python3 tests/start_display_kv_test.py`
+exercise the display preparation and root launcher using temporary sysfs/proc
+fixtures and stub commands. They never contact Docker, SSH, sudo or a GPU.
+The CPU-only engine-patch tests are described in [Display KV](../docs/DISPLAY-KV.md#offline-tests).
+
 `bash tests/host_tuning_test.sh` runs the node part of `scripts/host_tuning.sh` in a temporary folder, with stub `sysctl` and `systemctl` commands. It changes nothing on the node. It checks that the first run keeps the old sysctl values, that `--undo` puts them back, that a missing or stopped earlyoom stops the setup, that a failed setup puts the node back, and that transparent huge pages go off with a systemd unit and come back on with `--undo`.
 
 ## Run everything

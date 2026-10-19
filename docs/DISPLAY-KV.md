@@ -1,0 +1,145 @@
+# Display-Backed KV
+
+`./start-display-kv.sh` is an opt-in, self-contained launcher for the experimental
+display-only DeepSeek variant. The ordinary `start.sh` remains unchanged.
+
+## Start
+
+Run from the head after normal setup, host tuning, and the base image build:
+
+```bash
+./stop.sh
+./start-display-kv.sh --build
+./verify.sh
+```
+
+The launcher reads the current `.env`, including `WORKER_SSH`, `IMAGE`, paths,
+networking, context, API binding and authentication settings. It does not modify
+that file. The source installer currently requires the pinned TensorFold
+revision `07aa02585f64cfb04c60a96de6554c0d4708ed46`; it refuses source drift rather
+than guessing how to patch another version.
+
+The first launch needs `--build`. After that, `./start-display-kv.sh` reuses the
+image saved in `.display-kv-image`: it never builds or transfers an image, even
+when source files changed. Use `--build` to explicitly prepare an update and
+launch it, or `--build-only` to prepare it separately. A missing image or changed
+image ID on either node causes a clear refusal, not an automatic build/copy.
+
+Thinking defaults are controlled by `.env`: `THINKING=1` and
+`REASONING_EFFORT=high`. Valid launcher efforts are `low`, `medium`, `high` and
+`xhigh`. Requests can still override these server defaults. Each fresh display
+launch snapshot inherits the current values; existing snapshots are unchanged.
+
+Both ranks must be stopped even for `--build-only`. Building while weights are
+resident risks exhausting host memory. Do not run another model server or GPU
+workload during preparation or probes. The head requires sudo authorization;
+the worker requires working `sudo -n` over key-based SSH. Never stop GDM or the
+firmware framebuffer console to make the checks pass.
+
+The startup sequence is:
+
+1. Refuse running DeepSeek ranks and acquire a local launcher lock.
+2. Load the saved image reference, or build a source-tagged image only when
+   `--build` or `--build-only` was explicitly requested.
+3. Verify image IDs on both nodes. Transfer a missing/different image only in
+   explicit build mode, then atomically save the selected reference.
+4. Authorize sudo, then prepare runtime DRM settings on both nodes.
+5. Run two complete SM-side integrity sweeps across the 1792 MiB mapping on each
+   node in disposable probe containers.
+6. Create a private fresh launch snapshot in
+   `experiments/display-kv/bundle-launch-*` and start it with ordinary preflight.
+
+Generated snapshots preserve the latest recipe settings but select the variant
+image, native packed KV, 512-token prefill chunks and `SPILL_GIB=0`. No stale
+previous bundle or configuration snapshot is reused. Each bundle has its own
+startup/build logs. `./stop.sh` still stops both rank container names and saves
+their logs in the root recipe's `logs/` directory.
+
+## Commands
+
+| Command | Effect |
+|---|---|
+| `./start-display-kv.sh --check` | Read-only DRM/card/compute status on both nodes; safe with ranks running |
+| `./start-display-kv.sh --build` | Explicitly prepare an updated image on both nodes, then prepare DRM, probe and start |
+| `./start-display-kv.sh --build-only` | Build and copy the derived image; no DRM change, allocation probe or startup |
+| `./start-display-kv.sh` | Use the saved image, prepare DRM, probe and start; never build or copy |
+| `./start-display-kv.sh --restore-drm` | Restore boot-default DRM module parameters on both nodes; no server startup |
+| `./stop.sh` | Stop both ranks and save their container logs |
+
+Unreadable or empty DRM parameter files are reported as unknown, not as proof
+of readiness. Some 580.x drivers do not expose their parameter values correctly;
+the allocation and integrity probes are authoritative.
+
+## Safety And Recovery
+
+All DRM operations are local to `scripts/display_drm.sh`, streamed to the worker
+over SSH. No checkout, script, binary or configuration from another model repo
+is required. The helper discovers NVIDIA-owned cards and render nodes rather
+than assuming `card0` or `card1`.
+
+Preparation and restoration refuse active compute processes, active NVIDIA
+scanout encoders, NVIDIA DRM mappings/open file descriptors, unknown connected
+encoder state, or a positive module reference count. The simple-framebuffer TTY
+is a different device and is not a reason to reject an idle NVIDIA reservation.
+The helper reloads only `nvidia_drm`, never the compute driver. It does not write
+modprobe configuration or rebuild initramfs. Reboot restores boot defaults.
+
+After a cutover failure, the launcher stops only rank containers belonging to
+its own image and attempts to restore DRM defaults on both nodes. It does not
+silently start an ordinary-memory fallback. If another GPU/DRM user appears,
+restoration can safely refuse; inspect the error, stop that workload yourself,
+then use `--restore-drm`. The generated launcher does not force-remove a rank
+that appeared concurrently.
+
+To return to the normal engine:
+
+```bash
+./stop.sh
+./start-display-kv.sh --restore-drm
+./start.sh
+```
+
+Do not run the normal and display launchers concurrently. The display launcher
+lock serializes display launches only; both variants intentionally share rank
+names, API ports and model-cache paths.
+
+## Capacity And Metrics
+
+The 1792 MiB display mapping per rank holds a 2,109,440-position shared KV/indexer
+pool, not a larger context for an individual request. Rings, weights, snapshots,
+RoPE and workspaces remain in ordinary memory. The reservation is not added to
+`nvidia-smi`'s normal VRAM accounting.
+
+`/health` and `/metrics` report capacity, free/used positions, largest free
+extent, retained prompts, snapshot bytes, and display versus ordinary backing.
+EngineMetrics' TensorFold adapter can read these fields without changes. Byte
+figures are per rank, not summed across replicated ranks. See the
+[implementation notes](../experiments/display-kv/README.md#cache-telemetry) for
+precise field semantics.
+
+The staged image also includes [tool-output hardening](TOOL-OUTPUT.md) for the
+DeepSeek app: an unoffered tool call becomes an explicit model-output error,
+without retries or tool permission changes. Read its streaming tradeoff before
+deploying the new image.
+
+Disk prompt spill is deliberately disabled until mapped transfer paths are
+validated. In-memory prefix reuse is enabled. Two-node integrity, basic
+inference, 24K-prefix reuse, four concurrent 32K+ requests and a depth-65536
+benchmark have passed. Full-window, near-full-pool and sustained-load operation
+are not yet established as production-safe.
+
+## Offline Tests
+
+No live Docker, SSH, sudo or DRM operations occur in these launcher/helper tests:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 tests/display_drm_test.py
+PYTHONDONTWRITEBYTECODE=1 python3 tests/start_display_kv_test.py
+```
+
+Engine-patch and telemetry checks need a pristine checkout of the pinned
+TensorFold revision. They use fake tensors and do not load the GPU runtime:
+
+```bash
+TF_DISPLAY_SOURCE=/path/to/TensorFold PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/display-kv/tests -v
+```

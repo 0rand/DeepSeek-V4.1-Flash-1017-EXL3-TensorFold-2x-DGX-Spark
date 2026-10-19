@@ -33,7 +33,9 @@ print(reply.choices[0].message.content)
 
 ## Thinking
 
-Thinking is **off** unless a request turns it on. Use one of these fields:
+Thinking defaults to **on**, with **high** effort, through `THINKING=1` and
+`REASONING_EFFORT=high` in `.env`. A restart applies changes to those defaults.
+Requests can override them using these fields:
 
 | Field | Values | Example |
 |---|---|---|

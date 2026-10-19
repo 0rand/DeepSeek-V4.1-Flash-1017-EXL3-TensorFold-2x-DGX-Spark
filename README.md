@@ -105,6 +105,36 @@ scripts/host_tuning.sh
 
 Your server is ready at `http://127.0.0.1:8888/v1`. It works with any app that supports the OpenAI API. The model name is `DeepSeek-V4.1-Flash-1017`.
 
+### Optional Display-Backed KV
+
+On DGX Spark, the experimental display-only variant uses 1792 MiB of the NVIDIA
+display reservation per node for compressed KV and indexer storage. With this
+model it provides a 2,109,440-position shared pool while keeping the 1,048,576-token
+per-request context limit. It also exposes live pool metrics to EngineMetrics.
+
+Stop the current engine before switching, then run the self-contained launcher:
+
+```bash
+./stop.sh
+./start-display-kv.sh --build
+./verify.sh
+```
+
+With `--build`, the launcher prepares a separate image on both nodes. Later
+`./start-display-kv.sh` runs use that saved image without building or copying,
+even if staged source files have changed. It safely reloads `nvidia_drm` on
+both nodes, checks the full display mapping, and starts the variant. It uses this
+repo's scripts and sources only; no other model repo is needed. The head may ask
+for sudo and the worker needs passwordless sudo. Active NVIDIA scanout, GPU
+compute processes and DRM clients prevent preparation; an unrelated framebuffer
+TTY or a connected-but-disabled output does not.
+
+The normal `.env` and `start.sh` are not changed. Disk prompt spill is off in
+this experimental variant; in-memory prefix reuse remains on. DRM changes are
+runtime-only and the launcher prepares them again after a reboot. Full-window
+and sustained-load validation remain open. See [Display KV](docs/DISPLAY-KV.md)
+for checks, rollback and tests.
+
 ---
 
 ## Connect your app
@@ -117,7 +147,9 @@ Use these three settings in any app that supports a custom OpenAI endpoint:
 | Model | `DeepSeek-V4.1-Flash-1017` |
 | API key | any text (or your key, if you set one) |
 
-Thinking is off by default. Turn it on per request with `"reasoning_effort": "high"`.
+Thinking is on by default at high effort. Set `THINKING=1` and
+`REASONING_EFFORT=high` in `.env` to configure these server defaults; requests can
+override them. Use `THINKING=0` for a non-thinking default.
 
 [The connection guide](docs/CONNECT.md) covers thinking levels, tool calls, structured output, and use from other computers.
 
