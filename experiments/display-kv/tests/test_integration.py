@@ -255,6 +255,19 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         with mock.patch("builtins.print"):
             app._flush_spill()
 
+    def test_spill_calls_match_the_reused_tier(self):
+        relative, text = self.source("multi.py")
+        tree = ast.parse(apply.transform(relative, text), filename=str(relative))
+        calls = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                value = node.func.value
+                if (isinstance(value, ast.Attribute) and isinstance(value.value, ast.Name)
+                        and value.value.id == "self" and value.attr == "spill"):
+                    calls.add(node.func.attr)
+        self.assertNotIn("lineage", calls)
+        self.assertTrue({"save", "find", "load_async", "finish_load", "release", "info"} <= calls)
+
     def test_spill_share_callback_is_installed(self):
         relative, text = self.source("multi.py")
         changed = apply.transform(relative, text)

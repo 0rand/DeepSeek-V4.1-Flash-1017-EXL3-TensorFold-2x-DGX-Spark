@@ -394,6 +394,9 @@ def transform(relative: str | Path, text: str) -> str:
             "        if src == dst:\n            return\n        self._release_rows(src, 0)\n        c = self.m.cfg\n", name)
         text = _replace_once(text, "            if src is not None:\n                self.extents.give(src.base, src.size)\n",
             "            if src is not None:\n                self._release_rows(src.base, 0)\n                self.extents.give(src.base, src.size)\n", name)
+        text = _replace_once(text, "                if self.spill is not None:               # its spilled rows to the boundary are this prompt's too\n"
+            "                    s.lineage = self.spill.lineage(src.disk, cut)\n",
+            "                s.lineage = None                         # the GLM tier stores full rows: no lineage to inherit\n", name)
         return text
     if name == "app.py":
         text = _replace_once(text, 'class DsApp(App):\n    reads_ignore_eos = True\n',
