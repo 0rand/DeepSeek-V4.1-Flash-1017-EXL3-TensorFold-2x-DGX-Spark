@@ -1,0 +1,3 @@
+# The lint tools of .github/workflows/ci.yml. Dependabot keeps these versions current.
+ruff==0.17.1
+shellcheck-py==0.11.0.1

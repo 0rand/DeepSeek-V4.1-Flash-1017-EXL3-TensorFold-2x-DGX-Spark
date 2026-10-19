@@ -3,6 +3,18 @@
 This folder holds the tests that gave the results in [`runs/2026-10-17/`](../runs/2026-10-17/).
 Run all of them with one command, or run each test alone.
 
+## Offline tests (no server, no GPU)
+
+`tests/run_offline.sh` runs every offline test. CI runs the same script on each pull request. It needs no server, no GPU and no `.env`.
+
+```bash
+tests/run_offline.sh
+```
+
+It runs `host_tuning_test.sh` (see below) and the Python `unittest` files (`test_*.py` and `*_test.py`) in `tests/` and in each `experiments/*/tests/` folder.
+`test_repo_rules.py` checks the repo rules of [CONTRIBUTING.md](../CONTRIBUTING.md): git tracks `runs/`, each entry in `runs/` is a `YYYY-MM-DD` folder with an `INDEX.md`, and `.env.example` sources cleanly and holds no token.
+A test that needs a GPU, a server or the `tensorfold` package skips itself.
+
 ## Script check (no server needed)
 
 `bash tests/host_tuning_test.sh` runs the node part of `scripts/host_tuning.sh` in a temporary folder, with stub `sysctl` and `systemctl` commands. It changes nothing on the node. It checks that the first run keeps the old sysctl values, that `--undo` puts them back, that a missing or stopped earlyoom stops the setup, that a failed setup puts the node back, and that transparent huge pages go off with a systemd unit and come back on with `--undo`.

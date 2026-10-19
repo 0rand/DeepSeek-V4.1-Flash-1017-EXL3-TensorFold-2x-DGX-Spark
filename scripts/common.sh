@@ -12,7 +12,9 @@ set -a
 set +a
 
 API="http://${BIND_HOST/0.0.0.0/127.0.0.1}:${PORT}/v1"
+# shellcheck disable=SC2034  # the scripts that source this file use STORE_PORT and LOGS
 STORE_PORT=29551                 # TensorFold's rank-0 rendezvous port (--master-port default)
+# shellcheck disable=SC2034
 LOGS="$ROOT/logs"
 
 log() { echo "[tfv41 $(date -u +%H:%M:%SZ)] $*"; }

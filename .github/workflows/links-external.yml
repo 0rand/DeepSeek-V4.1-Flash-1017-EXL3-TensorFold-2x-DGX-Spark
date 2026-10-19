@@ -1,0 +1,33 @@
+# Weekly check of the external links in the Markdown files. It is not a required check: an external site that
+# is down does not block a pull request. Read the job summary and fix the dead links in a small pull request.
+name: links-external
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # every Monday, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external-links:
+    name: external-links
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check all links in Markdown files
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --no-progress --max-retries 3 --retry-wait-time 10
+            --accept 200..=299,403,429
+            --root-dir ${{ github.workspace }}
+            './**/*.md'
+          fail: true
+          jobSummary: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

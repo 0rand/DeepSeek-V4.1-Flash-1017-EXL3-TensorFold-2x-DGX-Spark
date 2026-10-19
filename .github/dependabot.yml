@@ -1,0 +1,23 @@
+# Dependabot opens a pull request when a pinned action or a CI lint tool has a new release.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    labels: ["type: fix"]
+    commit-message:
+      prefix: ci
+  - package-ecosystem: pip
+    directory: /.github
+    schedule:
+      interval: weekly
+    groups:
+      ci-tools:
+        patterns: ["*"]
+    labels: ["type: fix"]
+    commit-message:
+      prefix: ci
