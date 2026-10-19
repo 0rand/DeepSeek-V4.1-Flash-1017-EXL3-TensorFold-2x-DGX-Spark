@@ -143,6 +143,9 @@ writes. `/health["spill"]` and the `spill_*` Prometheus families expose entries,
 bytes, write/load counters, restore latency, failures and free disk. A restart
 keeps only prompts whose writes reached disk; `docker stop` sends SIGTERM, and
 the shutdown hook waits up to 55 seconds for queued writes (inside `docker stop -t 60`).
+The spill signature ignores the driver version, so nodes with frozen, differing
+drivers can share stored prompts; the model, TensorFold sources, CUDA/torch
+version, GPU name, KV layout and display size still gate compatibility.
 
 ## Live Memory Guard
 
