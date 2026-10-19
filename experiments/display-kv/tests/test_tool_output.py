@@ -1,171 +1,124 @@
+"""CPU regressions for strict native executable output, never inference."""
 import importlib.util
 import json
 import os
-import sys
+from pathlib import Path
 import unittest
 
+MODULE = (Path(os.environ['TF_DISPLAY_SOURCE']) / 'src/tensorfold/cuda/tool_output.py'
+          if os.environ.get('TF_TOOL_OUTPUT_INSTALLED') == '1'
+          else Path(__file__).resolve().parents[1] / 'overlay/tool_output.py')
+spec = importlib.util.spec_from_file_location('tool_output_test', MODULE)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+ToolOutputGuard, ModelOutputError = module.ToolOutputGuard, module.ModelOutputError
+TOOLS = [{'type':'function','function':{'name':'terminal','parameters':{'type':'object','properties':{'x':{'type':'integer'}},'required':['x'],'additionalProperties':False}}}]
+GOOD = '<tool_call>{"id":"call_fixture_exact","name":"terminal","arguments":{"x":7}}</tool_call>'
 
-SOURCE = os.environ.get("TF_DISPLAY_SOURCE", "/tmp/opencode/tfv41-display-source")
-MODULE = os.path.join(os.path.dirname(__file__), "..", "overlay", "tool_output.py")
+class Native(unittest.TestCase):
+    def guard(self, **kw):
+        request = {'tools': TOOLS, **kw}
+        effective = [] if kw.get('tool_choice') == 'none' else TOOLS
+        return ToolOutputGuard(effective, request=request)
 
+    def test_malformed_and_atomic(self):
+        for bad in ['<tool_call>{"name":"terminal",', '<tool_call>{}</tool_call>', '<tool_call>{"name":"terminal","arguments":[]}</tool_call>', '<｜DSML｜ calls><｜DSML｜ invoke name="terminal">', '<｜DSML｜tool_calls>', '<tool_call><function=terminal><parameter=x>1</function></tool_call>', '<tool_call>{"name":"terminal","arguments":{"x":1,"x":2}}</tool_call>', '<tool_call>{"name":"terminal","arguments":{"x":NaN}}</tool_call>', '<tool_call>{"name":"unoffered","arguments":{}}</tool_call>']:
+            with self.subTest(bad=bad), self.assertRaises(ModelOutputError):
+                self.guard().parse(GOOD + bad)
 
-def load():
-    sys.path.insert(0, os.path.join(SOURCE, "src"))
-    spec = importlib.util.spec_from_file_location("tool_output_test", MODULE)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    def test_schema_before_truncation(self):
+        for args in [{}, {'x':'7'}, {'x':True}, {'x':7,'extra':False}, {'x':float('inf')}, None, False, []]:
+            with self.subTest(args=args), self.assertRaises(ModelOutputError):
+                self.guard().parse(GOOD + '<tool_call>' + json.dumps({'name':'terminal','arguments':args}) + '</tool_call>', max_calls=1)
 
+    def test_required_none_parallel(self):
+        for text, choice, extra in [('answer','required',{}), (GOOD,'none',{}), (GOOD+GOOD,'auto',{'parallel_tool_calls':False})]:
+            with self.subTest(choice=choice), self.assertRaises(ModelOutputError):
+                self.guard(tool_choice=choice, **extra).parse(text)
 
-class ToolOutputTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.module = load()
-        cls.tools = [{"type": "function", "function": {"name": "task", "parameters": {"type": "object"}}}]
+    def test_literal_and_ids(self):
+        for literal in ['```\n'+GOOD+'\n```', '`'+GOOD+'`', "'"+GOOD+"'", '> '+GOOD, '```\n<｜DSML｜ calls><｜DSML｜ invoke name="missing">\n```']:
+            content, calls = self.guard().parse(literal)
+            self.assertEqual(content, literal)
+            self.assertIsNone(calls)
+        content, calls = self.guard().parse(GOOD)
+        self.assertEqual(content, '')
+        self.assertEqual(calls[0]['id'], 'call_fixture_exact')
+        nested = '<tool_call>'+json.dumps({'name':'terminal','arguments':{'x':7},'id':'copy_exact'})+'</tool_call>'
+        self.assertEqual(self.guard().parse(nested)[1][0]['id'], 'copy_exact')
 
-    def guard(self):
-        return self.module.ToolOutputGuard(self.tools)
+    def test_dsml_and_xml(self):
+        ds = '<｜DSML｜ calls><｜DSML｜ invoke name="terminal"><｜DSML｜ parameter name="x" string="false">7</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>'
+        xml = '<tool_call><function=terminal><parameter=x>7</parameter></function></tool_call>'
+        for text in [ds, xml]:
+            self.assertEqual(json.loads(self.guard().parse(text)[1][0]['function']['arguments']), {'x':7})
+        for text in [ds.replace('>7<','>true<'), ds.replace('>7<','>{<'), xml.replace('>7<','>True<'), ds.replace('</｜DSML｜ invoke>', '<｜DSML｜ parameter name="x" string="false">8</｜DSML｜ parameter></｜DSML｜ invoke>')]:
+            with self.assertRaises(ModelOutputError): self.guard().parse(text)
 
-    def assert_unavailable(self, text):
-        with self.assertRaises(self.module.ModelOutputError) as raised:
-            self.guard().parse(text)
-        self.assertEqual(raised.exception.code, "unavailable_tool_call")
-        self.assertEqual(raised.exception.error["type"], "model_output_error")
-        self.assertEqual(raised.exception.error["code"], "unavailable_tool_call")
-        self.assertEqual(raised.exception.error["source"], "tensorfold.tool_output_guard")
-        self.assertIn(raised.exception.rejection_id, raised.exception.error["message"])
-        self.assertNotIn("todowrite", str(raised.exception.error))
-        self.assertNotIn("secret", str(raised.exception.error))
+    def test_literal_boundaries_do_not_hide_following_attempts(self):
+        for literal in ['```\n<｜DSML｜ calls><｜DSML｜ invoke name="example">\n```', '> <tool_call>{broken', '`<tool_call>{broken`', '\"<tool_call>{broken\"', "'<tool_call>{broken'"]:
+            self.assertEqual(self.guard().parse(literal),(literal,None))
+            with self.assertRaises(ModelOutputError):
+                self.guard().parse(literal+'\n<tool_call>{broken')
+        with self.assertRaises(ModelOutputError):
+            self.guard().parse('\"'+GOOD+'\" <tool_call>{\"name\":\"missing\",\"arguments\":{}}</tool_call> \"example\"')
+        ds='<｜DSML｜tool_calls><｜DSML｜invoke name="terminal"><｜DSML｜parameter name="x" string="false">7</｜DSML｜parameter></｜DSML｜invoke></｜DSML｜tool_calls>'
+        self.assertEqual(json.loads(self.guard().parse(ds)[1][0]['function']['arguments']),{'x':7})
+        for marker in ['<foo:tool_call>{}</foo:tool_call>', '<|tool_call>call:missing{}<tool_call|>']:
+            with self.assertRaises(ModelOutputError):self.guard().parse(marker)
 
-    def test_diagnostics_identify_wrapper_and_tools_without_arguments(self):
-        cases = (
-            ('<tool_call>{"name":"unoffered","arguments":{"token":"PRIVATE_PAYLOAD"}}</tool_call>', "json"),
-            ('<tool_call><function=unoffered><parameter=x>PRIVATE_PAYLOAD</parameter></function></tool_call>', "qwen_xml"),
-            ('<tool_call>unoffered<arg_key>x</arg_key><arg_value>PRIVATE_PAYLOAD</arg_value></tool_call>', "glm"),
-            ('<｜DSML｜ calls><｜DSML｜ invoke name="unoffered"></｜DSML｜ invoke></｜DSML｜ calls>', "dsml"),
-        )
-        for text, kind in cases:
-            with self.subTest(kind=kind), self.assertRaises(self.module.ModelOutputError) as raised:
+    def test_choice_and_explicit_id_types(self):
+        for choice in [False,0,[],{},'', 'unknown',{'type':'function','function':{'name':'unoffered'}}]:
+            with self.subTest(choice=choice),self.assertRaises(ModelOutputError):
+                self.guard(tool_choice=choice).parse(GOOD)
+        for value in [None,False,0,[],{}]:
+            text='<tool_call>'+json.dumps({'name':'terminal','arguments':{'x':7},'id':value})+'</tool_call>'
+            with self.assertRaises(ModelOutputError):self.guard().parse(text)
+        with self.assertRaises(ModelOutputError):self.guard(parallel_tool_calls=0).parse(GOOD)
+
+    def test_nested_schema_constraints(self):
+        schema={'type':'object','properties':{'nested':{'type':'object','properties':{'n':{'type':'number','minimum':1,'maximum':3},'label':{'enum':['ok','yes']}},'required':['n','label'],'additionalProperties':False},'items':{'type':'array','items':{'type':'integer'},'minItems':1,'uniqueItems':True}},'required':['nested','items'],'additionalProperties':False}
+        tools=[{'type':'function','function':{'name':'check','parameters':schema}}]
+        def parse(args):return ToolOutputGuard(tools).parse('<tool_call>'+json.dumps({'name':'check','arguments':args})+'</tool_call>')
+        self.assertTrue(parse({'nested':{'n':2,'label':'ok'},'items':[1,2]})[1])
+        for args in [{'nested':{'n':True,'label':'ok'},'items':[1]}, {'nested':{'n':4,'label':'ok'},'items':[1]}, {'nested':{'n':2,'label':'bad'},'items':[1]}, {'nested':{'n':2,'label':'ok'},'items':[False]}, {'nested':{'n':2,'label':'ok'},'items':[1,1]}]:
+            with self.assertRaises(ModelOutputError):parse(args)
+        schema['properties']['nested']['properties']['n']['multipleOf']=0.1
+        self.assertTrue(parse({'nested':{'n':1.3,'label':'ok'},'items':[1]})[1])
+        with self.assertRaises(ModelOutputError):parse({'nested':{'n':1.30000000001,'label':'ok'},'items':[1]})
+        schema['properties']['nested']['unsupportedValidation']=True
+        with self.assertRaises(ModelOutputError):parse({'nested':{'n':2,'label':'ok'},'items':[1]})
+
+    def test_schema_contract_wrong_falsy_and_nonfinite(self):
+        def parse(schema):
+            tools=[{'type':'function','function':{'name':'empty','parameters':schema}}]
+            return ToolOutputGuard(tools).parse('<tool_call>{"name":"empty","arguments":{}}</tool_call>')
+        for schema in [{},True,{'type':'object','properties':{},'required':[],'additionalProperties':False}]:
+            self.assertTrue(parse(schema)[1])
+        for schema in [False,None,0,[],{'type':False},{'type':'object','required':False},{'type':'object','minProperties':False},{'type':'object','maxProperties':float('inf')},{'type':'object','additionalProperties':None},{'type':'object','properties':{'unused':{'type':'number','minimum':float('nan')}}},{'type':'object','properties':{'unused':{'minLength':False}}}]:
+            with self.subTest(schema=schema),self.assertRaises(ModelOutputError):parse(schema)
+
+    def test_ids_names_and_limits_are_not_repaired(self):
+        for ident in ('', None, False, 0, [], {}):
+            text = '<tool_call>' + json.dumps({'name':'terminal','arguments':{'x':7},'id':ident}) + '</tool_call>'
+            with self.subTest(ident=ident), self.assertRaises(ModelOutputError):
                 self.guard().parse(text)
-            exc = raised.exception
-            self.assertEqual(exc.diagnostic["wrapper"], kind)
-            self.assertEqual(exc.diagnostic["tool_name"], "unoffered")
-            self.assertEqual(exc.diagnostic["effective_tools"], ["task"])
-            self.assertEqual(exc.diagnostic["span_start"], 0)
-            self.assertEqual(exc.diagnostic["span_end"], len(text))
-            self.assertEqual(len(exc.diagnostic["answer_sha256"]), 64)
-            self.assertNotIn("PRIVATE_PAYLOAD", exc.log_line())
-            self.assertEqual(json.loads(exc.log_line().split("unavailable_tool_call ", 1)[1]), exc.diagnostic)
+        with self.assertRaises(ModelOutputError):
+            self.guard().parse(GOOD + GOOD)
+        for text in (GOOD.replace('terminal', 'TERMINAL'), GOOD + GOOD.replace('call_fixture_exact','second')):
+            with self.subTest(text=text), self.assertRaises(ModelOutputError):
+                self.guard().parse(text, max_calls=1)
+        calls = self.guard().parse(GOOD + GOOD.replace('call_fixture_exact','second'))[1]
+        self.assertEqual([call['id'] for call in calls], ['call_fixture_exact','second'])
+        generated = self.guard().parse(GOOD.replace('"id":"call_fixture_exact",',''))[1][0]['id']
+        self.assertTrue(generated.startswith('call_'))
 
-    def test_filtered_tools_are_distinct_from_unoffered_tools_in_diagnostics(self):
-        guard = self.module.ToolOutputGuard([], request={"tools": self.tools, "tool_choice": "none"})
-        with self.assertRaises(self.module.ModelOutputError) as raised:
-            guard.parse('<tool_call>{"name":"task","arguments":{}}</tool_call>')
-        info = raised.exception.diagnostic
-        self.assertEqual(info["reason"], "disallowed_by_tool_choice")
-        self.assertEqual(info["declared_tools"], ["task"])
-        self.assertEqual(info["effective_tools"], [])
-        self.assertEqual(info["tool_choice"], "none")
+    def test_protocol_in_argument_is_data(self):
+        tools = [{'type':'function','function':{'name':'echo','parameters':{'type':'object','properties':{'text':{'type':'string'}}}}}]
+        value = '<tool_call>{broken}</tool_call><｜DSML｜ calls>'
+        text = '<tool_call>'+json.dumps({'id':'nested_exact','name':'echo','arguments':{'text':value}})+'</tool_call>'
+        calls = ToolOutputGuard(tools).parse(text)[1]
+        self.assertEqual(json.loads(calls[0]['function']['arguments'])['text'], value)
+        self.assertEqual(calls[0]['id'],'nested_exact')
 
-    def test_diagnostics_escape_log_control_characters_and_bound_names(self):
-        name = "unavailable\n" + "x" * 300
-        text = '<tool_call>' + json.dumps({"name": name, "arguments": {"secret": "PRIVATE_PAYLOAD"}}) + '</tool_call>'
-        with self.assertRaises(self.module.ModelOutputError) as raised:
-            self.guard().parse(text)
-        self.assertEqual(len(raised.exception.diagnostic["tool_name"]), 96)
-        self.assertNotIn("\n", raised.exception.log_line())
-        self.assertNotIn("PRIVATE_PAYLOAD", raised.exception.log_line())
-
-    def test_benign_json_task_payload_is_preserved_by_cuda_parser(self):
-        content, calls = self.guard().parse('before <tool_call>{"name":"task","arguments":{"saved":"benign"}}</tool_call> after')
-        self.assertEqual(content, "before  after")
-        self.assertEqual(calls[0]["function"]["name"], "task")
-        self.assertEqual(calls[0]["function"]["arguments"], '{"saved":"benign"}')
-
-    def test_rejects_unknown_json_xml_glm_and_dsml(self):
-        for text in (
-            '<tool_call>{"function":{"name":"todowrite","arguments":{"secret":1}}}</tool_call>',
-            '<tool_call><function=todowrite><parameter=x>secret</parameter></function></tool_call>',
-            '<tool_call>todowrite<arg_key>x</arg_key><arg_value>secret</arg_value></tool_call>',
-            '<｜DSML｜ calls><｜DSML｜ invoke name="todowrite"></｜DSML｜ invoke></｜DSML｜ calls>',
-        ):
-            with self.subTest(text=text): self.assert_unavailable(text)
-
-    def test_unknown_after_valid_call_fails_even_at_limit(self):
-        text = '<tool_call>{"name":"task","arguments":{}}</tool_call><tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
-        with self.assertRaises(self.module.ModelOutputError):
-            self.guard().parse(text, max_calls=1)
-
-    def test_reported_task_envelope_is_rejected_when_task_is_not_offered(self):
-        tools = [{"type": "function", "function": {"name": "todowrite", "parameters": {"type": "object"}}}]
-        text = '<tool_call>{"name":"task","arguments":{"description":"Trace spill internals","prompt":"Research only, no edits.","subagent_type":"explore","task_id":""}}</tool_call>'
-        with self.assertRaises(self.module.ModelOutputError):
-            self.module.ToolOutputGuard(tools).parse(text)
-
-    def test_unknown_json_with_closing_tag_in_argument_is_still_rejected(self):
-        self.assert_unavailable('<tool_call>{"name":"todowrite","arguments":{"secret":"literal </tool_call> text"}}</tool_call>')
-
-    def test_argument_code_and_quotes_are_not_rewritten(self):
-        import json
-        args = {"prompt": 'Explain `x` and ``a ` b``. Quote: "example".\n```python\nx = 1\n```'}
-        text = '<tool_call>' + json.dumps({"name": "task", "arguments": args}) + '</tool_call>'
-        content, calls = self.guard().parse(text)
-        self.assertEqual(content, "")
-        self.assertEqual(json.loads(calls[0]["function"]["arguments"]), args)
-
-    def test_offered_calls_keep_prefix_and_obey_global_limit(self):
-        text = 'prefix <tool_call>{"name":"TASK","arguments":{}}</tool_call> middle <tool_call>{"name":"task","arguments":{}}</tool_call> suffix'
-        content, calls = self.guard().parse(text, max_calls=1)
-        self.assertEqual(content, "prefix  middle  suffix")
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(calls[0]["function"]["name"], "task")
-
-    def test_quoted_fenced_inline_and_blockquote_calls_remain_literal(self):
-        known = '<tool_call>{"name":"task","arguments":{}}</tool_call>'
-        unknown = '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
-        for text in (f'"{known}"', f"'{unknown}'", f'`{known}`', f'> {unknown}', f'```\n{known}\n{unknown}\n'):
-            with self.subTest(text=text):
-                content, calls = self.guard().parse(text)
-                self.assertEqual(content, text)
-                self.assertIsNone(calls)
-
-    def test_long_inline_delimiters_tilde_fences_and_spaced_quotes(self):
-        text = '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
-        for literal in (f'``{text}``', f'~~~json\n{text}\n~~~\n', f'"  {text}  "', f'>> {text}'):
-            with self.subTest(literal=literal):
-                content, calls = self.guard().parse(literal)
-                self.assertEqual(content, literal)
-                self.assertIsNone(calls)
-
-    def test_code_example_followed_by_real_call_is_not_executed_twice(self):
-        literal = '<tool_call>{"name":"task","arguments":{"example":true}}</tool_call>'
-        real = '<tool_call>{"name":"task","arguments":{"example":false}}</tool_call>'
-        content, calls = self.guard().parse('```json\n' + literal + '\n```\n' + real)
-        self.assertIn(literal, content)
-        self.assertEqual(len(calls), 1)
-        self.assertIn('false', calls[0]["function"]["arguments"])
-
-    def test_malformed_and_truncated_wrappers_are_not_misclassified(self):
-        for text in (
-            '<tool_call>{"name":}</tool_call>',
-            '<tool_call>{"name":"todowrite","arguments":{}',
-            '<tool_call>todowrite<arg_key>x</arg_key><arg_value>v</arg_value> extra</tool_call>',
-            'mention <tool_call> only',
-        ):
-            with self.subTest(text=text):
-                content, calls = self.guard().parse(text)
-                self.assertIsNone(calls)
-                self.assertIn(text.replace("</tool_call>", "") if text.endswith("{}") else text[:10], content)
-
-    def test_dsml_parameter_literal_tool_call_is_not_a_top_level_call(self):
-        text = ('<｜DSML｜ calls><｜DSML｜ invoke name="task">'
-                '<｜DSML｜ parameter name="note" string="true">'
-                '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
-                '</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>')
-        content, calls = self.guard().parse(text)
-        self.assertIsNone(calls)
-        self.assertIn("todowrite", content)
-
-
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == '__main__': unittest.main(verbosity=2)

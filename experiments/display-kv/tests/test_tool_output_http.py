@@ -1,7 +1,7 @@
-"""HTTP contracts for the display-KV strict DeepSeek tool-output patch.
+"""CPU HTTP contracts against transformed or actually installed pinned source.
 
-These tests execute the transformer output, rather than an installed checkout.
-They intentionally use no model, CUDA, tokenizers, or chat-template construction.
+Use run_tool_output_cpu.py for a full install into a temporary Git checkout.
+No model, CUDA, tokenizers, or chat-template construction is used.
 """
 
 import http.client
@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 
 ROOT = os.path.dirname(os.path.dirname(__file__))
-SOURCE = os.environ.get("TF_DISPLAY_SOURCE", "/tmp/opencode/tfv41-display-source")
+SOURCE = os.environ.get("TF_DISPLAY_SOURCE", "")
 SRC = os.path.join(SOURCE, "src")
 sys.path.insert(0, SRC)
 
@@ -28,7 +28,7 @@ apply = importlib.util.module_from_spec(apply_spec)
 apply_spec.loader.exec_module(apply)
 
 TOOLS = [{"type": "function", "function": {"name": "task", "parameters": {"type": "object"}}}]
-KNOWN = '<tool_call>{"name":"task","arguments":{"value":1}}</tool_call>'
+KNOWN = '<tool_call>{"id":"call_exact","name":"task","arguments":{"value":1}}</tool_call>'
 UNKNOWN = '<tool_call>{"name":"unoffered","arguments":{"secret":1}}</tool_call>'
 MIXED = '<tool_call><function=task></function></tool_call>' + UNKNOWN
 
@@ -47,6 +47,16 @@ def exec_transformed(name, relative):
 
 
 def load_modules():
+    if not SOURCE:
+        raise RuntimeError("set TF_DISPLAY_SOURCE or use run_tool_output_cpu.py --source")
+    if os.environ.get("TF_TOOL_OUTPUT_INSTALLED") == "1":
+        names = ("tensorfold.cuda.tool_output", "tensorfold.cuda.http", "tensorfold.cuda.server",
+                 "tensorfold.families.deepseek_v41.cuda.app")
+        modules = tuple(importlib.import_module(name) for name in names)
+        for module in modules:
+            if not os.path.realpath(module.__file__).startswith(os.path.realpath(SRC) + os.sep):
+                raise RuntimeError(f"import escaped installed source: {module.__file__}")
+        return modules
     importlib.import_module("tensorfold.cuda")
     tool_spec = importlib.util.spec_from_file_location(
         "tensorfold.cuda.tool_output", os.path.join(ROOT, "overlay", "tool_output.py"))
@@ -79,15 +89,17 @@ class FakeEngine:
         self.calls = []
 
     def generate(self, prompt, max_tokens, sampling, on_tokens, draft=True):
-        route = chr(prompt[-1])
+        prompt_text = "".join(map(chr, prompt))
+        route = chr(prompt[-1]) if prompt_text.startswith("route:") else "fixture"
         text = {"A": KNOWN, "B": UNKNOWN, "C": "ordinary answer", "D": "<think>" + UNKNOWN + "</think>answer",
                 "E": '<｜DSML｜ calls><｜DSML｜ invoke name="task"></｜DSML｜ invoke></｜DSML｜ calls>',
-                "F": MIXED, "G": '```\n' + UNKNOWN + '\n```', "H": '"' + KNOWN + '"'}[route]
+                "F": MIXED, "G": '```\n' + UNKNOWN + '\n```', "H": '"' + KNOWN + '"'}.get(route, prompt_text)
         self.calls.append((route, list(prompt), max_tokens, getattr(self.request, "stop_eos", None)))
         for char in text:  # Deliberately split every envelope across callback rounds.
             if on_tokens([ord(char)]):
                 break
-        return {"generated": len(text), "rounds": len(text)}
+        on_tokens([0])  # EOS: do not mistake fixtures for continuation requests.
+        return {"generated": len(text) + 1, "rounds": len(text)}
 
 
 def app_for(cls, server):
@@ -104,7 +116,7 @@ def app_for(cls, server):
         from tensorfold.server.tools import active_tool_specs
         tools = active_tool_specs(body.get("tools"), body.get("tool_choice"))
         route = body.get("route", "C")
-        return server.PreparedRequest([ord(char) for char in "route:" + route], 1024, tools,
+        return server.PreparedRequest([ord(char) for char in body.get("fixture_text", "route:" + route)], 1024, tools,
                                       bool(body.get("thinking")), None)
 
     app.prepare = prepare
@@ -153,6 +165,10 @@ class ToolOutputHttpTests(unittest.TestCase):
         if tools is not None:
             body["tools"] = tools
         return body
+
+    def test_no_native_modules_loaded(self):
+        for name in ("torch", "tensorfold_cuda", "tensorfold.families.deepseek_v41.cuda.engine"):
+            self.assertNotIn(name, sys.modules)
 
     def test_family_capability_and_generic_legacy_behavior(self):
         self.assertTrue(self.ds_app.strict_tool_output)
@@ -228,7 +244,7 @@ class ToolOutputHttpTests(unittest.TestCase):
                 tail = reply.read().decode()
                 error = next(item["error"] for item in frames(tail) if "error" in item)
                 self.assertEqual(error["source"], "tensorfold.tool_output_guard")
-                self.assertEqual(error["reason"], "unavailable_tool")
+                self.assertEqual(error["reason"], "invalid_executable_tool_output")
                 self.assertIn(error["rejection_id"], error["message"])
                 self.assertNotIn("secret", json.dumps(error))
             finally:
@@ -290,8 +306,8 @@ class ToolOutputHttpTests(unittest.TestCase):
             status, _, text = post(port, self.request("B", tools=TOOLS, tool_choice="none"))
             self.assertEqual(status, 500)
             status, _, text = post(port, self.request("B"))
-        self.assertEqual(status, 200)
-        self.assertIn("unoffered", json.loads(text)["choices"][0]["message"]["content"])
+        self.assertEqual(status, 500)
+        self.assertEqual(json.loads(text)["error"]["code"], "unavailable_tool_call")
 
     def test_strict_path_never_constructs_incremental_tool_streamer(self):
         app = app_for(self.ds_app, self.server)
@@ -300,6 +316,73 @@ class ToolOutputHttpTests(unittest.TestCase):
                 status, _, text = post(port, self.request("A", tools=TOOLS))
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(text)["choices"][0]["message"]["tool_calls"][0]["function"]["name"], "task")
+
+    def test_atomic_schema_protocol_failures_and_recovery(self):
+        bad_schema = {"type": "object", "properties": {"value": {"type": "string"}}}
+        recursive = {"properties": {"value": {"not": {"$ref": "#/$defs/loop"}}},
+                     "$defs": {"loop": {"$ref": "#/$defs/loop"}}}
+        regex = {"properties": {"value": {"pattern": "^(a+)+$"}}}
+        cases = [(TOOLS, KNOWN + UNKNOWN), (TOOLS, KNOWN + '<tool_call>{broken'),
+                 (None, KNOWN), ([], KNOWN)]
+        cases += [([{"type": "function", "function": {"name": "task", "parameters": schema}}], KNOWN)
+                  for schema in (bad_schema, recursive, regex)]
+        for stream in (False, True):
+            app = app_for(self.ds_app, self.server)
+            with http_server(self.http, app) as port:
+                for tools, text in cases:
+                    status, headers, wire = post(port, self.request("C", tools=tools, stream=stream,
+                        fixture_text="PRIVATE_SENTINEL" + text))
+                    self.assertEqual(status, 200 if stream else 500)
+                    self.assertIn('"model_output_error"', wire)
+                    self.assertNotIn("PRIVATE_SENTINEL", wire)
+                    self.assertNotIn("call_exact", wire)
+                    if stream:
+                        self.assertEqual(wire.count("data: [DONE]"), 1)
+                        self.assertFalse(any(choice.get("delta", {}).get(key)
+                            for frame in frames(wire) for choice in frame.get("choices", [])
+                            for key in ("content", "tool_calls")))
+                    else:
+                        self.assertEqual(headers.get("x-should-retry"), "false")
+                    status, _, wire = post(port, self.request("C", stream=stream))
+                    self.assertEqual(status, 200)
+                    self.assertIn("ordinary answer", wire)
+            self.assertEqual(len(app.engine.calls), 2 * len(cases))
+
+    def test_nullable_parallel_and_explicit_false(self):
+        twice = KNOWN + KNOWN.replace("call_exact", "call_second")
+        for stream in (False, True):
+            app = app_for(self.ds_app, self.server)
+            with http_server(self.http, app) as port:
+                for parallel in (None, True, False):
+                    status, _, wire = post(port, self.request("C", stream=stream, parallel_tool_calls=parallel))
+                    self.assertEqual(status, 200)
+                    self.assertIn("ordinary answer", wire)
+                    status, _, wire = post(port, self.request("A", tools=TOOLS, stream=stream,
+                        parallel_tool_calls=parallel, fixture_text=twice))
+                    self.assertEqual(status, 500 if parallel is False and not stream else 200)
+                    self.assertEqual('"model_output_error"' in wire, parallel is False)
+                    if parallel is not False:
+                        self.assertIn("call_exact", wire)
+                        self.assertIn("call_second", wire)
+            self.assertEqual(len(app.engine.calls), 6)
+
+    def test_retry_header_only_for_native_terminal_error(self):
+        native = self.tool.ModelOutputError().error
+        for payload, expected in (({"error": native}, "false"),
+                ({"error": {**native, "source": "other_backend"}}, None),
+                ({"error": {**native, "code": "other_error"}}, None),
+                ({"error": {**native, "type": "other_error"}}, None),
+                ({"error": "ordinary backend failure"}, None)):
+            handler = self.http.make_handler(app_for(self.ds_app, self.server))
+            class ErrorHandler(handler):
+                def do_POST(self):
+                    self.close_connection = True
+                    self._json(500, payload)
+            wrapper = SimpleNamespace(make_handler=lambda app: ErrorHandler)
+            with http_server(wrapper, None) as port:
+                status, headers, _ = post(port, {})
+            self.assertEqual(status, 500)
+            self.assertEqual(headers.get("x-should-retry"), expected)
 
     def test_concurrent_requests_keep_request_tool_sets_isolated(self):
         app = app_for(self.ds_app, self.server)
