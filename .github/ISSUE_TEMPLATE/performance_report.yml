@@ -1,0 +1,73 @@
+name: Performance report
+description: Your prefill, decode or TTFT numbers are different from the README, or you have an A/B result.
+title: "[perf] "
+labels: ["performance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. A performance report is useful only if somebody can run it again. Give the exact settings.
+        For an A/B result, keep all settings identical on both sides, except the change that you test.
+        Use the standard terms: prefill tok/s, decode tok/s, TTFT, prefix cache. docs/BENCHMARKS.md gives the method.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Report type
+      options:
+        - My numbers are lower than the README
+        - My numbers are higher than the README
+        - A/B result of a change
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: The metric, the median and the range of at least 3 runs, and the README number that you compare with.
+      placeholder: |
+        Prefill, 32K-token prompt, prefix cache cold: median 1,950 tok/s (range 1,940 to 1,962, 3 runs)
+        README: 2,179 tok/s
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: How you measured
+      description: The client or test script, the prompt lengths, the number of runs and the prefix-cache state (cold or warm).
+      placeholder: "tests/v41_bench.py, BENCH=1 tests/run_all.sh, or the kit_bench client (give the command)"
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Settings
+      description: For an A/B result, give the values of both sides. They must be identical, except the change that you test.
+      value: |
+        | Setting | A | B |
+        |---|---|---|
+        | Engine image id (`IMAGE`) | | |
+        | `TF_DS_PREFILL_CHUNK` (start.sh) | | |
+        | `SPILL_GIB` | | |
+        | `CONTEXT` / `PARALLEL` / `MTP_DRAFTS` | | |
+        | `MEM_FLOOR_GIB` | | |
+        | Host tuning applied (`scripts/host_tuning.sh`) | | |
+        | Repo commit | | |
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Hardware and software
+      description: The node setup, the OS version, the driver, the CUDA version and the Docker version.
+      placeholder: "2x DGX Spark, DGX OS 24.04.5, driver 580.178.04, CUDA 13.0, Docker 29.6.2"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Raw output
+      description: Attach the logs and the result files (for example `runs/<UTC date>/runall-...`). Remove machine-specific values first.
+      render: text
+    validations:
+      required: true

@@ -1,0 +1,83 @@
+name: Bug report
+description: The server does not start, fails a check, gives wrong output or stops.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Fill in each field. Remove keys, tokens, host names, user names and public IP addresses from what you paste.
+        For a security problem, do not use this form. Read SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect, and what happened?
+      placeholder: |
+        1. I ran ./start.sh
+        2. Rank 1 stopped after 3 minutes with exit code 75
+        Expected: the API answers on port 8888
+    validations:
+      required: true
+  - type: textarea
+    id: nodes
+    attributes:
+      label: Node setup
+      description: Two DGX Spark? The cable and the link state (`ibdev2netdev` on both nodes)? The OS version?
+      placeholder: |
+        2x DGX Spark, one QSFP cable, DGX OS 24.04.5
+        ibdev2netdev: rocep1s0f1 port 1 ==> enp1s0f1np1 (Up) on both nodes
+    validations:
+      required: true
+  - type: input
+    id: driver
+    attributes:
+      label: Driver and CUDA
+      description: The output of `nvidia-smi --query-gpu=driver_version --format=csv,noheader`, and the CUDA version.
+      placeholder: "580.178.04, CUDA 13.0"
+    validations:
+      required: true
+  - type: input
+    id: image
+    attributes:
+      label: Engine image id
+      description: The `IMAGE` value in your `.env`, and the output of `docker image inspect --format '{{.Id}}' "$IMAGE"`.
+      placeholder: "tensorfold-dsv41:07aa02585f64, sha256:..."
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Repo commit
+      description: The output of `git rev-parse --short HEAD` in this repo.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Your .env compared with .env.example
+      description: The output of `diff .env.example .env`. Remove secrets and machine-specific values first.
+      render: diff
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        The output of `./status.sh` and `./verify.sh`, and the last 200 lines of `docker logs tfv41-r0` and `docker logs tfv41-r1`.
+        `./stop.sh` also saves logs to `logs/`. Attach long logs as files.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I ran `scripts/preflight.sh` and fixed each `[FAIL]` line.
+          required: true
+        - label: I read docs/OPERATIONS.md and docs/KNOWN-LIMITS.md.
+          required: true
+        - label: I removed keys, tokens and machine-specific values from this report.
+          required: true

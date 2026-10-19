@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup and operations guide
+    url: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/blob/main/docs/OPERATIONS.md
+    about: Read this first if the server does not start or stops.
+  - name: Known limits
+    url: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/blob/main/docs/KNOWN-LIMITS.md
+    about: What the recipe does not support.
+  - name: Connect your app
+    url: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/blob/main/docs/CONNECT.md
+    about: The client settings for the API.
+  - name: Report a security problem
+    url: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/security
+    about: Do not open a public issue. Read SECURITY.md and report it in private.
