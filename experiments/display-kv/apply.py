@@ -429,7 +429,7 @@ def transform(relative: str | Path, text: str) -> str:
         text = _replace_once(text, 'from tensorfold.cuda.turns import Turns, Yield\n',
             'from tensorfold.cuda.turns import Turns, Yield\nfrom tensorfold.cuda.tool_output import ToolOutputGuard\n', name)
         text = _replace_once(text, '        policy = ToolCallPolicy(body)\n',
-            '        policy = ToolCallPolicy(body)\n        tool_output_guard = (ToolOutputGuard(tools) if chat and getattr(self, "strict_tool_output", False)\n                             and (tools or "tools" in body) else None)\n', name)
+            '        policy = ToolCallPolicy(body)\n        tool_output_guard = (ToolOutputGuard(tools, request=body) if chat and getattr(self, "strict_tool_output", False)\n                             and (tools or "tools" in body) else None)\n', name)
         text = _replace_once(text,
             '        calls_stream = ToolCallStreamer(tools) if tools and not policy.single else None\n',
             '        calls_stream = (ToolCallStreamer(tools) if tools and not policy.single\n                        and tool_output_guard is None else None)\n', name)
@@ -444,10 +444,10 @@ def transform(relative: str | Path, text: str) -> str:
             'from tensorfold.cuda import health\nfrom tensorfold.cuda.tool_output import ModelOutputError\n', name)
         text = _replace_once(text,
             '                except RequestError as exc:\n                    return self._stream_error(error_body(exc, field))\n',
-            '                except RequestError as exc:\n                    return self._stream_error(error_body(exc, field))\n                except ModelOutputError as exc:\n                    print(f"[tensorfold] model output rejected: {exc.code}", flush=True)\n                    return self._stream_error(exc.error)\n', name)
+            '                except RequestError as exc:\n                    return self._stream_error(error_body(exc, field))\n                except ModelOutputError as exc:\n                    print(exc.log_line(), flush=True)\n                    return self._stream_error(exc.error)\n', name)
         text = _replace_once(text,
             '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except RequestCancelled:\n',
-            '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except ModelOutputError as exc:\n                print(f"[tensorfold] model output rejected: {exc.code}", flush=True)\n                return self._json(500, {"error": exc.error})\n            except RequestCancelled:\n', name)
+            '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except ModelOutputError as exc:\n                print(exc.log_line(), flush=True)\n                return self._json(500, {"error": exc.error})\n            except RequestCancelled:\n', name)
         text = _replace_once(text,
             '    except KeyboardInterrupt:\n        pass\n    finally:\n        server.server_close()\n',
             '    except KeyboardInterrupt:\n'

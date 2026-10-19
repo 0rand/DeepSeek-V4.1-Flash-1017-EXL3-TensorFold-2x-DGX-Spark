@@ -171,6 +171,8 @@ class ToolOutputHttpTests(unittest.TestCase):
             error = json.loads(text)["error"]
             self.assertEqual(error["type"], "model_output_error")
             self.assertEqual(error["code"], "unavailable_tool_call")
+            self.assertEqual(error["source"], "tensorfold.tool_output_guard")
+            self.assertIn(error["rejection_id"], error["message"])
             self.assertNotIn("unoffered", error["message"])
             self.assertNotIn("secret", error["message"])
             status, _, text = post(port, self.request("A", tools=TOOLS))
@@ -192,6 +194,46 @@ class ToolOutputHttpTests(unittest.TestCase):
                              for item in payloads if "choices" in item for choice in item["choices"]))
         self.assertEqual(text.count("data: [DONE]"), 1)
         self.assertEqual(len(app.engine.calls), 1)
+
+    def test_reasoning_streams_before_generation_finishes_and_rejection_is_identifiable(self):
+        app = app_for(self.ds_app, self.server)
+        release = threading.Event()
+
+        def generate(prompt, max_tokens, sampling, on_tokens, draft=True):
+            for char in "<think>Working on the request.":
+                on_tokens([ord(char)])
+            if not release.wait(5):
+                raise TimeoutError("client did not receive streaming reasoning")
+            for char in "</think>" + UNKNOWN:
+                on_tokens([ord(char)])
+            return {"rounds": 1}
+
+        app.engine.generate = generate
+        with http_server(self.http, app) as port:
+            connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+            try:
+                body = self.request("B", tools=TOOLS, stream=True, thinking=True)
+                connection.request("POST", "/v1/chat/completions", json.dumps(body), {"Content-Type": "application/json"})
+                reply = connection.getresponse()
+                self.assertEqual(reply.status, 200)
+                while True:
+                    line = reply.readline().decode()
+                    self.assertTrue(line, "stream ended before reasoning was delivered")
+                    if line.startswith("data: {"):
+                        item = json.loads(line[6:])
+                        if any(choice.get("delta", {}).get("reasoning_content") for choice in item.get("choices", [])):
+                            break
+                self.assertFalse(release.is_set())
+                release.set()
+                tail = reply.read().decode()
+                error = next(item["error"] for item in frames(tail) if "error" in item)
+                self.assertEqual(error["source"], "tensorfold.tool_output_guard")
+                self.assertEqual(error["reason"], "unavailable_tool")
+                self.assertIn(error["rejection_id"], error["message"])
+                self.assertNotIn("secret", json.dumps(error))
+            finally:
+                release.set()
+                connection.close()
 
     def test_valid_calls_dsml_and_plain_content_are_structured_or_plain(self):
         app = app_for(self.ds_app, self.server)

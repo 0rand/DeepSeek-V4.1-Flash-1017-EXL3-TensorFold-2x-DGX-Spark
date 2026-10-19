@@ -52,7 +52,10 @@ Non-streaming failures return HTTP 500, not a client-input HTTP 400:
   "error": {
     "type": "model_output_error",
     "code": "unavailable_tool_call",
-    "message": "The model attempted to call a tool not offered by this request."
+      "message": "The model attempted to call a tool not offered by this request. Reason: unavailable_tool; source: tensorfold.tool_output_guard; diagnostic ID: <id>.",
+      "source": "tensorfold.tool_output_guard",
+      "reason": "unavailable_tool",
+      "rejection_id": "<id>"
   }
 }
 ```
@@ -60,7 +63,24 @@ Non-streaming failures return HTTP 500, not a client-input HTTP 400:
 For an established SSE stream the HTTP status remains 200. The server emits
 one error frame with the same error object and then `data: [DONE]`, without a
 normal successful finish or executable tool deltas. The error does not include
-the generated arguments or raw envelope. Logs report only the rejection code.
+the generated arguments or raw envelope. The diagnostic ID is also included in
+the message so clients displaying only the message can identify the failure.
+
+Backend logs contain one bounded JSON diagnostic per rejection, with the same
+`rejection_id`, rejected name (96 characters maximum), wrapper format, declared
+and effective tool names (up to 64 names each), tool-choice mode, matched span
+offsets and an answer SHA-256 fingerprint. No arguments, matched text, reasoning
+or conversation bodies are logged. JSON encoding escapes control characters to
+keep diagnostics on one line. A declared tool excluded by `tool_choice` is
+identified by `reason=disallowed_by_tool_choice`; a name absent from the request
+has `reason=unavailable_tool`. Both retain the `unavailable_tool_call` error code
+and the same fail-closed behavior.
+
+Do not confuse backend errors (`source=tensorfold.tool_output_guard`) with the
+MediaLLMProxy raw-call guard's `invalid_raw_tool_call`. Proxy and backend logs
+are separate evidence sources. These diagnostics do not establish that an
+unquoted protocol example was intended as a tool call; classification itself
+is unchanged.
 
 There is no server-side retry or fallback on this error. A client may have its
 own retry policy, particularly for HTTP 500; clients should treat this explicit

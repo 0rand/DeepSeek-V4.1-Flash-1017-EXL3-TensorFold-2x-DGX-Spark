@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import os
 import sys
 import unittest
@@ -29,12 +30,51 @@ class ToolOutputTests(unittest.TestCase):
         with self.assertRaises(self.module.ModelOutputError) as raised:
             self.guard().parse(text)
         self.assertEqual(raised.exception.code, "unavailable_tool_call")
-        self.assertEqual(raised.exception.error, {
-            "type": "model_output_error", "code": "unavailable_tool_call",
-            "message": "The model attempted to call a tool not offered by this request.",
-        })
+        self.assertEqual(raised.exception.error["type"], "model_output_error")
+        self.assertEqual(raised.exception.error["code"], "unavailable_tool_call")
+        self.assertEqual(raised.exception.error["source"], "tensorfold.tool_output_guard")
+        self.assertIn(raised.exception.rejection_id, raised.exception.error["message"])
         self.assertNotIn("todowrite", str(raised.exception.error))
         self.assertNotIn("secret", str(raised.exception.error))
+
+    def test_diagnostics_identify_wrapper_and_tools_without_arguments(self):
+        cases = (
+            ('<tool_call>{"name":"unoffered","arguments":{"token":"PRIVATE_PAYLOAD"}}</tool_call>', "json"),
+            ('<tool_call><function=unoffered><parameter=x>PRIVATE_PAYLOAD</parameter></function></tool_call>', "qwen_xml"),
+            ('<tool_call>unoffered<arg_key>x</arg_key><arg_value>PRIVATE_PAYLOAD</arg_value></tool_call>', "glm"),
+            ('<｜DSML｜ calls><｜DSML｜ invoke name="unoffered"></｜DSML｜ invoke></｜DSML｜ calls>', "dsml"),
+        )
+        for text, kind in cases:
+            with self.subTest(kind=kind), self.assertRaises(self.module.ModelOutputError) as raised:
+                self.guard().parse(text)
+            exc = raised.exception
+            self.assertEqual(exc.diagnostic["wrapper"], kind)
+            self.assertEqual(exc.diagnostic["tool_name"], "unoffered")
+            self.assertEqual(exc.diagnostic["effective_tools"], ["task"])
+            self.assertEqual(exc.diagnostic["span_start"], 0)
+            self.assertEqual(exc.diagnostic["span_end"], len(text))
+            self.assertEqual(len(exc.diagnostic["answer_sha256"]), 64)
+            self.assertNotIn("PRIVATE_PAYLOAD", exc.log_line())
+            self.assertEqual(json.loads(exc.log_line().split("unavailable_tool_call ", 1)[1]), exc.diagnostic)
+
+    def test_filtered_tools_are_distinct_from_unoffered_tools_in_diagnostics(self):
+        guard = self.module.ToolOutputGuard([], request={"tools": self.tools, "tool_choice": "none"})
+        with self.assertRaises(self.module.ModelOutputError) as raised:
+            guard.parse('<tool_call>{"name":"task","arguments":{}}</tool_call>')
+        info = raised.exception.diagnostic
+        self.assertEqual(info["reason"], "disallowed_by_tool_choice")
+        self.assertEqual(info["declared_tools"], ["task"])
+        self.assertEqual(info["effective_tools"], [])
+        self.assertEqual(info["tool_choice"], "none")
+
+    def test_diagnostics_escape_log_control_characters_and_bound_names(self):
+        name = "unavailable\n" + "x" * 300
+        text = '<tool_call>' + json.dumps({"name": name, "arguments": {"secret": "PRIVATE_PAYLOAD"}}) + '</tool_call>'
+        with self.assertRaises(self.module.ModelOutputError) as raised:
+            self.guard().parse(text)
+        self.assertEqual(len(raised.exception.diagnostic["tool_name"]), 96)
+        self.assertNotIn("\n", raised.exception.log_line())
+        self.assertNotIn("PRIVATE_PAYLOAD", raised.exception.log_line())
 
     def test_benign_json_task_payload_is_preserved_by_cuda_parser(self):
         content, calls = self.guard().parse('before <tool_call>{"name":"task","arguments":{"saved":"benign"}}</tool_call> after')

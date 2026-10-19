@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
+import uuid
 from typing import Any
 
 
@@ -12,11 +14,21 @@ class ModelOutputError(Exception):
 
     code = "unavailable_tool_call"
 
-    def __init__(self, tool_name: str | None = None):
-        message = "The model attempted to call a tool not offered by this request."
+    def __init__(self, tool_name: str | None = None, *, diagnostic: dict | None = None):
+        self.rejection_id = uuid.uuid4().hex[:16]
+        reason = (diagnostic or {}).get("reason", "unavailable_tool")
+        message = ("The model attempted to call a tool not offered by this request. "
+                   f"Reason: {reason}; source: tensorfold.tool_output_guard; diagnostic ID: {self.rejection_id}.")
         super().__init__(message)
-        self.error = {"type": "model_output_error", "code": self.code, "message": message}
+        self.error = {"type": "model_output_error", "code": self.code, "message": message,
+                      "source": "tensorfold.tool_output_guard", "reason": reason, "rejection_id": self.rejection_id}
         self.tool_name = tool_name
+        self.diagnostic = {**(diagnostic or {}), "rejection_id": self.rejection_id,
+                           "source": self.error["source"], "code": self.code,
+                           "tool_name": (tool_name or "")[:96]}
+
+    def log_line(self) -> str:
+        return f"[tensorfold] model output rejected: {self.code} " + json.dumps(self.diagnostic, ensure_ascii=True)
 
 
 class ToolOutputGuard:
@@ -29,8 +41,18 @@ class ToolOutputGuard:
     _glm_args_re = re.compile(r"<arg_key>.*?</arg_key>\s*<arg_value>.*?</arg_value>", re.DOTALL)
     _name_re = re.compile(r"[\w.:-]+\Z")
 
-    def __init__(self, tools: list[dict[str, Any]] | None):
+    def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self.tools = tools or []
+        self.declared_tools = (request.get("tools") or []) if request is not None else self.tools
+        self.tools_field = ("omitted" if request is not None and "tools" not in request else
+                            "nonempty" if self.declared_tools else "empty")
+        choice = request.get("tool_choice", "auto") if request is not None else "auto"
+        if isinstance(choice, dict):
+            function = choice.get("function")
+            name = function.get("name") if isinstance(function, dict) else None
+            self.tool_choice = {"type": "function", "name": str(name or "")[:96]}
+        else:
+            self.tool_choice = str(choice)[:96]
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
         """Return CUDA's parsed result, or fail atomically on an unavailable complete call."""
@@ -40,14 +62,16 @@ class ToolOutputGuard:
 
         known = {tool_spec_name(tool).lower() for tool in self.tools if tool_spec_name(tool)}
         literal = self._literal_spans(text)
-        candidates: list[tuple[int, int, list[str]]] = []
+        candidates: list[tuple[int, int, list[str], str]] = []
         for block in reply_text._DSML_BLOCK_RE.finditer(text):
             names = [match.group(1).strip() for match in reply_text._DSML_INVOKE_RE.finditer(block.group(1))]
             names = [name for name in names if self._name_re.fullmatch(name)]
-            candidates.append((block.start(), block.end(), names))
+            candidates.append((block.start(), block.end(), names, "dsml"))
         for block in self._call_re.finditer(text):
             name = self._call_name(block.group(1))
-            candidates.append((block.start(), block.end(), [name] if name else []))
+            body = block.group(1).lstrip()
+            kind = "json" if body.startswith("{") else "qwen_xml" if body.lower().startswith("<function=") else "glm"
+            candidates.append((block.start(), block.end(), [name] if name else [], kind))
         # A closing tag inside a JSON string is data, not the envelope's end.
         for opening in re.finditer(r"<tool_call>\s*", text, re.IGNORECASE):
             try:
@@ -57,11 +81,11 @@ class ToolOutputGuard:
             closing = re.match(r"\s*</tool_call>", text[size:], re.IGNORECASE)
             if closing:
                 name = self._call_name(text[opening.end():size])
-                candidates.append((opening.start(), size + closing.end(), [name] if name else []))
+                candidates.append((opening.start(), size + closing.end(), [name] if name else [], "json"))
 
         end = -1
         envelopes = []
-        for start, stop, names in sorted(candidates, key=lambda item: (item[0], -item[1])):
+        for start, stop, names, kind in sorted(candidates, key=lambda item: (item[0], -item[1])):
             if start < end:
                 continue
             end = stop
@@ -71,7 +95,19 @@ class ToolOutputGuard:
                 continue
             for name in names:
                 if name.lower() not in known:
-                    raise ModelOutputError(name)
+                    effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})
+                    declared = sorted({tool_spec_name(tool) for tool in self.declared_tools if tool_spec_name(tool)})
+                    raise ModelOutputError(name, diagnostic={
+                        "reason": "disallowed_by_tool_choice" if name.lower() in {value.lower() for value in declared}
+                                  else "unavailable_tool",
+                        "wrapper": kind, "span_start": start, "span_end": stop,
+                        "answer_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                        "effective_tools": [value[:96] for value in effective[:64]],
+                        "effective_tool_count": len(effective),
+                        "declared_tools": [value[:96] for value in declared[:64]],
+                        "declared_tool_count": len(declared),
+                        "tools_field": self.tools_field, "tool_choice": self.tool_choice,
+                    })
 
         # Parse real top-level envelopes without masking or rewriting argument values.
         content, calls, cursor = [], [], 0
