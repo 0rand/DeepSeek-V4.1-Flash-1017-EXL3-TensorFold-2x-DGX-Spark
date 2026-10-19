@@ -8,6 +8,7 @@ import unittest
 import zlib
 from dataclasses import dataclass
 
+import numpy as np
 import torch
 
 MODULE = os.path.join(os.path.dirname(__file__), "..", "overlay", "spill_tier.py")
@@ -26,6 +27,19 @@ class Snap:
     ids: list
     ring: torch.Tensor
     raw: torch.Tensor | None = None
+
+
+@dataclass
+class KeptLike:
+    eid: int
+    base: int
+    size: int
+    top: int
+    host: object
+    snaps: dict
+    replay: bool
+    keys: object
+    tick: int
 
 
 class SpillTierTests(unittest.TestCase):
@@ -103,6 +117,29 @@ class SpillTierTests(unittest.TestCase):
                         "loaded_bytes", "loaded_tokens", "restore_ms_p50", "restore_ms_p95",
                         "write_failed", "crc_failed", "load_failed", "load_unfit", "disk_free_bytes"):
                 self.assertIn(key, info)
+
+    def test_kept_like_object_roundtrip(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            classes = [f"{KeptLike.__module__}:{KeptLike.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+            ids = list(range(100))
+            host = np.arange(100, dtype=np.int32)
+            snaps = {"32": (torch.arange(8, dtype=torch.uint8), None),
+                     "64": (torch.arange(8, dtype=torch.uint8), torch.arange(4, dtype=torch.uint8))}
+            obj = KeptLike(1, 0, 100, 100, host, snaps, False, np.arange(100, dtype=np.int64), 1)
+            job = store.save(ids, obj, skip=("disk", "hits"))
+            self.assertIsNotNone(job)
+            self.assertTrue(store.drain(10))
+            lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            loaded, rows, meta = store.finish_load(lj)
+            self.assertEqual(loaded.eid, 1)
+            self.assertTrue(np.array_equal(loaded.host, host))
+            self.assertEqual(set(loaded.snaps), {"32", "64"})
+            self.assertTrue(torch.equal(loaded.snaps["32"][0], snaps["32"][0]))
+            self.assertIsNone(loaded.snaps["32"][1])
+            self.assertTrue(torch.equal(loaded.snaps["64"][1], snaps["64"][1]))
+            self.assertTrue(np.array_equal(loaded.keys, obj.keys))
 
     def test_save_load_roundtrip(self):
         with tempfile.TemporaryDirectory() as root:
