@@ -87,6 +87,21 @@ class MemoryGuardTests(unittest.TestCase):
         self.refresh(guard, 100)
         self.assertEqual(self.fractions, [1.0])
 
+    def test_cap_can_be_disabled_without_disabling_cache_cleanup_or_telemetry(self):
+        with mock.patch.dict(guard_module.os.environ, {"TF_DS_MEM_CAP": "0"}):
+            guard = self.make()
+        self.refresh(guard, 1.75, 2.75)
+        self.assertEqual(self.fractions, [])
+        self.cuda.empty_cache.assert_called_once()
+        self.assertFalse(guard.last["cap_enabled"])
+        self.assertEqual(guard.last["released_bytes"], GIB)
+        self.assertEqual(guard.last["host_available_bytes"], int(2.75 * GIB))
+
+    def test_invalid_cap_setting_is_rejected(self):
+        with mock.patch.dict(guard_module.os.environ, {"TF_DS_MEM_CAP": "false"}):
+            with self.assertRaisesRegex(ValueError, "TF_DS_MEM_CAP"):
+                self.make()
+
     def test_installer_refreshes_both_rank_prefill_and_decode_paths(self):
         apply_spec = importlib.util.spec_from_file_location("memory_guard_apply", ROOT / "apply.py")
         apply = importlib.util.module_from_spec(apply_spec)

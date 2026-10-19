@@ -136,6 +136,18 @@ class ThinkingSettingsTest(unittest.TestCase):
     def test_explicit_zero_emits_no_thinking(self):
         self.assert_docker_settings({"THINKING": "0"}, "high")
 
+    def test_allocator_cap_switch_reaches_docker(self):
+        for value in ("0", "1"):
+            result, _ = self.invoke(MEM_ALLOCATOR_CAP=value)
+            self.assertEqual(result.returncode, 37, result.stderr)
+            self.assertIn("TF_DS_MEM_CAP=" + value, self.docker_commands()[-1])
+
+    def test_invalid_allocator_cap_stops_before_operations(self):
+        result, operations = self.invoke(MEM_ALLOCATOR_CAP="invalid")
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(self.commands.exists())
+        self.assertFalse(operations.exists())
+
     def test_each_valid_reasoning_effort_reaches_docker_unchanged(self):
         for effort in ("low", "medium", "high", "xhigh"):
             with self.subTest(effort=effort):

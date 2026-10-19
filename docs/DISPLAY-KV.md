@@ -172,6 +172,19 @@ not a reservation against other processes or non-PyTorch allocations, and
 genuine memory exhaustion can still break the distributed lane. Startup logs
 identify the live guard; a broken step logs its last budget in bytes.
 
+For a controlled test without a PyTorch allocator cap, add
+`MEM_ALLOCATOR_CAP=0` to `.env` and keep `MEM_FLOOR_GIB` positive. Updated
+launchers pass this as `TF_DS_MEM_CAP=0` on both ranks. This retains pressure
+cleanup and budget telemetry, but the calculated ceiling is advisory only.
+Startup logs explicitly say `hard cap DISABLED; cleanup only`. The default is
+`MEM_ALLOCATOR_CAP=1`. This switch is implemented by the display overlay, not
+the ordinary upstream image. It is read at startup, not changed live.
+
+Keep earlyoom enabled during this test. Without the allocator cap, a memory
+spike can instead trigger earlyoom or a real CUDA/host OOM; this is a diagnostic
+mode, not proof that every workload fits. `MEM_FLOOR_GIB=0` is different: it
+turns off cleanup and telemetry as well, and is not needed for the cap-only test.
+
 Long-context attention indexing now tiles its packed ordering keys (16 MiB
 per key tile, or one complete row if larger) and builds them in place. This
 preserves the original score ordering and lower-index tie rule. The tile limit

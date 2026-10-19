@@ -10,6 +10,10 @@ case "${THINKING:-1}" in
   0|1) ;;
   *) log "THINKING must be 0 or 1"; exit 1 ;;
 esac
+case "${MEM_ALLOCATOR_CAP:-1}" in
+  0|1) ;;
+  *) log "MEM_ALLOCATOR_CAP must be 0 or 1"; exit 1 ;;
+esac
 case "${REASONING_EFFORT:-high}" in
   low|medium|high|xhigh) ;;
   *) log "REASONING_EFFORT must be low, medium, high or xhigh"; exit 1 ;;
@@ -33,7 +37,7 @@ run_args() {  # $1 = rank. Every TF_DS_* setting below is explained in docs/WHAT
 -e TF_DS_RANK_CACHE=/cache/tf-ds-rank -e TF_DS_RANK_CACHE_READERS=32
 -e TF_DS_WARM_LENGTHS=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,33,131,514,1024,2113 -e TF_DS_ENGRAM=/engram
 -e TF_DS_SPILL_GIB=${SPILL_GIB:-64} -e TF_DS_SPILL_DIR=/cache/tf-ds-spill
--e TF_DS_ENGRAM_DONTNEED=1 -e TF_DS_MEM_FLOOR_GIB=${MEM_FLOOR_GIB:-1.5}
+-e TF_DS_ENGRAM_DONTNEED=1 -e TF_DS_MEM_FLOOR_GIB=${MEM_FLOOR_GIB:-1.5} -e TF_DS_MEM_CAP=${MEM_ALLOCATOR_CAP:-1}
 -e TRITON_CACHE_DIR=/cache/triton -e CUDA_CACHE_PATH=/cache/nv
 -e TF_RDMA_DEVICES=$RDMA_DEVICES -e TF_RDMA_GID_INDEX=$GID_INDEX
 -e NCCL_IB_HCA=$NCCL_IB_HCA -e NCCL_IB_GID_INDEX=$GID_INDEX -e NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME
