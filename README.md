@@ -37,6 +37,7 @@ Prefill with cold prompts (bertholomus's kit_bench client, median of 3 runs):
 - **Ready for AI agents.** Forced tool calls (`tool_choice` set to `required` or to one tool) and structured output (a JSON schema, a regex or a list of choices).
 - **4 concurrent requests.** Up to 4 requests share the two computers. Aggregate decode reaches 140 tok/s on code.
 - **Prefix cache.** A second question about the same long document has a TTFT of about 1 s instead of 13 s. Cached prompts also go to disk, so after a restart the TTFT is about 3 s.
+- **Display-backed KV and SSD spill.** The current baseline maps 1792 MiB of the display reservation per node into a 2.1M-position shared pool and spills kept prompts to a 32 GiB per-rank SSD tier, so long agent sessions survive eviction and restarts.
 - **Fault isolation.** One failed request ends only that request, not the whole server.
 - **1M-token context.** The full 1,048,576-token context window. A needle test with a 1,035,020-token prompt passed.
 
@@ -137,6 +138,73 @@ runtime-only and the launcher prepares them again after a reboot. Full-window
 and near-full-pool validation remain open. See [Display KV](docs/DISPLAY-KV.md)
 for checks, rollback and tests.
 
+#### How the display cache works
+
+The display cache maps the compressed KV and indexer planes into the NVIDIA
+display reservation, which normal compute does not use. The engine then serves
+from a shared pool of 2,109,440 positions; each request still has the model's
+1,048,576-token context limit. The reservation is outside PyTorch's allocator
+accounting and does not appear in `nvidia-smi`'s memory total. Mapped rows move
+through bounded GPU-kernel copies, never through CPU reads or copy engines.
+
+The launcher prepares `nvidia_drm` at runtime on both nodes, runs two full
+integrity sweeps over the mapping, and starts the variant. Preparation refuses
+if an NVIDIA card is scanning out, a GPU compute process is active, or a DRM
+client holds the card. It never stops GDM or the firmware framebuffer console.
+DRM changes are runtime-only; after a reboot, run the launcher again.
+
+#### Display-RAM and SSD spill settings
+
+| Setting | Default | What it does |
+|---|---|---|
+| `TF_DS_DISPLAY_KV_MIB` | 1792 | Display reservation mapped for KV per node (set by the launcher). |
+| `PARALLEL` | 4 | Concurrent streams sharing the pool; display KV requires more than 1. |
+| `CONTEXT` | 1048576 | Per-request context limit; the shared pool is larger. |
+| `PREFILL_CHUNK` | 512 | Smaller chunks reduce temporary prefill memory. |
+| `MEM_FLOOR_GIB` | 1.25 | Host memory kept free; display images raise positive floors below 1.5 GiB to 1.5 GiB. |
+| `SPILL_GIB` | 32 | SSD spill capacity per rank; 0 disables the tier. |
+| `TF_DS_SPILL_DIR` | `/cache/tf-ds-spill` | Spill directory (set by `start.sh`). |
+| `TF_DS_SPILL_HIGHWATER` | 0.70 | Write kept prompts early past this fraction of memory. |
+| `TF_DS_SPILL_MIN` | 4096 | Prompts shorter than this are not spilled. |
+| `TF_DS_SPILL_MIN_FREE_GIB` | 50 | No write leaves less than this much disk free. |
+| `TF_DS_SPILL_KEEP_BUILDS` | 1 | Other builds' spill directories kept at start. |
+| `TF_SPILL_WRITERS` | 2 | Background writer threads per rank. |
+| `TF_SPILL_DIRECT` | 1 | Use O_DIRECT; 0 falls back to buffered writes. |
+| `TF_SPILL_FLUSH_S` | 60 | Shutdown flush budget; the drain waits up to 55 s inside `docker stop -t 60`. |
+
+#### Use patterns
+
+- **Long agent sessions.** The first request fills the prompt; later turns reuse
+  the in-memory prefix. When a prompt leaves the window, the spill tier writes it
+  to disk; a later request that extends it restores the rows instead of
+  prefilling.
+- **Restart persistence.** Prompts whose writes reached disk survive a restart.
+  A validated restart restored a 237568-token prompt in 0.05 s.
+- **Concurrency.** Four streams share the pool; each stream keeps its own request
+  context. The spill tier writes and restores per rank, so both ranks must hold
+  the same prompt.
+- **Monitoring.** `/health["spill"]` and the `spill_*` Prometheus families show
+  entries, bytes, write/load counters, restore latency, failures and free disk.
+  EngineMetrics renders them in its Live Cache panel.
+
+#### Precautions
+
+- Display-RAM is the current baseline, but full-window and near-full-pool
+  operation are not yet validated. Watch host memory, not only CUDA free memory.
+- Do not run another model server, GPU workload or DRM client during
+  preparation or probes. Stop both ranks before `--build` or `--build-only`.
+- Never stop GDM or the firmware framebuffer console to make DRM checks pass.
+- The spill signature includes the model, TensorFold sources, CUDA/torch
+  version, GPU name, KV layout and display size, but ignores the driver version.
+  A source change starts a new spill directory; old stores remain on disk but
+  are not reused. `TF_DS_SPILL_KEEP_BUILDS` controls how many old directories
+  are kept.
+- Spill storage is per rank. A prompt is restored only when every rank has it;
+  otherwise the request fills fresh. Corrupt entries are dropped after a failed
+  restore.
+- `docker stop` sends SIGTERM; the shutdown hook drains queued writes for up to
+  55 s. A SIGKILL or crash can lose queued writes.
+
 ---
 
 ## Connect your app
@@ -203,6 +271,7 @@ The fast engine for this model was written by [bertholomus](https://github.com/b
 4. **Fault isolation.** Before, one failed request stopped all requests until a manual restart. Now it ends only that request.
 5. **Faster long prefills.** The server now drops the page cache of the Engram tables after each prompt chunk. Before, the page cache filled the memory, and some chunks stalled for 1 to 4 s in reclaim and compaction.
 6. **Steady long prefills.** The server writes its spill files with O_DIRECT, so they skip the page cache, and the host setup turns transparent huge pages off. Page compaction stalls the GPU on these computers; these two changes remove the last compaction stalls, and prefill speed now changes by less than 2% from run to run.
+7. **Display-backed KV and SSD spill.** The current baseline maps the NVIDIA display reservation into a shared KV pool and spills kept prompts to a per-rank SSD tier, so long agent sessions survive eviction and restarts.
 
 [Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2), [#3](https://github.com/Elevatormusic/TensorFold/pull/3), [#4](https://github.com/Elevatormusic/TensorFold/pull/4) and [#6](https://github.com/Elevatormusic/TensorFold/pull/6).
 
