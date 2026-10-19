@@ -500,7 +500,7 @@ def transform(relative: str | Path, text: str) -> str:
                 continue
             if key.endswith(("_ms_p50", "_ms_p95")):
                 name, kind, value = f"spill_{key.replace('_ms_', '_seconds_')}", "gauge", value / 1000.0
-            elif key in {"entries", "pending", "stored_bytes", "disk_free_bytes", "highwater", "writers"}:
+            elif key in {"entries", "pending", "stored_bytes", "disk_free_bytes", "highwater", "writers", "gib"}:
                 name, kind = f"spill_{key}", "gauge"
             elif key.endswith("_s"):
                 name, kind = f"spill_{key[:-2]}_seconds_total", "counter"

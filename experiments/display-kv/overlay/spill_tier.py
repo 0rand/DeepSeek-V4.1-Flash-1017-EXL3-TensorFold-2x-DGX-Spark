@@ -1222,8 +1222,9 @@ class SpillStore:
             entries, pending = len(self.index), len(self.pending)
         lat = sorted(s.restore_ms)
         p = (lambda q: round(lat[min(len(lat) - 1, int(q * len(lat)))], 1)) if lat else (lambda q: 0.0)
-        return {"highwater": self.cfg.highwater, "writers": self.cfg.writers, "direct": self.direct,
-                "entries": entries, "pending": pending, "stored_gib": round(self._total() / (1 << 30), 2),
+        return {"gib": self.cfg.gib, "highwater": self.cfg.highwater, "writers": self.cfg.writers,
+                "direct": self.direct, "entries": entries, "pending": pending,
+                "stored_gib": round(self._total() / (1 << 30), 2),
                 "stored_bytes": self._total(), "written": s.written, "skipped": s.skipped, "full": s.full,
                 "no_space": s.no_space, "deferred": s.deferred, "behind": s.behind,
                 "unwritten_evicted": s.unwritten_evicted, "write_failed": s.write_failed, "loaded": s.loaded,

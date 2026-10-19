@@ -113,6 +113,7 @@ class SpillTierTests(unittest.TestCase):
             cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0)
             store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu")
             info = store.info()
+            self.assertEqual(info["gib"], 1)
             for key in ("entries", "stored_bytes", "written", "written_bytes", "loaded",
                         "loaded_bytes", "loaded_tokens", "restore_ms_p50", "restore_ms_p95",
                         "write_failed", "crc_failed", "load_failed", "load_unfit", "disk_free_bytes"):
