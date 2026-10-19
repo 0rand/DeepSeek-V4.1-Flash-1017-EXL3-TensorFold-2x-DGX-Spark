@@ -255,6 +255,72 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         with mock.patch("builtins.print"):
             app._flush_spill()
 
+    def test_spill_share_callback_is_installed(self):
+        relative, text = self.source("multi.py")
+        changed = apply.transform(relative, text)
+        self.assertIn("share=self._share", changed)
+        self.assertIn("def _share(self, values", changed)
+
+    def test_spill_share_returns_rank_zero_values_on_every_rank(self):
+        relative, text = self.source("multi.py")
+        tree = ast.parse(apply.transform(relative, text), filename=str(relative))
+        multi = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MultiDecoder")
+        method = next(node for node in multi.body if isinstance(node, ast.FunctionDef) and node.name == "_share")
+        method.decorator_list, method.returns = [], None
+        for arg in [*method.args.posonlyargs, *method.args.args, *method.args.kwonlyargs]:
+            arg.annotation = None
+
+        class Tensor:
+            def __init__(self, values):
+                self.values = list(values)
+
+            def numel(self):
+                return len(self.values)
+
+        class Torch:
+            int64 = "int64"
+
+            @staticmethod
+            def tensor(values, dtype, device):
+                return Tensor(values)
+
+            @staticmethod
+            def zeros(n, dtype, device):
+                return Tensor([0] * n)
+
+            @staticmethod
+            def cat(tensors):
+                return Tensor([value for tensor in tensors for value in tensor.values])
+
+        class Rows:
+            def __init__(self, rows):
+                self.rows = rows
+
+            def tolist(self):
+                return self.rows
+
+        class Comm:
+            def gather(self, tensor):
+                if len(tensor.values) == 1:
+                    return Rows([[3], [0]])
+                return Rows([[1, 2, 3], [0, 0, 0]])
+
+        namespace = {"torch": Torch}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "_share", "exec"),
+             namespace)
+
+        class Multi:
+            _share = namespace["_share"]
+
+        multi = Multi()
+        multi.e = types.SimpleNamespace(world=2)
+        multi.m = types.SimpleNamespace(comm=Comm())
+        self.assertEqual(multi._share([1, 2, 3]), [1, 2, 3])
+        self.assertEqual(multi._share(None), [1, 2, 3])
+        multi.e.world = 1
+        self.assertEqual(multi._share([4, 5]), [4, 5])
+        self.assertEqual(multi._share(None), [])
+
     def test_install_transforms_minimal_checkout_and_refuses_reinstall(self):
         with tempfile.TemporaryDirectory() as directory:
             checkout = Path(directory)
