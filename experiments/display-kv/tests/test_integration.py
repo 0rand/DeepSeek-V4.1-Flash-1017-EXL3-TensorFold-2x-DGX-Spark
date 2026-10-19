@@ -255,6 +255,12 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         with mock.patch("builtins.print"):
             app._flush_spill()
 
+    def test_spill_signature_ignores_the_driver_version(self):
+        relative, text = self.source("multi.py")
+        changed = apply.transform(relative, text)
+        self.assertIn('build_id(getattr(engine, "model_dir", ".")).split("|driver=")[0]', changed)
+        self.assertNotIn('"dsv41-multi", build_id(getattr(engine, "model_dir", ".")),', changed)
+
     def test_spill_calls_match_the_reused_tier(self):
         relative, text = self.source("multi.py")
         tree = ast.parse(apply.transform(relative, text), filename=str(relative))
