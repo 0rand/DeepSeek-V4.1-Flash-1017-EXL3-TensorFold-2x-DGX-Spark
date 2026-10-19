@@ -172,8 +172,9 @@ bash experiments/display-kv/bundle/start.sh
    overlapping in-memory prefix reuse, and concurrent streams with nonzero
    extent bases. Confirm a request cannot exceed 1M even though the shared pool
    is larger. Measure headroom on both hosts, not only CUDA's free-memory count.
-   Exercise SSD spill with a nonzero `SPILL_GIB`: write, eviction, restore,
-   CRC-failure handling and two-rank agreement.
+   SSD spill write, eviction, restore, CRC-failure handling and two-rank
+   agreement have passed with 32 GiB per rank, four concurrent streams and
+   170K-197K-token prompts. Re-run them after any spill or display change.
 6. Compare equivalent workloads with the ordinary baseline. Full-window,
    near-full-pool, image input and long mixed-concurrency tests are required
    before calling this production-ready. Disk spill is enabled through the

@@ -129,9 +129,10 @@ reads or copy engines. `SPILL_GIB` is inherited from `.env`; a nonzero value
 enables per-rank SSD storage, and both ranks must independently write and
 restore. Queued writes are drained on SIGTERM before exit. In-memory prefix
 reuse is enabled. Two-node integrity, basic inference, 24K-prefix reuse, four
-concurrent 32K+ requests and a depth-65536 benchmark have passed. Full-window,
-near-full-pool, SSD restore and sustained-load operation are not yet established
-as production-safe.
+concurrent 32K+ requests and a depth-65536 benchmark have passed. SSD write,
+eviction, restore, CRC handling and four-stream concurrent restore have also
+passed. Full-window and near-full-pool operation are not yet established as
+production-safe.
 
 ## Disk Spill
 
@@ -146,6 +147,12 @@ the shutdown hook waits up to 55 seconds for queued writes (inside `docker stop 
 The spill signature ignores the driver version, so nodes with frozen, differing
 drivers can share stored prompts; the model, TensorFold sources, CUDA/torch
 version, GPU name, KV layout and display size still gate compatibility.
+
+Live validation on the two-node display recipe: 32 GiB per rank, four concurrent
+streams, 170K-197K-token prompts, disk restores at 4608, 176640 and 195584
+tokens, 26 entries and 43 writes with no write, CRC or load failures; both
+ranks' entry counts matched. Full-window and near-full-pool operation remain
+unvalidated.
 
 ## Live Memory Guard
 
