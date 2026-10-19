@@ -313,9 +313,12 @@ class DisplayKvIntegrationTest(unittest.TestCase):
                 return self.rows
 
         class Comm:
+            def __init__(self, length=3):
+                self.length = length
+
             def gather(self, tensor):
                 if len(tensor.values) == 1:
-                    return Rows([[3], [0]])
+                    return Rows([[self.length], [0]])
                 return Rows([[1, 2, 3], [0, 0, 0]])
 
         namespace = {"torch": Torch}
@@ -330,6 +333,8 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         multi.m = types.SimpleNamespace(comm=Comm())
         self.assertEqual(multi._share([1, 2, 3]), [1, 2, 3])
         self.assertEqual(multi._share(None), [1, 2, 3])
+        multi.m.comm = Comm(length=0)
+        self.assertEqual(multi._share(None), [])
         multi.e.world = 1
         self.assertEqual(multi._share([4, 5]), [4, 5])
         self.assertEqual(multi._share(None), [])

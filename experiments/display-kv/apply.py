@@ -272,6 +272,8 @@ def transform(relative: str | Path, text: str) -> str:
             "            return list(values or [])\n"
             "        n = torch.tensor([len(values) if values is not None else 0], dtype=torch.int64, device=\"cuda\")\n"
             "        length = max(row[0] for row in self.m.comm.gather(n).tolist())\n"
+            "        if length == 0:\n"
+            "            return []\n"
             "        if values is None:\n"
             "            values = [0] * length\n"
             "        t = torch.tensor(values, dtype=torch.int64, device=\"cuda\")\n"
