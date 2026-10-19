@@ -396,6 +396,23 @@ def transform(relative: str | Path, text: str) -> str:
         backing = cache["kv_cache_backing"]
         _family(lines, "kv_cache_backing_info", "gauge", "Backing for this rank's compressed KV and indexer tensors.",
                 [f'{PREFIX}kv_cache_backing_info{{backing="{backing}"}} 1'])
+    spill = cache.get("spill")
+    if isinstance(spill, dict):
+        for key in sorted(spill):
+            value = spill[key]
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            if key.endswith("_gib"):
+                continue
+            if key.endswith(("_ms_p50", "_ms_p95")):
+                name, kind, value = f"spill_{key.replace('_ms_', '_seconds_')}", "gauge", value / 1000.0
+            elif key in {"entries", "pending", "stored_bytes", "disk_free_bytes", "highwater", "writers"}:
+                name, kind = f"spill_{key}", "gauge"
+            elif key.endswith("_s"):
+                name, kind = f"spill_{key[:-2]}_seconds_total", "counter"
+            else:
+                name, kind = f"spill_{key}_total", "counter"
+            _family(lines, name, kind, f"Spill tier: /health's spill.{key}.", [f"{PREFIX}{name} {_num(value)}"])
     _family(lines, "mtp_drafted_total",''', name)
         text = _replace_once(text,
             '            "Tokens in a stream cache divided by that stream\'s context window.",',

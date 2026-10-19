@@ -40,7 +40,7 @@ class Tensor:
         return self.width
 
 
-def fake_engine(*, display: bool = True, live: bool = True):
+def fake_engine(*, display: bool = True, live: bool = True, spill: bool = False):
     shared = Tensor(7, 4)
     kept = types.SimpleNamespace(size=65_536, snaps={"a": (shared, Tensor(3, 8)), "b": [shared]})
     pool = types.SimpleNamespace(
@@ -54,6 +54,14 @@ def fake_engine(*, display: bool = True, live: bool = True):
         decoding["decode"] = types.SimpleNamespace(st=types.SimpleNamespace(sc=types.SimpleNamespace(length=524_288)))
         # The prompt is deliberately larger: telemetry must use partial prefill progress.
         filling.append(types.SimpleNamespace(filled=262_144, prompt=[0] * 1_048_576))
+    spill_info = {
+        "entries": 3, "pending": 1, "stored_bytes": 1234, "written": 2, "written_bytes": 1000,
+        "loaded": 1, "loaded_bytes": 500, "loaded_tokens": 64,
+        "restore_ms_p50": 12.5, "restore_ms_p95": 20.0,
+        "write_failed": 0, "crc_failed": 0, "load_failed": 0, "load_unfit": 0,
+        "disk_free_bytes": 9999, "highwater": 0.7, "writers": 2, "direct": True,
+        "stored_gib": 0.0, "written_gib": 0.0, "loaded_gib": 0.0,
+    }
     multi = types.SimpleNamespace(
         extents=types.SimpleNamespace(total=2_109_440, gaps=[(0, 500_000), (700_000, 1_000_000)]),
         streams=decoding,
@@ -61,6 +69,7 @@ def fake_engine(*, display: bool = True, live: bool = True):
         kept={"retained": kept},
         slots=[None] * 4,
         pool=pool,
+        spill=types.SimpleNamespace(info=lambda: spill_info) if spill else None,
     )
     scheduler = types.SimpleNamespace(decoder=multi, max_streams=4)
     engine = types.SimpleNamespace(multi=multi, scheduler=scheduler, limit=1_048_576)
@@ -132,6 +141,29 @@ class MetricsContractTests(unittest.TestCase):
         body = metrics.render(types.SimpleNamespace(engine=engine))
         self.assertIn('tensorfold:kv_cache_usage_ratio{pool="0"} 0', body)
         self.assertIn('tensorfold:kv_cache_backing_info{backing="cuda"} 1', body)
+
+    def test_spill_info_reaches_health_and_prometheus_gauges(self):
+        metrics, health = self.load_transformed_modules()
+        engine = fake_engine(spill=True)
+        app = types.SimpleNamespace(engine=engine, effective_context_window=engine.limit)
+        tracker = health.Health()
+        body = tracker.snapshot(app)
+        self.assertIn("spill", body)
+        self.assertEqual(body["spill"]["entries"], 3)
+        self.assertEqual(body["spill"]["stored_bytes"], 1234)
+        self.assertEqual(body["spill"]["restore_ms_p50"], 12.5)
+
+        rendered = metrics.render(app)
+        self.assertIn("tensorfold:spill_entries 3", rendered)
+        self.assertIn("tensorfold:spill_stored_bytes 1234", rendered)
+        self.assertIn("tensorfold:spill_disk_free_bytes 9999", rendered)
+        self.assertIn("tensorfold:spill_restore_seconds_p50 0.0125", rendered)
+        self.assertIn("tensorfold:spill_written_total 2", rendered)
+        self.assertIn("tensorfold:spill_loaded_tokens_total 64", rendered)
+        self.assertNotIn("tensorfold:spill_stored_gib", rendered)
+
+        plain = metrics.render(types.SimpleNamespace(engine=fake_engine(spill=False)))
+        self.assertNotIn("tensorfold:spill_", plain)
 
     def test_health_preserves_request_counters_and_metrics_without_hook_stays_unfabricated(self):
         metrics, health = self.load_transformed_modules()

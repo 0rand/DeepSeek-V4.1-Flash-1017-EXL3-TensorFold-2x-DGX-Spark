@@ -25,14 +25,15 @@ class Tensor:
         return self.width
 
 
-def engine(*, display=False, gaps=((0, 2_100_000),), decoding=(), filling=(), kept=()):
+def engine(*, display=False, gaps=((0, 2_100_000),), decoding=(), filling=(), kept=(), spill=None):
     comp = {0: (Tensor(10, 1), Tensor(3, 1))}
     index = {0: (Tensor(6, 2), Tensor(1, 2))}
     pool = SimpleNamespace(comp=comp, index_k=index,
                            display_arena=SimpleNamespace(size=1234) if display else None)
     decoder = SimpleNamespace(extents=SimpleNamespace(total=2_100_000, gaps=list(gaps)), pool=pool,
                               streams={index: stream for index, stream in enumerate(decoding)}, filling=list(filling),
-                              kept={index: item for index, item in enumerate(kept)}, slots=[None, None, None])
+                              kept={index: item for index, item in enumerate(kept)}, slots=[None, None, None],
+                              spill=spill)
     return SimpleNamespace(multi=decoder, limit=1_000_000)
 
 
@@ -95,6 +96,17 @@ class CacheMetricsTests(unittest.TestCase):
         value.multi.pool.comp = {0: Tensor(100, 2)}
         value.multi.pool.index_k = {0: Tensor(20, 2)}
         self.assertEqual(self.metrics.snapshot(value)["kv_cache_payload_bytes"], 240)
+
+    def test_spill_info_is_exported_when_present(self):
+        info = {"entries": 3, "stored_bytes": 1234, "written": 2, "written_bytes": 1000,
+                "loaded": 1, "loaded_bytes": 500, "loaded_tokens": 64,
+                "restore_ms_p50": 12.5, "restore_ms_p95": 20.0,
+                "write_failed": 0, "crc_failed": 0, "load_failed": 0, "load_unfit": 0,
+                "disk_free_bytes": 9999}
+        spill = SimpleNamespace(info=lambda: info)
+        result = self.metrics.snapshot(engine(spill=spill))
+        self.assertEqual(result["spill"], info)
+        self.assertNotIn("spill", self.metrics.snapshot(engine()))
 
 
 if __name__ == "__main__":

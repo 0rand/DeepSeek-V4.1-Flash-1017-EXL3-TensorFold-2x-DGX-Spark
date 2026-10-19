@@ -96,7 +96,7 @@ def snapshot(engine) -> dict:
     limit = int(engine.limit)
     usage = min(1.0, max(occupied, default=0) / limit) if limit > 0 else 0.0
 
-    return {
+    result = {
         "pool_tokens": total,
         "pool_free_tokens": free,
         "pool_used_tokens": max(0, total - free),
@@ -115,3 +115,7 @@ def snapshot(engine) -> dict:
         "kv_cache_backing": backing,
         "kv_cache_bytes_scope": "compressed_kv_and_indexer_per_rank",
     }
+    spill = getattr(decoder, "spill", None)
+    if spill is not None and hasattr(spill, "info"):
+        result["spill"] = spill.info()
+    return result
