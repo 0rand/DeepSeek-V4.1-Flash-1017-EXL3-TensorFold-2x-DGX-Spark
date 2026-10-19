@@ -151,7 +151,8 @@ version, GPU name, KV layout and display size still gate compatibility.
 Live validation on the two-node display recipe: 32 GiB per rank, four concurrent
 streams, 170K-197K-token prompts, disk restores at 4608, 176640 and 195584
 tokens, 26 entries and 43 writes with no write, CRC or load failures; both
-ranks' entry counts matched. Full-window and near-full-pool operation remain
+ranks' entry counts matched. A restart restored a 237568-token prompt from disk
+in 0.05 s (41 ms restore p50). Full-window and near-full-pool operation remain
 unvalidated.
 
 ## Live Memory Guard

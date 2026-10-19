@@ -174,7 +174,8 @@ bash experiments/display-kv/bundle/start.sh
    is larger. Measure headroom on both hosts, not only CUDA's free-memory count.
    SSD spill write, eviction, restore, CRC-failure handling and two-rank
    agreement have passed with 32 GiB per rank, four concurrent streams and
-   170K-197K-token prompts. Re-run them after any spill or display change.
+   170K-197K-token prompts; a restart restored a 237568-token prompt from disk
+   in 0.05 s. Re-run them after any spill or display change.
 6. Compare equivalent workloads with the ordinary baseline. Full-window,
    near-full-pool, image input and long mixed-concurrency tests are required
    before calling this production-ready. Disk spill is enabled through the
