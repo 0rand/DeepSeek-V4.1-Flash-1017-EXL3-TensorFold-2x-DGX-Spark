@@ -363,9 +363,11 @@ def transform(relative: str | Path, text: str) -> str:
             "                    if e.rank == 0:\n"
             "                        print(f\"[tensorfold] spilled prompt {key}: continued at {cut} of {len(s.prompt)} (disk, \"\n"
             "                              f\"{time.perf_counter() - t0:.2f}s)\", flush=True)\n"
-            "                elif e.rank == 0:\n"
-            "                    print(f\"[tensorfold] spilled prompt {key}: a rank could not read it, the prompt fills fresh\",\n"
-            "                          flush=True)\n", name)
+            "                else:\n"
+            "                    self.spill.forget(key)\n"
+            "                    if e.rank == 0:\n"
+            "                        print(f\"[tensorfold] spilled prompt {key}: a rank could not read it, the prompt fills fresh\",\n"
+            "                              flush=True)\n", name)
         text = _replace_once(text, "        sp = self.spill\n"
             "        spilled = sp is not None and all(k.disk is not None for k in kept_now if k.top >= sp.min_top)\n"
             "        for eid in drops:\n"

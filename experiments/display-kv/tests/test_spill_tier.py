@@ -141,6 +141,27 @@ class SpillTierTests(unittest.TestCase):
             self.assertTrue(torch.equal(loaded.snaps["64"][1], snaps["64"][1]))
             self.assertTrue(np.array_equal(loaded.keys, obj.keys))
 
+    def test_corrupt_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+            ids = list(range(100))
+            ring = torch.arange(100 * 4, dtype=torch.uint8).reshape(100, 4)
+            snap = Snap(ids=ids, ring=ring)
+            job = store.save(ids, snap, skip=("ids",))
+            self.assertIsNotNone(job)
+            self.assertTrue(store.drain(10))
+            with open(job.path, "r+b") as f:
+                f.seek(-1, os.SEEK_END)
+                last = f.read(1)
+                f.seek(-1, os.SEEK_END)
+                f.write(bytes([last[0] ^ 0xFF]))
+            lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            with self.assertRaises(Exception):
+                store.finish_load(lj)
+            self.assertEqual(store.info()["crc_failed"], 1)
+
     def test_save_load_roundtrip(self):
         with tempfile.TemporaryDirectory() as root:
             cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)

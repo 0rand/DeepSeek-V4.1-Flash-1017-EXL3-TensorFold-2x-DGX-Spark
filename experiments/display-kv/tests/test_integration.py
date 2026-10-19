@@ -263,7 +263,8 @@ class DisplayKvIntegrationTest(unittest.TestCase):
 
     def test_spill_calls_match_the_reused_tier(self):
         relative, text = self.source("multi.py")
-        tree = ast.parse(apply.transform(relative, text), filename=str(relative))
+        changed = apply.transform(relative, text)
+        tree = ast.parse(changed, filename=str(relative))
         calls = set()
         for node in ast.walk(tree):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
@@ -272,7 +273,8 @@ class DisplayKvIntegrationTest(unittest.TestCase):
                         and value.value.id == "self" and value.attr == "spill"):
                     calls.add(node.func.attr)
         self.assertNotIn("lineage", calls)
-        self.assertTrue({"save", "find", "load_async", "finish_load", "release", "info"} <= calls)
+        self.assertTrue({"save", "find", "load_async", "finish_load", "release", "info", "forget"} <= calls)
+        self.assertIn("self.spill.forget(key)", changed)
 
     def test_spill_share_callback_is_installed(self):
         relative, text = self.source("multi.py")
