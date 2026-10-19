@@ -327,6 +327,17 @@ Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROV
 
 ## Credits and licence
 
+The display-backed KV cache and SSD spill tier are modifications built on
+bertholomus's V4.1 engine. The display cache maps the compressed KV and indexer
+planes into the NVIDIA display reservation, adds a shared pool with a per-request
+context limit, and exposes pool and spill telemetry through `/health` and
+`/metrics`. The SSD spill tier reuses the GLM spill implementation with
+display-safe staging copies, CRC-checked restores, eviction, shutdown draining
+and restart persistence. These changes were developed and validated by
+**opencode** (the DeepSeek V4.1 Flash coding agent) on top of bertholomus's
+engine. **GPT Sol** fixed the improper pre-OOM SIGTERM handling, so earlyoom
+stops the engine cleanly instead of leaving the lane broken.
+
 This recipe stands on the work of DeepSeek (the model), LibertAIDAI (the compressed weights), turboderp (ExLlamaV3), ashhart and the TensorFold contributors, **bertholomus (the fast V4.1 engine this recipe runs)**, willjriley and Capicua25x (engine fixes), MiaAI-Lab (the vLLM kit and the template) and tonyd2wild (the benchmark method). [Full credits](CREDITS.md)
 
 The scripts, tests and documents here are Apache-2.0 ([LICENSE](LICENSE)). The model, the template and the engine keep their own licences.

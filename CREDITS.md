@@ -17,6 +17,19 @@ This recipe stands on other people's work. The table lists what each project giv
 
 The OpenAI Codex review bot reviewed every engine change; its findings and our fixes are on the three fork pull requests.
 
+## Display cache and SSD spill
+
+The display-backed KV cache and SSD spill tier are modifications built on
+bertholomus's V4.1 engine. The display cache maps the compressed KV and indexer
+planes into the NVIDIA display reservation, adds a shared pool with a per-request
+context limit, and exposes pool and spill telemetry through `/health` and
+`/metrics`. The SSD spill tier reuses the GLM spill implementation with
+display-safe staging copies, CRC-checked restores, eviction, shutdown draining
+and restart persistence. These changes were developed and validated by
+**opencode** (the DeepSeek V4.1 Flash coding agent) on top of bertholomus's
+engine. **GPT Sol** fixed the improper pre-OOM SIGTERM handling, so earlyoom
+stops the engine cleanly instead of leaving the lane broken.
+
 ## This repo's licence
 
 Apache-2.0 (see [LICENSE](LICENSE)), the same as TensorFold. It covers the scripts, tests and documents in this repo only. The model weights, the chat template and the engine keep their own licences.
