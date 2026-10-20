@@ -71,7 +71,7 @@ def check_limit():
     """#14: with --vision-max-images 32, 9 and 32 images pass, 33 get the limit message."""
     out = {}
     for n in (9, 32, 33):
-        s, d = post({"messages": image_msg(n, f"How many images are there? Answer with a number.", size=(64, 64)),
+        s, d = post({"messages": image_msg(n, "How many images are there? Answer with a number.", size=(64, 64)),
                      "max_tokens": 16, "temperature": 0, "chat_template_kwargs": {"enable_thinking": False}})
         msg = json.dumps(d.get("error", ""))[:200] if s != 200 else (d["choices"][0]["message"].get("content") or "")[:80]
         out[n] = [s, msg]

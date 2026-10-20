@@ -122,8 +122,8 @@ if __name__ == "__main__":
                          capture_output=True, text=True).stdout.splitlines()
     phases = list(dict.fromkeys(r[3] for r in rows))
     report = {"tag": TAG, "started": started, "requests": reqs, "phases": {p: phase_min(p) for p in phases},
-              "earlyoom_head": [l for l in eo if "sending" in l.lower() or "low memory" in l.lower()][:20],
-              "earlyoom_worker": [l for l in weo if "sending" in l.lower() or "low memory" in l.lower()][:20]}
+              "earlyoom_head": [line for line in eo if "sending" in line.lower() or "low memory" in line.lower()][:20],
+              "earlyoom_worker": [line for line in weo if "sending" in line.lower() or "low memory" in line.lower()][:20]}
     (OUT / f"oom-{TAG}.csv").write_text("t,head_kib,worker_kib,phase\n" + "\n".join(",".join(map(str, r)) for r in rows))
     (OUT / f"oom-{TAG}.json").write_text(json.dumps(report, indent=1))
     print(json.dumps(report["phases"], indent=1))
