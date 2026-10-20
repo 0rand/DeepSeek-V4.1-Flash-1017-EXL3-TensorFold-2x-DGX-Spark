@@ -40,7 +40,7 @@ If you open an issue or a pull request in this repo, read [CONTRIBUTING.md](CONT
 1. One focused change in each pull request, made on a branch from `main`. Do not mix a refactor with a change in behaviour. Do not change unrelated files.
 2. Do not change a protected default ([Default behaviour](CONTRIBUTING.md#default-behaviour)) unless the user asks for it. Then follow the four steps in that section. `tests/test_defaults.py` fails on a silent change.
 3. Run the offline tests and the linters ([Run the tests](CONTRIBUTING.md#run-the-tests)). They must pass before you push.
-4. Give each performance number a saved run under `runs/YYYY-MM-DD/` and a fair A/B ([The evidence rule](CONTRIBUTING.md#the-evidence-rule)). Never write a number that no run shows.
+4. Give each performance number a saved run under `runs/YYYY-MM-DD/` ([The evidence rule](CONTRIBUTING.md#the-evidence-rule)). Never write a number that no run shows. A claim that a change makes something faster or slower also needs a fair A/B ([Performance claims need a fair A/B](CONTRIBUTING.md#performance-claims-need-a-fair-ab)).
 5. Remove secrets and machine-specific values: home paths with a user name, public IP addresses, host names, keys ([No secrets](CONTRIBUTING.md#no-secrets-and-no-machine-specific-values)). `tests/test_machine_values.py` and gitleaks check this.
 6. Use the [pull request template](.github/pull_request_template.md) and fill in every part. Tick exactly one type. Keep the "AI disclosure" block at the bottom, with your model and size, your harness and what you and the user checked. The `pr-template` check fails without them.
 7. If users see the change, add one line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
