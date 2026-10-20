@@ -13,7 +13,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 ### Added
 
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
-- Preflight runs a bounded NCCL socket-bootstrap check in the engine image on each node. It checks that NCCL can create a unique ID with `NCCL_SOCKET_IFNAME`; it does not test the RDMA data path or allocate GPU memory. A failure names the interface and points to `.env`.
+- Opt-in preflight check: set `PREFLIGHT_NCCL_BOOTSTRAP=1` in `.env` and preflight runs a bounded NCCL socket-bootstrap check in the engine image on each node. It is off by default, so `./start.sh` behaves as before. It checks that NCCL can create a unique ID with `NCCL_SOCKET_IFNAME`; it does not test the RDMA data path or allocate GPU memory. A failure names the interface and points to `.env`.
 
 ### Changed
 

@@ -9,10 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NcclBootstrapTests(unittest.TestCase):
-    def probe(self, status=0, timed_out=False):
+    def probe(self, status=0, timed_out=False, gate=None):
         source = (ROOT / "scripts/preflight.sh").read_text()
         start = source.index("if bootstrap=")
         end = source.index("\nfi\n", start) + len("\nfi\n")
+        if gate is not None:                     # the whole check, with the opt-in line around it
+            start = source.index('if [ "${PREFLIGHT_NCCL_BOOTSTRAP')
+            end = source.index("\nfi\nfi\n", start) + len("\nfi\nfi\n")
         fragment = source[start:end]
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -31,6 +34,9 @@ class NcclBootstrapTests(unittest.TestCase):
                 "TIMED_OUT": "1" if timed_out else "0", "IMAGE": "fixture:image",
                 "NCCL_SOCKET_IFNAME": "fixture-net",
             }
+            env.pop("PREFLIGHT_NCCL_BOOTSTRAP", None)
+            if gate:
+                env["PREFLIGHT_NCCL_BOOTSTRAP"] = gate
             # Use the same unquoted heredoc expansion as check_node. Only the
             # extracted fragment runs. It can see no real Docker executable.
             result = subprocess.run(["bash", "-s"], input="bash -s <<EOF\n" + fragment + "EOF\n",
@@ -47,6 +53,23 @@ class NcclBootstrapTests(unittest.TestCase):
         self.assertNotIn("--gpus", args)
         self.assertNotIn("exec", args)
         self.assertIn("ncclGetUniqueId", args[-1])
+
+    def test_the_check_is_off_unless_the_switch_is_1(self):
+        for gate in ("", "0", "yes"):            # "" means the variable is not set
+            with self.subTest(gate=gate):
+                result, args = self.probe(gate=gate)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, "")
+                self.assertEqual(args, [])           # no container is started
+
+    def test_the_check_runs_when_the_switch_is_1(self):
+        result, args = self.probe(gate="1")
+        self.assertIn("OK NCCL socket bootstrap (fixture-net)", result.stdout)
+        self.assertIn("fixture:image", args)
+
+    def test_the_switch_is_listed_in_the_example_and_off(self):
+        example = (ROOT / ".env.example").read_text()
+        self.assertIn("#PREFLIGHT_NCCL_BOOTSTRAP=1", example)
 
     def test_failure_is_one_diagnostic_line(self):
         result, _ = self.probe(status=3)
