@@ -22,7 +22,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Fixed
 
-- README: the free disk you need is about 550 GB (the model view is 414 GB, and the first start needs 110 GiB more for the cache), not 500 GB.
+- README: the free disk you need is about 650 GB (the model view is 414 GB, the first start needs 110 GiB more for the cache, and the default prompt spill can use 64 GiB), not 500 GB. With `SPILL_GIB=0`, about 550 GB is enough.
 - README: the concurrency columns are now "aggregate throughput" (all completion tokens divided by the batch wall time, TTFT included), not "aggregate decode".
 - `docs/CONNECT.md`: the examples show how to send your key when you set `API_KEY_FILE`.
 - `./start.sh` stopped with "Permission denied" on a new clone: `scripts/build_extensions.sh` had no executable bit (#15).

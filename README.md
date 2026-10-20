@@ -47,7 +47,7 @@ Prefill with cold prompts (bertholomus's kit_bench client, median of 3 runs):
 You need:
 
 - **Two NVIDIA DGX Spark**, joined by one QSFP cable between their ConnectX-7 network ports. NVIDIA's [Connect Two Sparks](https://build.nvidia.com/spark/connect-two-sparks) guide shows how to cable them, set fixed addresses, and set up ssh.
-- **About 550 GB of free disk on each computer.** The model files use 414 GB (385 GiB). The first start needs 110 GiB more for the cache, and preflight checks this.
+- **About 650 GB of free disk on each computer.** The model files use 414 GB (385 GiB). The first start needs 110 GiB more for the cache (preflight checks this). With the default `SPILL_GIB=64`, cached prompts can use up to 64 GiB more. With `SPILL_GIB=0`, about 550 GB is enough.
 - **About 100 GB of free memory on each computer.** Close other AI programs first.
 - **A network setup** with fixed addresses on the cable link and ssh from the first computer to the second. Do NVIDIA's guide first, then read [our network notes](docs/NETWORK.md).
 - **Software on the head:** Docker with GPU support (DGX OS has it), Python 3, `curl`, `rsync`, and the [Hugging Face CLI](https://huggingface.co/docs/huggingface_hub/guides/cli) (`hf`). The worker needs Docker and `rsync`.
