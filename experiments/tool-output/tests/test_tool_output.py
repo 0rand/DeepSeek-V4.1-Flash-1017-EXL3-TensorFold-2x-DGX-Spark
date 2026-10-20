@@ -43,14 +43,22 @@ class ToolOutputTests(unittest.TestCase):
         self.assertEqual(guard.stream("a <too"), "a ")
         self.assertEqual(guard.stream("a <tooth"), "a <tooth")
 
-    def test_fenced_example_keeps_streaming_then_real_call_is_held(self):
+    def test_example_in_code_waits_while_streaming_and_stays_literal_at_the_end(self):
+        # Code that is open before a call can end inside the call, so the stream holds the call and parse() decides.
         literal = '```\n<tool_call>{"name":"unoffered"}</tool_call>\n```\n'
         guard = self.guard()
         for size in range(1, len(literal) + 1):
             shown = guard.stream(literal[:size])
             self.assertTrue(literal.startswith(shown))
-        self.assertEqual(guard.stream(literal), literal)
-        self.assertEqual(guard.stream(literal + '<tool_call>{'), literal)
+            self.assertNotIn("<tool_call>", shown)
+        self.assertEqual(guard.stream(literal), "```\n")
+        self.assertEqual(self.guard().parse(literal), (literal, None))
+        self.assertEqual(guard.stream(literal + '<tool_call>{'), "```\n")
+
+    def test_blockquote_line_with_a_call_still_streams(self):
+        text = '> <tool_call>{"name":"unoffered"}</tool_call>\nafter'
+        self.assertEqual(self.guard().stream(text), text)
+        self.assertEqual(self.guard().parse(text), (text, None))
 
     def test_real_argument_backticks_do_not_hide_later_calls(self):
         for argument in ("`", "```\n", "~~~\n", '"', "</tool_call> `", "``a ` b"):
@@ -294,6 +302,40 @@ class ToolOutputTests(unittest.TestCase):
                     self.guard().parse(text)
         # A fence that stays open through the call keeps both calls literal.
         text = "```\n" + offered.format("x") + "\n" + real
+        self.assertEqual(self.guard().parse(text), (text, None))
+
+    def test_stream_holds_a_call_in_open_code_that_can_end_inside_the_call(self):
+        pairs = (("`", "`"), ("``", "``"), ("```\n", "\n```\n"), ("~~~\n", "\n~~~\n"))
+        for opening, closing in pairs:
+            secret = "PRIVATE" + closing
+            # A JSON string cannot hold a raw newline, so the fence cases use the XML form.
+            body = (f"<function=unoffered><parameter=secret>{secret}</parameter></function>" if "\n" in closing
+                    else json.dumps({"name": "unoffered", "arguments": {"secret": secret}}))
+            text = opening + '<tool_call>' + body + '</tool_call>'
+            with self.subTest(opening=opening):
+                guard = self.guard()
+                for size in range(1, len(text) + 1):
+                    shown = guard.stream(text[:size])
+                    self.assertNotIn("PRIVATE", shown)
+                    self.assertNotIn("<tool_call>", shown)
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+
+    def test_a_span_that_ends_and_another_that_begins_inside_the_call_still_counts_as_a_close(self):
+        body = ("<tool_call><function=unoffered><parameter=secret>a`b\n```\nc</parameter></function></tool_call>")
+        for text in ("`" + body, "``" + body.replace("a`b", "a``b")):
+            with self.subTest(text=text[:20]):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+
+    def test_an_escaped_quote_mark_before_the_call_opens_no_quote(self):
+        envelope = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        for text in (f'Example: \\" {envelope} "tail', f"Example: \\' {envelope} 'tail"):
+            with self.subTest(text=text):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+        # An escaped backslash does not escape the mark: this quote is real.
+        text = f'Example: \\\\" {envelope} "tail'
         self.assertEqual(self.guard().parse(text), (text, None))
 
     def test_malformed_and_truncated_wrappers_are_not_misclassified(self):

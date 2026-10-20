@@ -65,7 +65,8 @@ class ToolOutputGuard:
 
         Only a possible opening tag suffix waits for more characters. Once an
         executable opener occurs, the rest waits for final atomic validation.
-        No call delta can escape before a later unoffered call is checked.
+        No call delta can escape before a later unoffered call is checked. An opener inside a code fence or
+        inline code also waits: the code can end inside the call, and only parse() sees the whole call.
         """
         if not text.startswith(self._stream_seen):
             # The text does not extend the text of the last call (a reset or a rewrite): trust nothing, scan again.
@@ -77,7 +78,8 @@ class ToolOutputGuard:
         longest = max(len(tag) for tag in self._openers)
         first = min(self._stream_scanned, len(text))
         for opening in self._opener_re.finditer(text, first):
-            if not self._literal_prefix(text[:opening.start()]):
+            # Code that is open before the opener can end inside the call, so only parse() may call it literal.
+            if not self._in_blockquote(text[:opening.start()]):
                 self._stream_cut = opening.start()
                 return text[:self._stream_cut]
         tail = text[-(longest - 1):].lower()
@@ -87,6 +89,18 @@ class ToolOutputGuard:
         return text[:-held] if held else text
 
     @staticmethod
+    def _escaped(text: str, index: int) -> bool:
+        """True when an odd number of backslashes stand right before ``text[index]``."""
+        run = 0
+        while index - run > 0 and text[index - run - 1] == "\\":
+            run += 1
+        return run % 2 == 1
+
+    @staticmethod
+    def _in_blockquote(prefix: str) -> bool:
+        return bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", prefix.rsplit("\n", 1)[-1]))
+
+    @staticmethod
     def _opens_quote(line: str, mark: str) -> bool:
         """True when the quote mark after ``line`` opens a span: an even number of marks come before it.
 
@@ -94,7 +108,7 @@ class ToolOutputGuard:
         """
         count = 0
         for index, char in enumerate(line):
-            if char != mark or (index and line[index - 1] == "\\"):
+            if char != mark or ToolOutputGuard._escaped(line, index):
                 continue
             if (mark == "'" and 0 < index < len(line) - 1
                     and line[index - 1].isalnum() and line[index + 1].isalnum()):
@@ -104,9 +118,16 @@ class ToolOutputGuard:
 
     @staticmethod
     def _closes_inside(prefix: str, body: str) -> bool:
-        """True when a code fence or inline code open at the end of ``prefix`` closes inside ``body``."""
-        return (ToolOutputGuard._markdown_open(prefix)
-                and not ToolOutputGuard._markdown_open(prefix + body))
+        """True when the code fence or the inline code open at the end of ``prefix`` ends inside ``body``.
+
+        Spans are compared by where they began, so a span that ends and another that begins inside ``body``
+        still count as a close.
+        """
+        before = ToolOutputGuard._markdown_state(prefix)
+        if before == (None, None):
+            return False
+        after = ToolOutputGuard._markdown_state(prefix + body)
+        return any(old is not None and new != old for old, new in zip(before, after))
 
     @staticmethod
     def _literal_prefix(prefix: str, suffix: str | None = None, body: str | None = None) -> bool:
@@ -127,17 +148,23 @@ class ToolOutputGuard:
         if suffix is not None:
             before = last_line.rstrip(" \t")
             quoted = (bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
+                      and not ToolOutputGuard._escaped(before, len(before) - 1)
                       and ToolOutputGuard._opens_quote(before[:-1], before[-1]))
-        return (code
-                or bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", last_line))
-                or quoted)
+        return code or ToolOutputGuard._in_blockquote(prefix) or quoted
 
     @staticmethod
     def _markdown_open(prefix: str) -> bool:
         """True when ``prefix`` ends inside a code fence or inside inline code."""
+        return ToolOutputGuard._markdown_state(prefix) != (None, None)
+
+    @staticmethod
+    def _markdown_state(prefix: str) -> tuple[int | None, int | None]:
+        """Where the open code fence began and where the open inline code began in ``prefix`` (None: not open)."""
         fence = None
         inline = None
+        offset = 0
         for line in prefix.splitlines(keepends=True):
+            base, offset = offset, offset + len(line)
             marker = re.match(r"[ \t]*(`{3,}|~{3,})", line)
             if fence is not None:
                 if (marker and marker.group(1)[0] == fence[0] and len(marker.group(1)) >= fence[1]
@@ -145,15 +172,15 @@ class ToolOutputGuard:
                     fence = None
                 continue
             if marker and inline is None:
-                fence = (marker.group(1)[0], len(marker.group(1)))
+                fence = (marker.group(1)[0], len(marker.group(1)), base)
                 continue
             for token in re.finditer(r"`+", line):
                 width = len(token.group())
                 if inline is None:
-                    inline = width
-                elif inline == width:
+                    inline = (width, base + token.start())
+                elif inline[0] == width:
                     inline = None
-        return fence is not None or inline is not None
+        return (fence[2] if fence else None, inline[1] if inline else None)
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
         """Return CUDA's parsed result, or fail atomically on an unavailable complete call."""
