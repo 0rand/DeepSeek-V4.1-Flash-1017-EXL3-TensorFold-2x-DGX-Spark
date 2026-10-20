@@ -51,7 +51,8 @@ jobs:
               core.info(`label: ${want}`);
             }
 
-            const disclosure = /<summary>\s*AI disclosure\s*<\/summary>([\s\S]*?)<\/details>/i.exec(body);
+            // the whole block: <details>, then the summary, then </details> (a block without its opening tag fails)
+            const disclosure = /<details>\s*<summary>\s*AI disclosure\s*<\/summary>([\s\S]*?)<\/details>/i.exec(body);
             const ai = disclosure && /^\s*AI:\s*(.+)$/m.exec(disclosure[1]);
             const checked = disclosure && /^\s*Checked:\s*(.*)$/m.exec(disclosure[1]);
             const placeholder = /<[^<>]+>/;                   // an unchanged template value, e.g. <harness>

@@ -1,7 +1,8 @@
 # Offline checks for every pull request and every push to main. They run on GitHub-hosted runners with no GPU,
 # no server and no .env. Tests that need a GPU, a server or the tensorfold package skip themselves.
-# The job names (shellcheck, python, markdown-links, workflows, secrets) are the required status checks of the main
-# ruleset: if you rename a job, change the ruleset too.
+# The job names (shellcheck, python, markdown-links, workflows) are required status checks of the main ruleset:
+# if you rename a job, change the ruleset too. The secret scan (job secrets) is in secret-scan.yml: it must run from
+# the base branch.
 name: ci
 
 on:
@@ -99,41 +100,3 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: zizmor --format github .github/workflows/
-
-  secrets:
-    name: secrets
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    env:
-      GITLEAKS_VERSION: "8.30.1"
-      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      # gitleaks scans every commit for keys and tokens. The binary is pinned by version and SHA-256.
-      # tests/test_machine_values.py (job "python") checks home paths and public IP addresses.
-      # The binary and its config stay in RUNNER_TEMP, outside the checkout. A pull request must not change them:
-      # a .gitleaks.toml in the checkout could turn the default rules off.
-      - name: Install gitleaks
-        run: |
-          cd "$RUNNER_TEMP"
-          f="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl -fsSLo "$f" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/$f"
-          echo "${GITLEAKS_SHA256}  $f" | sha256sum -c -
-          tar -xzf "$f" gitleaks
-          printf '[extend]\nuseDefault = true\n' > gitleaks.toml
-          mkdir -p no-ignore
-      # gitleaks also loads <source>/.gitleaksignore whatever --gitleaks-ignore-path says, so a pull request could
-      # hide its own leak with one. The job refuses such a file.
-      - name: Refuse a .gitleaksignore in the checkout
-        run: |
-          if [ -e .gitleaksignore ]; then
-            echo "::error file=.gitleaksignore::remove .gitleaksignore: the secret scan does not accept repo ignores"
-            exit 1
-          fi
-      - name: gitleaks (all commits)
-        run: >-
-          "$RUNNER_TEMP/gitleaks" git . --config "$RUNNER_TEMP/gitleaks.toml"
-          --gitleaks-ignore-path "$RUNNER_TEMP/no-ignore" --redact --no-banner --exit-code 1

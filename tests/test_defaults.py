@@ -20,6 +20,7 @@ PROTECTED = {
     "PARALLEL": "4",
     "MTP_DRAFTS": "5",
     "SPILL_GIB": "64",
+    "THINKING": "0",
     # The engine build. A change here must come with new gate results (see CONTRIBUTING.md).
     "TF_COMMIT": "07aa02585f64",
     "IMAGE": "tensorfold-dsv41:07aa02585f64",
@@ -34,6 +35,7 @@ FORWARDED = {
     "MTP_DRAFTS": "--mtp-drafts",
     "IMAGE": "--entrypoint tensorfold",
     "SPILL_GIB": "TF_DS_SPILL_GIB=",
+    "REASONING_EFFORT": "--reasoning-effort",
 }
 
 
@@ -71,12 +73,13 @@ class ProtectedDefaults(unittest.TestCase):
                                  f"start.sh passes {option} without ${key}. {HOW}")
 
     def test_thinking_off(self):
+        """Thinking is off unless THINKING=1: the only --thinking in start.sh is the THINKING=1 branch."""
         text = start_sh()
-        self.assertIn("--no-thinking", text, f"start.sh must start the server with thinking off. {HOW}")
-        self.assertIsNone(re.search(r"(?<!no-)--thinking\b", text), f"start.sh turns thinking on. {HOW}")
-        env = env_example()
-        if "THINKING" in env:
-            self.assertEqual(env["THINKING"], "0", f".env.example turns thinking on. {HOW}")
+        switch = '$( [ "${THINKING:-0}" = 1 ] && echo --thinking || echo --no-thinking )'
+        self.assertIn(switch, text, f"start.sh must start the server with thinking off unless THINKING=1. {HOW}")
+        self.assertIsNone(re.search(r"(?<!no-)--thinking\b", text.replace(switch, "")),
+                          f"start.sh turns thinking on. {HOW}")
+        self.assertEqual(env_example().get("THINKING"), "0", f".env.example turns thinking on. {HOW}")
 
     def test_prefill_chunk(self):
         m = re.search(r"TF_DS_PREFILL_CHUNK=(?:\$\{PREFILL_CHUNK:-)?(\d+)", start_sh())

@@ -12,7 +12,7 @@ Read the [Code of Conduct](CODE_OF_CONDUCT.md) first. To report a security probl
 5. Run the offline tests ([Run the tests](#run-the-tests)). They must pass.
 6. If your change touches the serving path, run the live checks on your own pair. Save the output under `runs/YYYY-MM-DD/` ([The evidence rule](#the-evidence-rule)).
 7. If users see the change, add one line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
-8. Open a pull request. Fill in every part of the template.
+8. Open a pull request. Fill in every part of the template. Do not give your branch a name that looks like a commit SHA (for example 40 hex characters): GitHub then does not start the secret scan, and the pull request cannot merge.
 
 For a question, use [Discussions](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/discussions), not an issue.
 
@@ -64,7 +64,7 @@ These defaults are important. Do not change them silently:
 
 | Setting | Where | Default |
 |---|---|---|
-| Thinking off for requests that do not ask for it (`--no-thinking`) | `start.sh` | off |
+| Thinking off for requests that do not ask for it (`THINKING`, `--no-thinking`) | `.env.example`, `start.sh` | `0` (off) |
 | Bind address (`BIND_HOST`) | `.env.example` | `127.0.0.1` (this node only) |
 | Prefill chunk (`TF_DS_PREFILL_CHUNK`) | `start.sh` | `2048` |
 | Prompt spill to disk (`SPILL_GIB`) | `.env.example` | `64` |
