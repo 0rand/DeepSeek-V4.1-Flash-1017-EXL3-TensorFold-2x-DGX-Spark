@@ -11,7 +11,7 @@ it releases executable call deltas. It returns a safe error instead.
 
 ## Build and select
 
-Build the ordinary pinned image first. See [the main recipe](../../README.md).
+Build the ordinary pinned image first. See [the main recipe](../README.md).
 Then run this command from the recipe root:
 
 ```bash
@@ -27,7 +27,7 @@ experiments/tool-output/transfer.sh tensorfold-dsv41:07aa02585f64-tool-output
 
 Set `IMAGE=tensorfold-dsv41:07aa02585f64-tool-output` in your local `.env` on the head.
 Keep `BIND_HOST=127.0.0.1`. Start only one model server.
-Run `./verify.sh`. Use the authentication settings in [CONNECT](../../docs/CONNECT.md).
+Run `./verify.sh`. Use the authentication settings in [CONNECT](CONNECT.md).
 To return to the ordinary engine, stop the server and restore the original `IMAGE`.
 
 This image has not had a live two-rank serving check. Do that check before production use.
