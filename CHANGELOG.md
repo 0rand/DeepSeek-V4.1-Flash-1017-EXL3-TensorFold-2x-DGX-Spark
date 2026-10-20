@@ -12,6 +12,9 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Added
 
+- Optional, experimental display-backed KV variant (pull request #6, by 0rand): `./start-display-kv.sh` starts a derived image that maps the NVIDIA display reservation into a 2.1M-position KV pool. `./start.sh` does not change. The launcher has its own settings (`MEM_ALLOCATOR_CAP`, `STRICT_TOOL_OUTPUT`). `docs/DISPLAY-KV.md` has the measured cost: the testers saw a lower prefill tok/s.
+- A tool-output guard in the display image: a model answer that calls a tool the request did not offer gets an explicit error (HTTP 422, or an error frame in a stream). It is on in the display launcher. `STRICT_TOOL_OUTPUT=0` in `.env` turns it off. See `docs/TOOL-OUTPUT.md`.
+- A live memory guard, a patched SSD spill with a shutdown drain on both ranks, and cache telemetry in `/health` and `/metrics` (display image only).
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
 
 ### Changed
@@ -27,6 +30,8 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Repo
 
+- `runs/` keeps the `runs/YYYY-MM-DD/` layout with an `INDEX.md` for each day. The tester reports of pull request #6 are saved there. A 5,963-line tool-call transcript of the pull request is not kept.
+- The experiment tests of `experiments/display-kv/` skip when torch or the pinned TensorFold source is absent, so the offline CI job passes without them.
 - CI: a defaults guard test, a home-path and public-IP scan, workflow checks (actionlint, zizmor) and a secret scan (gitleaks).
 - CI: the secret scan refuses a `.gitleaksignore` in the checkout, because gitleaks loads it in any case.
 - CI: the secret scan runs from the base branch (`secret-scan.yml`, `pull_request_target`), so a pull request cannot change it.

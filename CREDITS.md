@@ -17,18 +17,11 @@ This recipe stands on other people's work. The table lists what each project giv
 
 The OpenAI Codex review bot reviewed every engine change; its findings and our fixes are on the three fork pull requests.
 
-## Display cache and SSD spill
+## Display-backed KV
 
-The display-backed KV cache and SSD spill tier are modifications built on
-bertholomus's V4.1 engine. The display cache maps the compressed KV and indexer
-planes into the NVIDIA display reservation, adds a shared pool with a per-request
-context limit, and exposes pool and spill telemetry through `/health` and
-`/metrics`. The SSD spill tier reuses the GLM spill implementation with
-display-safe staging copies, CRC-checked restores, eviction, shutdown draining
-and restart persistence. These changes were developed and validated by
-**opencode** (the DeepSeek V4.1 Flash coding agent) on top of bertholomus's
-engine. **GPT Sol** fixed the improper pre-OOM SIGTERM handling, so earlyoom
-stops the engine cleanly instead of leaving the lane broken.
+**0rand** wrote the optional display-backed KV variant (`./start-display-kv.sh`, `experiments/display-kv/`): the display KV pool, the patched SSD spill, the live memory guard, the tool-output guard, the cache telemetry and the EngineMetrics adapter. It builds on bertholomus's V4.1 engine. The notes of the author credit the opencode coding agent for development and GPT Sol for a fix to the SIGTERM handling before an out-of-memory kill.
+
+**Sora39831** and **hjasond** tested the pull request on their own nodes. Sora39831's measured runs are in `runs/2026-10-19/` and `runs/2026-10-20/`.
 
 ## This repo's licence
 

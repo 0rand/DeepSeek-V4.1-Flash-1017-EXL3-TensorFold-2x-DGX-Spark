@@ -1,120 +1,159 @@
 # Tool Output Hardening
 
-This change is included in the display-KV image installer. Live JSON rejection,
-SSE rejection, offered-tool recovery and default-thinking checks passed on
-2026-10-19 with image `tensorfold-dsv41:display-kv-fe26bd75d49e`. The original
-base image is not modified. An actual OpenCode-session retest is still pending.
+This guard is part of the display-KV image (`experiments/display-kv/`). It
+rejects a model answer that calls a tool the request did not offer. It does not
+change the base image.
+
+## On and off
+
+| Path | State of the guard |
+|---|---|
+| `./start-display-kv.sh` | ON by default. The bundle sets `TF_DS_STRICT_TOOL_OUTPUT=1`. |
+| `./start-display-kv.sh` with `STRICT_TOOL_OUTPUT=0` in `.env` | OFF. The bundle sets `TF_DS_STRICT_TOOL_OUTPUT=0`. |
+| `./start.sh` (default launcher, stock image) | The guard code is not in the image. No change. |
+| The display image started with another launcher | OFF, unless you set `TF_DS_STRICT_TOOL_OUTPUT=1` yourself. |
+
+The switch is independent of the display-KV allocation. `STRICT_TOOL_OUTPUT` is
+the only `.env` name. `./start-display-kv.sh` checks it and refuses any value
+other than `0` or `1`. To turn the guard off:
+
+```bash
+# in .env
+STRICT_TOOL_OUTPUT=0
+```
+
+Then start `./start-display-kv.sh` again. A running container does not change.
 
 ## Behaviour
 
 The DeepSeek-V4.1 app rejects a complete tool-call envelope when it names a tool
-not offered by that request. This includes the reported case of `task` being
-generated while only other tools are available in the selected OpenCode agent.
-It never enables a denied tool, repairs arguments, substitutes another name, or
-retries a rejected model response.
+that the request did not offer. One reported case: the model generates `task`
+while the selected agent offers other tools only. The guard never enables a
+denied tool. It never repairs arguments, never replaces a name and never retries
+a rejected answer.
 
-The effective offered set is used after `tool_choice` filtering. If a request
-declares tools but selects `tool_choice: none`, a generated tool call is still
-rejected. Requests without a tools field and other TensorFold families retain
-their existing behaviour.
+The guard uses the offered set after `tool_choice` filtering. If a request
+declares tools and sets `tool_choice: none`, a generated tool call is still
+rejected. A request without a tools field keeps the old behavior. Other
+TensorFold model families keep the old behavior.
 
-Recognized complete envelopes are JSON, Qwen function/parameter XML and GLM
-argument tags inside `<tool_call>`, plus DeepSeek-V4.1's spaced DSML calls block.
-Explicitly quoted, inline-code, fenced-code and Markdown blockquote examples
-remain content rather than becoming executable calls. The same applies to tool
-syntax appearing inside reasoning, which is separated before answer validation.
-Unquoted protocol markup is considered an attempted call; the server cannot
-reliably infer that an unquoted call was merely an example.
+The guard reads these envelopes:
 
-Malformed and truncated envelopes are outside this first patch's error
-classification. They are not mislabeled as unavailable tools, and can still
-surface through the existing permissive parser. Argument schema validation and
-model-level reliability are not fixed by this change. Existing parser JSON
-normalization remains in place; argument values are not fuzzily repaired or
-rewritten by the new guard.
+- JSON inside `<tool_call>`
+- Qwen function/parameter XML inside `<tool_call>`
+- GLM argument tags inside `<tool_call>`
+- the DeepSeek-V4.1 spaced DSML calls block
+
+An example stays content and does not become a call when it is quoted, in inline
+code, in a fenced code block or in a Markdown blockquote. The same applies to
+tool syntax inside reasoning, which the server splits off before it checks the
+answer. Unquoted protocol markup counts as an attempted call. The server cannot
+know that an unquoted call is only an example.
+
+A real call can contain an unclosed code fence or a stray backtick in its
+arguments. That text does not hide a later call. The classifier takes each
+accepted call out of the text before it looks for literal spans in the rest.
+
+A malformed or truncated envelope has no error class in this change. The guard
+does not label it "unavailable tool", and the existing permissive parser can
+still pass it. The guard does not check argument schemas. It does not make the
+model more reliable.
 
 ## Streaming
 
-For strict DeepSeek requests with tools, answer content and all executable tool
-deltas are buffered until the complete answer passes validation. Reasoning can
-still stream separately. This prevents an offered call from being emitted before
-a later unoffered call invalidates the response. It also means plain answer text
-on tool-enabled requests arrives at completion rather than token by token.
+For a request with tools, the server sends answer text in two parts:
 
-The validation state is local to each request. Rejecting a response happens
-after model generation and does not break the distributed inference lane. A
-subsequent request can run normally.
+1. Text before the first possible tool-call opening tag is sent at once. The
+   server also holds back a trailing partial opening tag.
+2. The rest of the answer waits until the full answer passes validation. All
+   tool-call deltas arrive at the end, after the check.
 
-Non-streaming failures return HTTP 500, not a client-input HTTP 400:
+This keeps an offered call from reaching the client before a later unoffered
+call makes the answer invalid. Reasoning streams as before. A tool-enabled
+answer that starts with plain text shows that text during decode. A tool-call
+block arrives when decode ends.
+
+The validation state belongs to one request. A rejection happens after the model
+generates. It does not break the distributed inference lane, and the next
+request runs as normal.
+
+## Errors
+
+In non-stream mode the server returns HTTP 422, not 500. A client may retry a 5xx
+response. It should not retry a response that cannot change.
 
 ```json
 {
   "error": {
     "type": "model_output_error",
     "code": "unavailable_tool_call",
-      "message": "The model attempted to call a tool not offered by this request. Reason: unavailable_tool; source: tensorfold.tool_output_guard; diagnostic ID: <id>.",
-      "source": "tensorfold.tool_output_guard",
-      "reason": "unavailable_tool",
-      "rejection_id": "<id>"
+    "message": "The model attempted to call a tool not offered by this request. Reason: unavailable_tool; source: tensorfold.tool_output_guard; diagnostic ID: <id>.",
+    "source": "tensorfold.tool_output_guard",
+    "reason": "unavailable_tool",
+    "rejection_id": "<id>"
   }
 }
 ```
 
-For an established SSE stream the HTTP status remains 200. The server emits
-one error frame with the same error object and then `data: [DONE]`, without a
-normal successful finish or executable tool deltas. The error does not include
-the generated arguments or raw envelope. The diagnostic ID is also included in
-the message so clients displaying only the message can identify the failure.
+In an SSE stream the HTTP status stays 200. The server sends one error frame
+with the same error object, then `data: [DONE]`. It sends no normal finish and
+no tool-call delta. Text sent before the first possible tag (see Streaming)
+stays sent. The error does not contain the generated arguments or the raw
+envelope. The diagnostic ID is also in the message text, so a client that shows
+only the message can still report it.
 
-Backend logs contain one bounded JSON diagnostic per rejection, with the same
-`rejection_id`, rejected name (96 characters maximum), wrapper format, declared
-and effective tool names (up to 64 names each), tool-choice mode, matched span
-offsets and an answer SHA-256 fingerprint. No arguments, matched text, reasoning
-or conversation bodies are logged. JSON encoding escapes control characters to
-keep diagnostics on one line. A declared tool excluded by `tool_choice` is
-identified by `reason=disallowed_by_tool_choice`; a name absent from the request
-has `reason=unavailable_tool`. Both retain the `unavailable_tool_call` error code
-and the same fail-closed behavior.
+The backend log has one bounded JSON line for each rejection. It contains:
 
-Do not confuse backend errors (`source=tensorfold.tool_output_guard`) with the
-MediaLLMProxy raw-call guard's `invalid_raw_tool_call`. Proxy and backend logs
-are separate evidence sources. These diagnostics do not establish that an
-unquoted protocol example was intended as a tool call; classification itself
-is unchanged.
+- the same `rejection_id`
+- the rejected name (96 characters at most)
+- the wrapper format
+- the declared and effective tool names (64 names each at most)
+- the tool-choice mode
+- the offsets of the matched span
+- a SHA-256 fingerprint of the answer
 
-There is no server-side retry or fallback on this error. A client may have its
-own retry policy, particularly for HTTP 500; clients should treat this explicit
-error code as a failed model response rather than repeatedly submitting it.
+It never contains arguments, matched text, reasoning or conversation bodies. A
+declared tool that `tool_choice` excludes has `reason=disallowed_by_tool_choice`.
+A name that the request does not contain has `reason=unavailable_tool`. Both use
+the code `unavailable_tool_call`, and both fail closed.
 
-## Activation And Tests
+Do not confuse these errors (`source=tensorfold.tool_output_guard`) with the
+`invalid_raw_tool_call` error of the MediaLLMProxy raw-call guard. The proxy and
+the backend write separate logs.
 
-An explicit `./start-display-kv.sh --build` includes changes to the guard and
-selects an updated source-tagged image. A plain launch reuses the saved image,
-without rebuilding or copying. The guard applies to this image's DeepSeek app
-whether or not its display allocation is enabled. Existing running containers
-are immutable and are not changed by staging or testing this patch.
+The server does not retry or fall back after this error. A client must treat the
+code as a failed model response and must not send the same request again in a
+loop.
 
-With a pristine pinned TensorFold checkout:
+## Tests
+
+Tests need a checkout of the pinned TensorFold revision. They skip when it is
+absent.
 
 ```bash
 TF_DISPLAY_SOURCE=/path/to/TensorFold PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/display-kv/tests -v
 ```
 
-Classifier tests cover offered/unoffered JSON, XML, GLM and DSML, literals,
-nested argument text and global call limits. Fake-engine HTTP tests cover
-streaming and non-streaming errors, mixed-call atomicity, concurrent requests,
-recovery and one generation per rejected request. They run an ephemeral local
-HTTP server, not the model service, and do not load CUDA or real model weights.
+- The classifier tests cover offered and unoffered JSON, XML, GLM and DSML calls,
+  literals, nested argument text, open fences inside real calls and global call
+  limits.
+- The fake-engine HTTP tests cover stream and non-stream errors, text before a
+  call, mixed-call atomicity, concurrent requests, recovery, one generation per
+  rejected request and the off switch. They start a local HTTP server. They do
+  not use CUDA or model weights.
 
-After deployment, test in an OpenCode agent where `task` remains unavailable.
-Do not enable the tool to make the test pass. Also verify normal tool calls,
-tool-result round trips, plain answers and literal syntax examples. Host-memory
-pressure and SSD spill support are separate issues; this guard changes neither.
+`tests/live_tool_hardening.py` sends model-backed probes to a running server. It
+does not run or retry the generated calls. The saved live files are in
+`runs/2026-10-19/`. In those files the core rejection checks induced an unoffered
+`task` call. Two other probes (mixed-call atomicity, a literal copy) did not
+induce their fixtures: the model chose an offered call only, or it refused to
+copy the example. Those two results are inconclusive, not a parser failure. The
+deterministic HTTP tests cover the same cases. The saved files come from an
+earlier state of the guard (HTTP 500 for an unoffered call). They do not record
+the image or the settings. No live run exists yet for the current code (streaming
+of text before a call, HTTP 422).
 
-`tests/live_tool_hardening.py` performs model-backed API probes without executing
-or retrying generated calls. Core rejection checks successfully induced an
-unoffered `task` call. Additional mixed-call and literal-copy probes did not
-induce their requested fixtures in the initial live run: the model selected
-only an offered call or refused to reproduce the example. Those cases remain
-inconclusive live, rather than evidence of a parser failure; they pass the
-deterministic fake-engine HTTP tests.
+After you deploy, test in an agent where `task` is not available. Do not enable
+the tool to make the test pass. Also check normal tool calls, tool-result round
+trips, plain answers and literal syntax examples. This guard does not change
+host-memory behavior or SSD spill.

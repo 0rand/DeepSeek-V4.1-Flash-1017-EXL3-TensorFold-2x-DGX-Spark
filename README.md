@@ -37,7 +37,7 @@ Prefill with cold prompts (bertholomus's kit_bench client, median of 3 runs):
 - **Ready for AI agents.** Forced tool calls (`tool_choice` set to `required` or to one tool) and structured output (a JSON schema, a regex or a list of choices).
 - **4 concurrent requests.** Up to 4 requests share the two computers. Aggregate decode reaches 140 tok/s on code.
 - **Prefix cache.** A second question about the same long document has a TTFT of about 1 s instead of 13 s. Cached prompts also go to disk, so after a restart the TTFT is about 3 s.
-- **Display-backed KV and SSD spill.** The current baseline maps 1792 MiB of the display reservation per node into a 2.1M-position shared pool and spills kept prompts to a 32 GiB per-rank SSD tier, so long agent sessions survive eviction and restarts.
+- **Display-backed KV (optional, experimental).** A separate launcher maps 1792 MiB of the display reservation per node into a 2.1M-position shared pool. It has its own SSD spill and tool-output guard. It costs prefill speed. [Details](docs/DISPLAY-KV.md).
 - **Fault isolation.** One failed request ends only that request, not the whole server.
 - **1M-token context.** The full 1,048,576-token context window. A needle test with a 1,035,020-token prompt passed.
 
@@ -106,15 +106,26 @@ scripts/host_tuning.sh
 
 Your server is ready at `http://127.0.0.1:8888/v1`. It works with any app that supports the OpenAI API. The model name is `DeepSeek-V4.1-Flash-1017`.
 
-### Display-Backed KV (current baseline)
+### Display-Backed KV (optional, experimental)
 
-On DGX Spark, the display-backed variant uses 1792 MiB of the NVIDIA display
-reservation per node for compressed KV and indexer storage. With this model it
-provides a 2,109,440-position shared pool while keeping the 1,048,576-token
-per-request context limit. It also exposes live pool and SSD spill metrics to
-EngineMetrics.
+This is an opt-in variant. `./start.sh` does not use it and does not change.
 
-Stop the current engine before switching, then run the self-contained launcher:
+On DGX Spark, the display-backed variant maps 1792 MiB of the NVIDIA display
+reservation on each node for compressed KV and indexer storage. With this model
+it gives a 2,109,440-position shared pool and keeps the 1,048,576-token limit for
+one request. It also shows live pool and SSD spill metrics to EngineMetrics.
+
+Two testers measured it on one pair of nodes (saved in
+[`runs/2026-10-19/`](runs/2026-10-19/display-kv-tester-ab.md) and
+[`runs/2026-10-20/`](runs/2026-10-20/display-kv-tester-kv-budget.md)):
+
+- The KV position budget is 0.59% larger than the stock engine (2,109,440 against 2,097,152).
+- Cold prefill was 16% to 21% slower in tok/s. The test also used a smaller prefill chunk (512 against 2048), so the cause is not isolated. Decode was about the same.
+- It does not give more free host memory. It moved the point where simultaneous 1M-token streams end the engine from 4 streams (earlyoom) to 6 (CUDA out of memory with the hard cap on).
+- The SSD spill was never filled in these runs, so eviction and restore are not shown by a saved run.
+
+[Display KV](docs/DISPLAY-KV.md) has the numbers and the caveats. Stop the
+current engine before you switch, then run the launcher:
 
 ```bash
 ./stop.sh
@@ -123,87 +134,48 @@ Stop the current engine before switching, then run the self-contained launcher:
 ```
 
 With `--build`, the launcher prepares a separate image on both nodes. Later
-`./start-display-kv.sh` runs use that saved image without building or copying,
-even if staged source files have changed. It safely reloads `nvidia_drm` on
-both nodes, checks the full display mapping, and starts the variant. It uses this
-repo's scripts and sources only; no other model repo is needed. The head may ask
-for sudo and the worker needs passwordless sudo. Active NVIDIA scanout, GPU
-compute processes and DRM clients prevent preparation; an unrelated framebuffer
-TTY or a connected-but-disabled output does not.
+`./start-display-kv.sh` runs use that saved image and do not build or copy, even
+if source files changed. The launcher reloads `nvidia_drm` on both nodes, checks
+the full display mapping, and starts the variant. It uses the scripts and sources
+of this repo only. The head can ask for sudo, and the worker needs passwordless
+sudo. An active NVIDIA scanout, a GPU compute process or a DRM client stops the
+preparation. An unrelated framebuffer TTY or a connected-but-disabled output does
+not.
 
-The normal `.env` and `start.sh` are not changed. Disk prompt spill is enabled
-through the reused GLM tier when `SPILL_GIB` is nonzero (32 GiB per rank in the
-current baseline); in-memory prefix reuse remains on. DRM changes are
-runtime-only and the launcher prepares them again after a reboot. Full-window
-and near-full-pool validation remain open. See [Display KV](docs/DISPLAY-KV.md)
-for checks, rollback and tests.
+`.env` and `start.sh` are not changed. DRM changes last until the next reboot, and
+the launcher prepares them again after a reboot. See [Display KV](docs/DISPLAY-KV.md)
+for the checks, the rollback and the tests.
 
-#### How the display cache works
+#### What the display launcher turns on
 
-The display cache maps the compressed KV and indexer planes into the NVIDIA
-display reservation, which normal compute does not use. The engine then serves
-from a shared pool of 2,109,440 positions; each request still has the model's
-1,048,576-token context limit. The reservation is outside PyTorch's allocator
-accounting and does not appear in `nvidia-smi`'s memory total. Mapped rows move
-through bounded GPU-kernel copies, never through CPU reads or copy engines.
+The patched code is only in the derived image. These settings are in the launch
+bundle that `./start-display-kv.sh` makes. `./start.sh` ignores them.
 
-The launcher prepares `nvidia_drm` at runtime on both nodes, runs two full
-integrity sweeps over the mapping, and starts the variant. Preparation refuses
-if an NVIDIA card is scanning out, a GPU compute process is active, or a DRM
-client holds the card. It never stops GDM or the firmware framebuffer console.
-DRM changes are runtime-only; after a reboot, run the launcher again.
-
-#### Display-RAM and SSD spill settings
-
-| Setting | Default | What it does |
+| Setting | Display launcher default | What it does |
 |---|---|---|
-| `TF_DS_DISPLAY_KV_MIB` | 1792 | Display reservation mapped for KV per node (set by the launcher). |
-| `PARALLEL` | 4 | Concurrent streams sharing the pool; display KV requires more than 1. |
-| `CONTEXT` | 1048576 | Per-request context limit; the shared pool is larger. |
-| `PREFILL_CHUNK` | 512 | Smaller chunks reduce temporary prefill memory. |
-| `MEM_FLOOR_GIB` | 1.25 | Host memory kept free; display images raise positive floors below 1.5 GiB to 1.5 GiB. |
-| `SPILL_GIB` | 32 | SSD spill capacity per rank; 0 disables the tier. |
-| `TF_DS_SPILL_DIR` | `/cache/tf-ds-spill` | Spill directory (set by `start.sh`). |
-| `TF_DS_SPILL_HIGHWATER` | 0.70 | Write kept prompts early past this fraction of memory. |
+| `PREFILL_CHUNK` | 512 | Prefill chunk in tokens. The stock path uses 2048. |
+| `MEM_FLOOR_GIB` | from `.env` (1.5) | Host memory kept free. The display image raises a positive floor below 1.5 GiB to 1.5 GiB. |
+| `MEM_ALLOCATOR_CAP` | 0 | 1 turns on a hard CUDA allocator cap. It can end in exit 75 near the floor. |
+| `STRICT_TOOL_OUTPUT` | 1 | 0 turns off the [tool-output guard](docs/TOOL-OUTPUT.md). |
+| `SPILL_GIB` | from `.env` (64) | Patched SSD spill, GiB per rank. 0 turns it off. |
 | `TF_DS_SPILL_MIN` | 4096 | Prompts shorter than this are not spilled. |
 | `TF_DS_SPILL_MIN_FREE_GIB` | 50 | No write leaves less than this much disk free. |
-| `TF_DS_SPILL_KEEP_BUILDS` | 1 | Other builds' spill directories kept at start. |
+| `TF_DS_SPILL_KEEP_BUILDS` | 1 | Spill folders of other builds kept at start. |
 | `TF_SPILL_WRITERS` | 2 | Background writer threads per rank. |
-| `TF_SPILL_DIRECT` | 1 | Use O_DIRECT; 0 falls back to buffered writes. |
-| `TF_SPILL_FLUSH_S` | 60 | Shutdown flush budget; the drain waits up to 55 s inside `docker stop -t 60`. |
+| `TF_SPILL_DIRECT` | 1 | O_DIRECT writes. 0 uses buffered writes. |
+| `TF_SPILL_FLUSH_S` | 60 | Wait for queued writes at shutdown. The wait never exceeds 55 s, inside `docker stop -t 60`. |
 
-#### Use patterns
-
-- **Long agent sessions.** The first request fills the prompt; later turns reuse
-  the in-memory prefix. When a prompt leaves the window, the spill tier writes it
-  to disk; a later request that extends it restores the rows instead of
-  prefilling.
-- **Restart persistence.** Prompts whose writes reached disk survive a restart.
-  A validated restart restored a 237568-token prompt in 0.05 s.
-- **Concurrency.** Four streams share the pool; each stream keeps its own request
-  context. The spill tier writes and restores per rank, so both ranks must hold
-  the same prompt.
-- **Monitoring.** `/health["spill"]` and the `spill_*` Prometheus families show
-  entries, bytes, write/load counters, restore latency, failures and free disk.
-  EngineMetrics renders them in its Live Cache panel.
+You set the `TF_*` names in your shell before the launcher starts. The launcher
+passes them to the containers when they are set.
 
 #### Precautions
 
-- Display-RAM is the current baseline, but full-window and near-full-pool
-  operation are not yet validated. Watch host memory, not only CUDA free memory.
-- Do not run another model server, GPU workload or DRM client during
-  preparation or probes. Stop both ranks before `--build` or `--build-only`.
-- Never stop GDM or the firmware framebuffer console to make DRM checks pass.
-- The spill signature includes the model, TensorFold sources, CUDA/torch
-  version, GPU name, KV layout and display size, but ignores the driver version.
-  A source change starts a new spill directory; old stores remain on disk but
-  are not reused. `TF_DS_SPILL_KEEP_BUILDS` controls how many old directories
-  are kept.
-- Spill storage is per rank. A prompt is restored only when every rank has it;
-  otherwise the request fills fresh. Corrupt entries are dropped after a failed
-  restore.
-- `docker stop` sends SIGTERM; the shutdown hook drains queued writes for up to
-  55 s. A SIGKILL or crash can lose queued writes.
+- Full-window and near-full-pool operation is not shown to be safe. Watch host memory, not only CUDA free memory.
+- Do not run another model server, GPU workload or DRM client during the preparation or the probes. Stop both ranks before `--build` or `--build-only`.
+- Never stop GDM or the firmware framebuffer console to make the DRM checks pass.
+- The spill signature includes the model, the TensorFold sources, the CUDA and torch versions, the GPU name, the KV layout and the display size. It ignores the driver version. A source change starts a new spill folder. Old folders stay on disk but are not reused.
+- Spill storage is per rank. A prompt is restored only when every rank has it. A corrupt entry is dropped after a failed restore.
+- `docker stop` sends SIGTERM. Both ranks drain queued writes before they exit. A SIGKILL or a crash can lose queued writes.
 
 ---
 
@@ -269,7 +241,7 @@ The fast engine for this model was written by [bertholomus](https://github.com/b
 4. **Fault isolation.** Before, one failed request stopped all requests until a manual restart. Now it ends only that request.
 5. **Faster long prefills.** The server now drops the page cache of the Engram tables after each prompt chunk. Before, the page cache filled the memory, and some chunks stalled for 1 to 4 s in reclaim and compaction.
 6. **Steady long prefills.** The server writes its spill files with O_DIRECT, so they skip the page cache, and the host setup turns transparent huge pages off. Page compaction stalls the GPU on these computers; these two changes remove the last compaction stalls, and prefill speed now changes by less than 2% from run to run.
-7. **Display-backed KV and SSD spill.** The current baseline maps the NVIDIA display reservation into a shared KV pool and spills kept prompts to a per-rank SSD tier, so long agent sessions survive eviction and restarts.
+7. **Display-backed KV (optional, experimental).** `./start-display-kv.sh` starts a derived image. It maps the NVIDIA display reservation into a shared KV pool, and it adds a patched SSD spill and a tool-output guard. The default `./start.sh` path does not use it. Testers measured a lower prefill tok/s, see [Display KV](docs/DISPLAY-KV.md#cost-and-capacity).
 
 [Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2), [#3](https://github.com/Elevatormusic/TensorFold/pull/3), [#4](https://github.com/Elevatormusic/TensorFold/pull/4) and [#6](https://github.com/Elevatormusic/TensorFold/pull/6).
 
@@ -401,16 +373,7 @@ Pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first: it giv
 
 ## Credits and licence
 
-The display-backed KV cache and SSD spill tier are modifications built on
-bertholomus's V4.1 engine. The display cache maps the compressed KV and indexer
-planes into the NVIDIA display reservation, adds a shared pool with a per-request
-context limit, and exposes pool and spill telemetry through `/health` and
-`/metrics`. The SSD spill tier reuses the GLM spill implementation with
-display-safe staging copies, CRC-checked restores, eviction, shutdown draining
-and restart persistence. These changes were developed and validated by
-**opencode** (the DeepSeek V4.1 Flash coding agent) on top of bertholomus's
-engine. **GPT Sol** fixed the improper pre-OOM SIGTERM handling, so earlyoom
-stops the engine cleanly instead of leaving the lane broken.
+The display-backed KV cache, the patched SSD spill, the tool-output guard and the EngineMetrics adapter are by **0rand**, built on bertholomus's V4.1 engine. The author's notes credit the opencode coding agent for development and GPT Sol for a fix to the SIGTERM handling before an out-of-memory kill. **Sora39831** and **hjasond** tested the pull request on their own nodes.
 
 This recipe stands on the work of DeepSeek (the model), LibertAIDAI (the compressed weights), turboderp (ExLlamaV3), ashhart and the TensorFold contributors, **bertholomus (the fast V4.1 engine this recipe runs)**, willjriley and Capicua25x (engine fixes), MiaAI-Lab (the vLLM kit and the template) and tonyd2wild (the benchmark method). [Full credits](CREDITS.md)
 
