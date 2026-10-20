@@ -74,7 +74,7 @@ normal server restart. Do not run both images at the same time.
 
 ## Tester report on the allocator policy
 
-A tester ran the earlier combined display build, where this policy was on by default, on one pair of Spark nodes ([report](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/pull/6#issuecomment-6282611548)). The maintainers did not repeat the runs. With 6 simultaneous 1M-token streams the policy ended in a CUDA out-of-memory error and exit code 75 (a rank was lost). With 3 to 5 streams and the policy off, the tester saw no lane failure, but no memory spike was large enough to make earlyoom act, so that is no proof that the policy is not needed. This is why `MEM_CAP` stays `0` by default: turn it on only for a test, and expect exit 75 near the floor.
+A tester ran the earlier combined display build, where this policy was on by default, on one pair of Spark nodes (saved in [`runs/2026-10-20/display-kv-tester-kv-budget.md`](../runs/2026-10-20/display-kv-tester-kv-budget.md), with the setup and the caveats of the tester). The maintainers did not repeat the runs. With 6 simultaneous 1M-token streams the policy ended in a CUDA out-of-memory error and exit code 75 (a rank was lost). With 3 to 5 streams and the policy off, the tester saw no lane failure, but no memory spike was large enough to make earlyoom act, so that is no proof that the policy is not needed. This is why `MEM_CAP` stays `0` by default: turn it on only for a test, and expect exit 75 near the floor.
 
 ## Validation limits
 
