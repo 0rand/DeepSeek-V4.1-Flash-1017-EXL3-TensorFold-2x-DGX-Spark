@@ -1,0 +1,6 @@
+bundle*
+tests
+__pycache__
+**/__pycache__
+overlay/*
+!overlay/*.py
