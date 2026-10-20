@@ -1,7 +1,9 @@
 """Check that only the dependent spill bundle keeps SPILL_GIB."""
 import importlib.util
+import os
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -39,6 +41,30 @@ class SpillBundleTests(unittest.TestCase):
         start = (destination / "start.sh").read_text()
         self.assertIn("-e TF_DS_DISPLAY_KV_MIB=1792", start)
         self.assertIn("--device /dev/dri", start)
+
+    def test_spill_bundle_forwards_the_tuning_values_that_env_sets(self):
+        destination = self.root / "bundle"
+        prepare.prepare(destination, image="fixture:display-spill", spill=True)
+        start = (destination / "start.sh").read_text()
+        self.assertEqual(start.count(prepare.FORWARD_SNIPPET), 1)
+        for name in ("TF_DS_SPILL_MIN", "TF_DS_SPILL_MIN_FREE_GIB", "TF_DS_SPILL_KEEP_BUILDS",
+                     "TF_SPILL_WRITERS", "TF_SPILL_DIRECT", "TF_SPILL_FLUSH_S"):
+            self.assertIn(name, prepare.FORWARDED_VARIABLES)
+        # The snippet prints only the variables that are set.
+        shell = shutil.which("bash")
+        if shell is None:
+            self.skipTest("needs bash")
+        result = subprocess.run([shell, "-c", f"set -u; printf '%s\\n' {prepare.FORWARD_SNIPPET}"], capture_output=True,
+                                text=True, env={"PATH": os.environ.get("PATH", ""), "TF_SPILL_FLUSH_S": "30",
+                                                "TF_SPILL_DIRECT": ""})
+        self.assertEqual(result.stdout.split(), ["-e", "TF_SPILL_FLUSH_S=30"])
+        syntax = subprocess.run([shell, "-n", str(destination / "start.sh")], capture_output=True, text=True)
+        self.assertEqual(syntax.returncode, 0, syntax.stderr)
+
+    def test_display_only_bundle_does_not_forward_spill_values(self):
+        destination = self.root / "bundle"
+        prepare.prepare(destination, image="fixture:display-kv")
+        self.assertNotIn("TF_SPILL_FLUSH_S", (destination / "start.sh").read_text())
 
     def test_display_only_bundle_still_disables_spill(self):
         destination = self.root / "bundle"

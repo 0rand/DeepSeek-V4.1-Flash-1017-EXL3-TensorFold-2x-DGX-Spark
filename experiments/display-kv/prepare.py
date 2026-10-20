@@ -11,6 +11,11 @@ import shutil
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 IMAGE = "tensorfold-dsv41:07aa02585f64-display-kv-stage1"
+# Spill tuning values of .env that the spill bundle passes on to the rank containers, only when .env sets them.
+FORWARDED_VARIABLES = ("TF_DS_SPILL_MIN", "TF_DS_SPILL_MIN_FREE_GIB", "TF_DS_SPILL_KEEP_BUILDS",
+                       "TF_SPILL_WRITERS", "TF_SPILL_DIRECT", "TF_SPILL_FLUSH_S")
+FORWARD_SNIPPET = ('$(for v in ' + " ".join(FORWARDED_VARIABLES)
+                   + '; do [ -n "${!v:-}" ] && echo "-e $v=${!v}"; done)')
 
 
 def prepare(destination: Path, image: str = IMAGE, spill: bool = False) -> None:
@@ -68,6 +73,12 @@ fi
             count = 1
         if count != 1:
             raise ValueError(f"expected exactly one {key} in .env")
+    if spill:
+        # Forward the spill tuning values of .env to both ranks.
+        anchor = "-e TF_DS_SPILL_GIB=${SPILL_GIB:-64} -e TF_DS_SPILL_DIR=/cache/tf-ds-spill"
+        if start.count(anchor) != 1:
+            raise ValueError("start.sh spill anchor changed; review the experiment")
+        start = start.replace(anchor, anchor + "\n" + FORWARD_SNIPPET)
     # Validate the installer syntax without importing Torch or touching devices.
     ast.parse((HERE / "apply.py").read_text())
     if spill:

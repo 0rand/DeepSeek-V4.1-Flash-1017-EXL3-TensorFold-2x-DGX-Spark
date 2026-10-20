@@ -52,22 +52,30 @@ are explicitly configured.
 | Setting | Default | Effect |
 |---|---|---|
 | `SPILL_GIB` | `64` | Maximum stored prompt bytes per rank. `0` disables writes. |
-| `TF_DS_SPILL_HIGHWATER` | `0.70` | Occupancy past which eviction candidates are written early. |
 | `TF_DS_SPILL_MIN` | `4096` | Shortest prompt written to disk. |
 | `TF_DS_SPILL_MIN_FREE_GIB` | `50` | No write leaves less disk free on any rank. |
 | `TF_SPILL_WRITERS` | `2` | Writer threads per rank. |
 | `TF_SPILL_DIRECT` | `1` | Use O_DIRECT where the file system supports it. |
-| `TF_SPILL_FLUSH_S` | `60` | Shutdown drain budget. The app uses at most 55 seconds. |
+| `TF_SPILL_FLUSH_S` | `60` | Shutdown drain budget. Each rank waits at most the smaller of this value and 55 seconds. |
 
+Put a setting in `.env` to change it. The private bundle passes `TF_DS_SPILL_MIN`, `TF_DS_SPILL_MIN_FREE_GIB`,
+`TF_DS_SPILL_KEEP_BUILDS`, `TF_SPILL_WRITERS`, `TF_SPILL_DIRECT` and `TF_SPILL_FLUSH_S` to both ranks, only when
+.env sets them. A write starts when a prompt leaves the kept set (write-through); there is no early-write threshold.
 The store writes safetensors files with a CRC-32 per 8 MiB, fsyncs, and renames
-from `.partial`. A corrupt or short file is dropped. Every rank agrees on the
-index and on each read. A read is used only when it worked on every rank.
+from `.partial`. Token ids are stored as base64 int64 (format 3). A corrupt or short file is dropped. The
+table of tensor descriptors is checked before any memory is allocated: gaps, overlaps, negative numbers and
+unknown dtypes are refused. Every rank agrees on the index and on each read. A read is used only when it
+worked on every rank. If a write failed on one rank only, `find()` keeps the entry, so the read fails on all
+ranks and all of them forget it. A failed read is counted once as `load_failed`.
+
+On SIGTERM (docker stop), rank 0 and rank 1 each wait for their queued writes (the shutdown drain). Rank 1
+also drains when rank 0 closes the link first, because `stop.sh` stops rank 0 first.
 
 ## Validation limits
 
 Offline tests use CPU torch and temporary directories. They do not prove a real
-two-rank write, eviction, restore and correct reply. That live test is a merge
-gate. Also test restart restore, a pending write during SIGTERM, one-rank
+two-rank write, eviction, restore and correct reply. That live gate is pending and runs in the next maintenance
+window (`./verify.sh` and `tests/run_all.sh` with this image on the pair; save the output under `runs/`). Also test restart restore, a pending write during SIGTERM, one-rank
 read/write failure, corrupt entries, low disk space, disabled mode, and no
 collective hang. Record counters that prove disk writes and loads happened.
 No performance claim is made.
