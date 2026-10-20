@@ -8,16 +8,16 @@ Same pair of DGX Spark as `runs/2026-10-18/`. Engine image `tensorfold-dsv41:val
 
 | Run | `PARALLEL` | Load | Head lowest `MemAvailable` | Worker lowest | Result |
 |---|---|---|---:|---:|---|
-| 1 | 4 | 4 long prompts at the same time (99K, 152K, 229K, 305K prompt tokens), then 4 x 8 images | 1,009 MiB (earlyoom log) | n/a | long prompts 4 x 200; images: earlyoom stopped rank 0 at 06:36:51Z |
+| 1 | 4 | 4 long prompts at the same time (99K, 152K, 229K, 305K prompt tokens), then 4 x 8 images | 1,009 MiB (earlyoom `mem avail` line) | n/a | long prompts 4 x 200; images: earlyoom stopped rank 0 at 06:36:51Z |
 | 2 | 4 | new engine: 1 x 8, then 2 x 8, then 4 x 8 images | 1,379 MiB | 2,009 MiB | all 200 |
-| 3 | 2 | 4 long prompts, then 4 x 8, then 4 x 16 images | 1,356 MiB (4 x 8), 1,064 MiB (4 x 16) | 2,351 MiB | 4 x 8: all 200; 4 x 16: earlyoom stopped rank 0 at 06:49:50Z |
+| 3 | 2 | 4 long prompts, then 4 x 8, then 4 x 16 images | 1,356 MiB (4 x 8); 4 x 16: 1,064 MiB in the samples, 901 MiB in the earlyoom `mem avail` line | 2,351 MiB | 4 x 8: all 200; 4 x 16: earlyoom stopped rank 0 at 06:49:50Z |
 
 Files:
 
 - Run 1: `oom/run1-p4-long-then-images.out` (the long-prompt results). This first version of the script stopped on the error and lost its samples, so this run has no CSV.
 - Run 2: `oom/run2-p4-images.json` (requests and lowest values for each phase) and `.csv` (one row each second).
 - Run 3: `oom/run3-p2-long-then-images.json` and `.csv`.
-- The earlyoom events: `oom/earlyoom-head.txt`. The worker had no earlyoom event in any run.
+- The earlyoom events: `oom/earlyoom-head.txt`, with the `mem avail` line that earlyoom read just before each stop (the 1 s samples can miss the lowest point). The worker had no earlyoom event in any run.
 
 ## What the runs show
 

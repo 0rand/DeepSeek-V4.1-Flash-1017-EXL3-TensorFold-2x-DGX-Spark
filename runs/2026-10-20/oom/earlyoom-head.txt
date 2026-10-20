@@ -1,6 +1,8 @@
+2026-10-20T06:36:51.145939+00:00 head earlyoom[1154575]: mem avail:  1009 of 124608 MiB ( 0.81%), swap free: 14743 of 16383 MiB (89.99%)
 2026-10-20T06:36:51.145939+00:00 head earlyoom[1154575]: low memory! at or below SIGTERM limits: mem  0.82%, swap 100.00%
 2026-10-20T06:36:51.152998+00:00 head earlyoom[1154575]: sending SIGTERM to process 3699374 uid 0 "tensorfold": badness 1661, VmRSS 5965 MiB
 2026-10-20T06:36:52.558674+00:00 head earlyoom[1154575]: process exited after 1.4 seconds
+2026-10-20T06:49:50.971034+00:00 head earlyoom[1154575]: mem avail:   901 of 124608 MiB ( 0.72%), swap free: 14684 of 16383 MiB (89.62%)
 2026-10-20T06:49:50.971034+00:00 head earlyoom[1154575]: low memory! at or below SIGTERM limits: mem  0.82%, swap 100.00%
 2026-10-20T06:49:50.978854+00:00 head earlyoom[1154575]: sending SIGTERM to process 3743994 uid 0 "tensorfold": badness 1661, VmRSS 5955 MiB
 2026-10-20T06:49:51.379329+00:00 head earlyoom[1154575]: process exited after 0.4 seconds
