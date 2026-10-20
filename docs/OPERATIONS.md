@@ -51,12 +51,25 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   . ./.env; watch -n 1 "grep MemAvailable /proc/meminfo; ssh -o BatchMode=yes $WORKER_SSH grep MemAvailable /proc/meminfo"
   ```
 
-  If `MemAvailable` on either node goes near 1 GiB (1,048,576 kB):
-  1. Set `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. Fewer prompts fill at the same time, so the peak is lower. Each request still gets the full context. This is not measured on this recipe yet.
-  2. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
-  3. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
+  In the traces in [runs/2026-10-20/INDEX.md](../runs/2026-10-20/INDEX.md), image requests made the head run out first. These traces ran on a validation image (`deepseek-v41-tp2` at 434301e with fork PRs #13, #14 and #15), not on the shipped `07aa02585f64`. Fork PR #13 changes how overlapping image requests are tracked, so the values on the shipped image can differ. The head runs the vision tower and decodes the images. The worker went down to about 2.0 GiB.
 
-  Issue #21 tracks the memory trace and the engine fix.
+  | Load | `PARALLEL` | Head lowest `MemAvailable` | Result |
+  |---|---|---|---|
+  | 4 long prompts, then 4 requests with 8 images each at the same time | 4 | 1,009 MiB (earlyoom reading) | earlyoom stopped the engine |
+  | 4 requests with 8 images each, on a new engine | 4 | 1,379 MiB | all passed |
+  | 4 long prompts (loaded from the spill cache), then 4 requests with 8 images each | 2 | 1,356 MiB | all passed |
+  | then 4 requests with 16 images each (needs `--vision-max-images`; the recipe allows 8) | 2 | 901 MiB (earlyoom reading) | earlyoom stopped the engine |
+
+  Each image request also had random-word text: about 34.5K prompt tokens in all with 8 images. With 8 images in each request (the recipe's limit), `PARALLEL=2` passed the load that failed with `PARALLEL=4`. This is not a clean A/B: in the `PARALLEL=2` run the long prompts came from the spill cache and were not filled again. With 16 images in each request, `PARALLEL=2` also failed.
+
+  If `MemAvailable` on either node goes near 1 GiB (1,048,576 kB):
+  1. Set `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. Each request still gets the full context. This is measured only on the validation image above.
+  2. Send fewer images at the same time. Keep the images in each request low (the server accepts at most 8), and do not send many image requests at the same time. For an agent, send screenshots one at a time, not as a batch.
+  3. If you do not need image input, set `VISION=0` in `.env`, then run `./stop.sh && ./start.sh`. The vision tower then does not load on the head. The engine log gives its size as 0.95 GiB on rank 0 ([runs/2026-10-20/oom/run2-engine-vision.txt](../runs/2026-10-20/oom/run2-engine-vision.txt)). A run with `VISION=0` is not measured yet.
+  4. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
+  5. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
+
+  Issue #21 tracks the engine fix.
 - **The whole node stops (no ssh, no ping above the link).** One report ([#24](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/24)) shows this kernel log on the head just before the hang:
 
   ```text

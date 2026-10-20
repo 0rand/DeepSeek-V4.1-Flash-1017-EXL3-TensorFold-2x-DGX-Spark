@@ -1,0 +1,84 @@
+{
+ "tag": "img",
+ "started": "2026-10-19 23:39:07",
+ "requests": [
+  {
+   "kind": "8 images + ~20K text",
+   "status": 200,
+   "seconds": 23.7,
+   "prompt_tokens": 34513,
+   "error": null
+  },
+  {
+   "kind": "8 images + ~20K text",
+   "status": 200,
+   "seconds": 26.5,
+   "prompt_tokens": 34459,
+   "error": null
+  },
+  {
+   "kind": "8 images + ~20K text",
+   "status": 200,
+   "seconds": 44.0,
+   "prompt_tokens": 34496,
+   "error": null
+  },
+  {
+   "kind": "8 images + ~20K text",
+   "status": 200,
+   "seconds": 33.6,
+   "prompt_tokens": 34464,
+   "error": null
+  },
+  {
+   "kind": "8 images + ~20K text",
+   "status": 200,
+   "seconds": 69.1,
+   "prompt_tokens": 34475,
+   "error": null
+  },
+  {
+   "kind": "8 images + ~20K text",
+   "status": 200,
+   "seconds": 50.9,
+   "prompt_tokens": 34483,
+   "error": null
+  },
+  {
+   "kind": "8 images + ~20K text",
+   "status": 200,
+   "seconds": 85.9,
+   "prompt_tokens": 34463,
+   "error": null
+  }
+ ],
+ "phases": {
+  "idle": {
+   "head_min_mib": 3687,
+   "worker_min_mib": 4110,
+   "samples": 10
+  },
+  "1 x 8 images": {
+   "head_min_mib": 2401,
+   "worker_min_mib": 2108,
+   "samples": 44
+  },
+  "2 x 8 images": {
+   "head_min_mib": 2181,
+   "worker_min_mib": 2168,
+   "samples": 64
+  },
+  "4 x 8 images": {
+   "head_min_mib": 1379,
+   "worker_min_mib": 2009,
+   "samples": 106
+  },
+  "after": {
+   "head_min_mib": 2456,
+   "worker_min_mib": 2233,
+   "samples": 15
+  }
+ },
+ "earlyoom_head": [],
+ "earlyoom_worker": []
+}
