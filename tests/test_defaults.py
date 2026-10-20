@@ -20,6 +20,9 @@ PROTECTED = {
     "PARALLEL": "4",
     "MTP_DRAFTS": "5",
     "SPILL_GIB": "64",
+    # The engine build. A change here must come with new gate results (see CONTRIBUTING.md).
+    "TF_COMMIT": "07aa02585f64",
+    "IMAGE": "tensorfold-dsv41:07aa02585f64",
 }
 PREFILL_CHUNK = "2048"
 
