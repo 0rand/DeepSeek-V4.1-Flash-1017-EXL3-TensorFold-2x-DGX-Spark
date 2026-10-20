@@ -42,6 +42,7 @@ No performance claim is made.
 - Streaming scans each new part of the answer once. It does not scan the whole answer again for each chunk. If a new text does not extend the text of the last call, it scans from the start.
 - A code fence or inline code that was open before a call and ends inside the call does not make that call or the next call literal. The check follows each span from where it began, so a span that ends inside the call and another span that begins there still count as a close.
 - While streaming, every call opener waits, like a real call, until the answer is complete: open code or a quote line (`>`) can end inside the call. The final result then returns an example as text. A quote line ends at a blank line, so a call with a blank line inside it is not a quoted example.
+- Quote marks inside inline code do not pair. A code fence may have at most three spaces of indent; a line with four spaces or a tab is indented code, and its backticks are text.
 - A backslash before a backtick makes it text, except inside a code span, where a backslash does nothing. After a call that ends open code, the first close counts and the rest of the call is data.
 - The content of a guarded reply passes through the same `ToolCallPolicy.content()` step as before. With `parallel_tool_calls: false`, that step removes tool text that is not a complete call.
 - A flat JSON call with an empty nested `function` object is read by its top-level `name`.

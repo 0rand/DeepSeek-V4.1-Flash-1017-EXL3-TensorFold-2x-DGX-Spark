@@ -367,6 +367,21 @@ class ToolOutputTests(unittest.TestCase):
         text = "`" + quiet + "\n" + real
         self.assertEqual(self.guard().parse(text), (text, None))
 
+    def test_quote_marks_inside_inline_code_do_not_pair(self):
+        envelope = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse('He said "the mark `"` " ' + envelope + ' "and next"')
+        known = '<tool_call>{"name":"task","arguments":{}}</tool_call>'
+        text = 'He said `a "quote` and "' + known + '"'                 # the code span is not counted: this is a quote
+        self.assertEqual(self.guard().parse(text), (text, None))
+
+    def test_a_fence_needs_at_most_three_spaces_of_indent(self):
+        envelope = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse("    ```\n" + envelope)                   # four spaces: indented code, not a fence
+        text = "   ```\n" + envelope
+        self.assertEqual(self.guard().parse(text), (text, None))
+
     def test_malformed_and_truncated_wrappers_are_not_misclassified(self):
         for text in (
             '<tool_call>{"name":}</tool_call>',

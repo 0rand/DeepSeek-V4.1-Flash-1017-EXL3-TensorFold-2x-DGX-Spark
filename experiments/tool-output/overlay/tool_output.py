@@ -97,6 +97,22 @@ class ToolOutputGuard:
         return run % 2 == 1
 
     @staticmethod
+    def _blank_code_spans(line: str) -> str:
+        """``line`` with every inline code span (and its backticks) replaced by spaces; an unclosed span runs to the end."""
+        out = list(line)
+        opened = None
+        for token in re.finditer(r"`+", line):
+            if opened is None:
+                if not ToolOutputGuard._escaped(line, token.start()):
+                    opened = token
+            elif len(token.group()) == len(opened.group()):
+                out[opened.start():token.end()] = " " * (token.end() - opened.start())
+                opened = None
+        if opened is not None:
+            out[opened.start():] = " " * (len(line) - opened.start())
+        return "".join(out)
+
+    @staticmethod
     def _in_blockquote(prefix: str) -> bool:
         return bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", prefix.rsplit("\n", 1)[-1]))
 
@@ -146,7 +162,7 @@ class ToolOutputGuard:
         last_line = prefix.rsplit("\n", 1)[-1]
         quoted = False
         if suffix is not None:
-            before = last_line.rstrip(" \t")
+            before = ToolOutputGuard._blank_code_spans(last_line).rstrip(" \t")     # marks in code do not pair
             quoted = (bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
                       and not ToolOutputGuard._escaped(before, len(before) - 1)
                       and ToolOutputGuard._opens_quote(before[:-1], before[-1]))
@@ -181,7 +197,7 @@ class ToolOutputGuard:
         offset = 0
         for line in prefix.splitlines(keepends=True):
             base, offset = offset, offset + len(line)
-            marker = re.match(r"[ \t]*(`{3,}|~{3,})", line)
+            marker = re.match(r" {0,3}(`{3,}|~{3,})", line)      # four spaces make indented code, not a fence
             if fence is not None:
                 if (marker and marker.group(1)[0] == fence[0] and len(marker.group(1)) >= fence[1]
                         and not line[marker.end():].strip()):
@@ -190,6 +206,8 @@ class ToolOutputGuard:
             if marker and inline is None:
                 fence = (marker.group(1)[0], len(marker.group(1)), base)
                 continue
+            if inline is None and re.match(r" {4}|\t", line):
+                continue                  # an indented code line: its backticks are text (the safe reading)
             for token in re.finditer(r"`+", line):
                 if inline is None and ToolOutputGuard._escaped(line, token.start()):
                     continue       # an escaped backtick is text, but a backslash does nothing inside a code span
