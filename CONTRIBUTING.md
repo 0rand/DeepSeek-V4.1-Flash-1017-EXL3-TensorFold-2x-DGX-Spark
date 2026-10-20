@@ -11,7 +11,10 @@ Read the [Code of Conduct](CODE_OF_CONDUCT.md) first. To report a security probl
 4. Make one focused change. See [Small, focused pull requests](#small-focused-pull-requests).
 5. Run the offline tests ([Run the tests](#run-the-tests)). They must pass.
 6. If your change touches the serving path, run the live checks on your own pair. Save the output under `runs/YYYY-MM-DD/` ([The evidence rule](#the-evidence-rule)).
-7. Open a pull request. Fill in every part of the template.
+7. If users see the change, add one line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
+8. Open a pull request. Fill in every part of the template.
+
+For a question, use [Discussions](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/discussions), not an issue.
 
 The maintainer reviews each pull request. An automatic review bot can also comment. Reply to each comment, or push a fix for it.
 
@@ -26,7 +29,7 @@ The maintainer reviews each pull request. An automatic review bot can also comme
 
 ### Pull requests
 
-Each pull request gets exactly one type label. Tick the type in the template. The maintainer adds the label.
+Each pull request gets exactly one type label. Tick the type in the template. The `pr-template` check adds the label. It fails if you tick no type, more than one type, or if the AI disclosure block is missing. Edit the pull request text to fix it: the check runs again.
 
 | Label | Use it for |
 |---|---|

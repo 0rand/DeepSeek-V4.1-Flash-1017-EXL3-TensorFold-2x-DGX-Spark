@@ -75,6 +75,7 @@ Write "no performance claim" if this pull request has none.
 - [ ] `runs/` stays tracked: no change to `.gitignore` that ignores it, and no other layout (for example `runs/YYYY/MM/`).
 - [ ] A new setting is in `.env.example`, with a safe default and a comment.
 - [ ] The docs (`README.md`, `docs/`, `tests/README.md`) match the change.
+- [ ] If users see the change, `CHANGELOG.md` has a line under `## [Unreleased]`.
 - [ ] A new feature is off by default, or it has its own start script.
 - [ ] No secrets, keys, tokens or machine-specific values (host names, user names, home paths, public IP addresses).
 - [ ] New docs use ASD-STE100 Simplified Technical English and the standard serving terms.
