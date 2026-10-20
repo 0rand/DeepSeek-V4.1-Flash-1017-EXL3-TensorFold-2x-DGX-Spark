@@ -14,14 +14,19 @@ docker build -t tensorfold-dsv41:07aa02585f64-metrics experiments/cache-metrics
 ```
 
 Stop the current server before you select another image.
-Copy the new image to the worker with the normal image transfer procedure.
+Copy the new image to the worker. `docker/build.sh` cannot do this: it rebuilds the ordinary image first. Use this helper, which copies the tag that you built and checks that both nodes hold the same image ID:
+
+```bash
+experiments/cache-metrics/transfer.sh tensorfold-dsv41:07aa02585f64-metrics
+```
+
 Set `IMAGE=tensorfold-dsv41:07aa02585f64-metrics` in your local `.env` on the head.
 Keep `BIND_HOST=127.0.0.1`. Start only one model server.
 Run `./verify.sh`. Check `/health` and `/metrics` on the local API port.
 Use the authentication settings in [CONNECT](../../docs/CONNECT.md).
 To return to the ordinary engine, stop the server and restore the original `IMAGE`.
 
-This image has not had a live two-rank serving check. Do that check before production use.
+This image has not had a live two-rank serving check. The offline tests, including the transfer helper, use fixtures only. Before you call the experiment supported, the maintainer runs `./verify.sh` and `tests/run_all.sh` with this image on the two-node pair and saves the output under `runs/`. Until then, do not use the image on a node that serves production traffic.
 No performance claim is made.
 
 ## Accounting
