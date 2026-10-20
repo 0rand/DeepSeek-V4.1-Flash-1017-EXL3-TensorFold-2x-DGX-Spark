@@ -45,13 +45,13 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   - `RESTART_POLICY=on-failure` in `.env` (docker's own restart) restarts each container alone. It works when rank 0 comes back first, but no tool enforces that order.
 - **Out of memory.** With `scripts/host_tuning.sh`, earlyoom stops the engine when a node has less than 1 GiB available, so the node stays reachable by ssh. `journalctl -u earlyoom` shows when it did. Then restart by hand as above.
 - **Out of memory under load.** Some users see earlyoom stop the engine with several long requests at the same time, or with many images in one agent session ([#21](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/21)).
-  Short tests often do not show it. To find it, run this on the head while the load runs:
+  Short tests often do not show it. earlyoom runs on each node, so watch both. Run this on the head while the load runs. It shows the head first, then the worker:
 
   ```bash
-  watch -n 1 "grep MemAvailable /proc/meminfo"
+  . ./.env; watch -n 1 "grep MemAvailable /proc/meminfo; ssh -o BatchMode=yes $WORKER_SSH grep MemAvailable /proc/meminfo"
   ```
 
-  If `MemAvailable` goes near 1 GiB (1,048,576 kB):
+  If `MemAvailable` on either node goes near 1 GiB (1,048,576 kB):
   1. Set `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. Fewer prompts fill at the same time, so the peak is lower. Each request still gets the full context. This is not measured on this recipe yet.
   2. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
   3. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
