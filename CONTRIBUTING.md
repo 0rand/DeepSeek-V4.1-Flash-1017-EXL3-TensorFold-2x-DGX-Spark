@@ -133,6 +133,23 @@ tests/run_all.sh
 - If you add a setting, document it in `.env.example` and in the doc in `docs/` that is about it.
 - If you add a doc, link it from the README or from another doc. CI checks the local links in all Markdown files.
 
+## AI disclosure
+
+If an AI helped with your pull request or issue, paste this block at the very bottom. If no AI helped, write `AI: none` in it.
+
+```html
+<details>
+<summary>AI disclosure</summary>
+
+AI: <model and size> via <harness>, e.g. "Qwen3-8B Q4 via Aider" or "Claude Opus 5.5 via Claude Code"
+Checked: <what you did yourself, e.g. "read every line, ran tests">
+
+</details>
+```
+
+This does not cause a rejection. It tells reviewers how carefully to check your work.
+Keep the empty lines after `<summary>` and before `</details>`. Without them, GitHub does not format the text.
+
 ## Licence
 
 This repo uses the Apache License 2.0 ([LICENSE](LICENSE)). When you open a pull request, you agree that your contribution uses the same licence. If you add code or data from another project, give its licence and source in [CREDITS.md](CREDITS.md).

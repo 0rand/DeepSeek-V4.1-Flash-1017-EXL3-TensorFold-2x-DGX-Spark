@@ -67,3 +67,12 @@ Write "no performance claim" if this pull request has none.
 - [ ] A new feature is off by default, or it has its own start script.
 - [ ] No secrets, keys, tokens or machine-specific values (host names, user names, home paths, public IP addresses).
 - [ ] New docs use ASD-STE100 Simplified Technical English and the standard serving terms.
+
+<!-- Keep this at the very bottom. Write "AI: none" if no AI helped. See CONTRIBUTING.md. -->
+<details>
+<summary>AI disclosure</summary>
+
+AI: <model and size> via <harness>, e.g. "Qwen3-8B Q4 via Aider" or "Claude Opus 5.5 via Claude Code"
+Checked: <what you did yourself, e.g. "read every line, ran tests">
+
+</details>
