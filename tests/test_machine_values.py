@@ -24,6 +24,11 @@ ALLOWED_HOME_IN_FILE = {
     ("runs/2026-10-18/gate/suite-ht.log", "elevatormusic"),
     ("runs/2026-10-18/gate/suite-odirect2.log", "elevatormusic"),
 }
+# The sample values of the Detection tests in this file. The scan reads this file too: only these values may stay.
+SELF = "tests/test_machine_values.py"
+FIXTURE_HOMES = {"alice", "bob", "carol", "dave", "erin", "fay", "gus", "hal", "ivy", "jo", "kim", "lee"}
+ALLOWED_HOME_IN_FILE |= {(SELF, user) for user in FIXTURE_HOMES}
+ALLOWED_IP_IN_FILE = {(SELF, "34.117.59.81"), (SELF, "2a01:4f8:c17:1234::1")}
 # /home/<name>, /Users/<name> and C:\Users\<name>. Windows paths match in any letter case, also with the doubled
 # backslashes of JSON. The POSIX forms stay case-sensitive, so a URL path such as /users/123 does not match.
 # ~<name> is the home of a named user, also with no slash after it (cd ~alice, HOME=~alice).
@@ -42,7 +47,7 @@ ALLOWED_IPS = {"1.1.1.1", "8.8.8.8", "8.8.4.4", "2606:4700:4700::1111", "2001:48
 def tracked_text_files():
     out = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z"], capture_output=True, check=True).stdout
     for name in out.decode().split("\0"):
-        if not name or name == "tests/test_machine_values.py":   # this file holds sample values on purpose
+        if not name:
             continue
         text = tracked_text(ROOT / name)
         if text is not None:
@@ -93,7 +98,7 @@ class MachineValues(unittest.TestCase):
         hits = []
         for name, text in tracked_text_files():
             for m in ip_candidates(text):
-                if public_ip(m.group(1)):
+                if public_ip(m.group(1)) and (name, m.group(1)) not in ALLOWED_IP_IN_FILE:
                     line = text.count("\n", 0, m.start()) + 1
                     hits.append(f"{name}:{line}: {m.group(1)}")
         self.assertEqual(hits, [], "public IP addresses; use the 10.100.80.x examples or <head>:\n"

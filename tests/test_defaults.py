@@ -25,6 +25,16 @@ PROTECTED = {
     "IMAGE": "tensorfold-dsv41:07aa02585f64",
 }
 PREFILL_CHUNK = "2048"
+# Where start.sh gives each protected value to the server. Every use of the option must take the variable, so a
+# literal value or a missing option fails.
+FORWARDED = {
+    "BIND_HOST": "--host",
+    "CONTEXT": "--context",
+    "PARALLEL": "--parallel",
+    "MTP_DRAFTS": "--mtp-drafts",
+    "IMAGE": "--entrypoint tensorfold",
+    "SPILL_GIB": "TF_DS_SPILL_GIB=",
+}
 
 
 def env_example() -> dict:
@@ -47,6 +57,18 @@ class ProtectedDefaults(unittest.TestCase):
         for key, want in PROTECTED.items():
             with self.subTest(key=key):
                 self.assertEqual(env.get(key), want, f".env.example {key} changed. {HOW}")
+
+    def test_start_sh_forwards_values(self):
+        text = start_sh()
+        for key, option in FORWARDED.items():
+            with self.subTest(key=key):
+                sep = "" if option.endswith("=") else r"\s+"
+                opt = r"\s+".join(re.escape(word) for word in option.split())
+                uses = re.findall(r"(?<![\w-])" + opt + sep + r"(\S+)", text)
+                var = r"\$(?:" + key + r"\b|\{" + key + r"(?::-[^}]*)?\})"
+                self.assertTrue(uses, f"start.sh does not pass {key} with {option}. {HOW}")
+                self.assertEqual([u for u in uses if not re.fullmatch(var, u)], [],
+                                 f"start.sh passes {option} without ${key}. {HOW}")
 
     def test_thinking_off(self):
         text = start_sh()
