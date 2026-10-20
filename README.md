@@ -34,6 +34,8 @@ Prefill with cold prompts (bertholomus's kit_bench client, median of 3 runs):
 
 ## What you get
 
+Optional: [cache accounting for health and Prometheus](experiments/cache-metrics/README.md). This experiment does not change the ordinary image.
+
 - **About 2× the decode speed** of the standard vLLM setup: 57 vs 27 tok/s on prose, 92 vs 40 tok/s on code.
 - **Fast prefill.** About 2,000 to 2,200 tok/s for prompts up to 64K tokens.
 - **Ready for AI agents.** Forced tool calls (`tool_choice` set to `required` or to one tool) and structured output (a JSON schema, a regex or a list of choices).
