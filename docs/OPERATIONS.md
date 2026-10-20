@@ -51,12 +51,12 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   watch -n 1 "grep MemAvailable /proc/meminfo"
   ```
 
-  If `MemAvailable` goes near 1 GiB (1,048,576 kB), change one setting in `.env` at a time, then run `./stop.sh && ./start.sh`:
-  1. `PARALLEL=2`: fewer prompts fill at the same time, so the peak is lower. Each request still gets the full context.
-  2. `MEM_FLOOR_GIB=3`: the engine stops its growth earlier, so more memory stays free for peaks.
+  If `MemAvailable` goes near 1 GiB (1,048,576 kB):
+  1. Set `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. Fewer prompts fill at the same time, so the peak is lower. Each request still gets the full context. This is not measured on this recipe yet.
+  2. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
   3. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
 
-  These settings are not measured on this recipe yet. Issue #21 tracks the memory trace and the engine fix.
+  Issue #21 tracks the memory trace and the engine fix.
 - **Boot.** Do not let a second server also start at boot (a vLLM unit, another model). Both servers want port 8888 and ~100 GB per node, and the second one fails or runs a node out of memory.
 
 ## Things that hurt on DGX Spark
