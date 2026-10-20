@@ -34,6 +34,16 @@ LOOP = {'$ref':'#/$defs/loop'}
 
 
 class SchemaSafetyTests(unittest.TestCase):
+    def test_unconstrained_instance_nesting_is_not_evaluation_depth(self):
+        # R2: preserve existing compatibility; docs distinguish this from the
+        # schema/evaluation depth cap rather than claiming a full-instance walk.
+        value = 0
+        for _ in range(100):
+            value = [value]
+        content, calls = parse({'type':'object'},value)
+        self.assertEqual(content,'')
+        self.assertEqual(json.loads(calls[0]['function']['arguments']),{'x':value})
+
     def rejected(self, schema, value):
         with self.assertRaises(native.ModelOutputError) as caught:
             parse(schema, value)

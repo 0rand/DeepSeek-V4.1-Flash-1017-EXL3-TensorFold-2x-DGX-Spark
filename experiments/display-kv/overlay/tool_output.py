@@ -408,6 +408,10 @@ def _schema(value, schema, root=None, depth=0, budget=None):
 class ToolOutputGuard:
     """Validate the entire answer before releasing any executable delta/content."""
     _marker = re.compile(r'<(?:/?(?:[\w.-]+:)?tool_call\b|/?[｜|]DSML[｜|]|\|tool_call\b)', re.I)
+    _quote_line = re.compile(r'^[ \t]*>[^\n]*(?:\n|$)', re.M)
+    _prose_token = re.compile(_quote_line.pattern + r'|' + _marker.pattern + r'|`+|~{3,}', re.I|re.M)
+    _inline_boundary = re.compile(r'^[ \t]*(?:\n|$)|' + _quote_line.pattern + r'|`+|~{3,}', re.M)
+    _fence_close = re.compile(r'(?m)^[ \t]*(`{3,}|~{3,})([^\n]*)(?:\n|$)')
     _param = re.compile(r'<parameter=([^>\s]+)>\n?(.*?)\n?</parameter>',re.I|re.S)
     _invoke = re.compile(r'<｜DSML｜ invoke name="([^"\s]+)">\s*(.*?)\s*</｜DSML｜ invoke>',re.S)
     _dsparam = re.compile(r'<｜DSML｜ parameter name="([^"\s]+)"(?: string="(true|false)")?>(.*?)</｜DSML｜ parameter>',re.S)
@@ -499,7 +503,6 @@ class ToolOutputGuard:
         raise ValueError('malformed_call')
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
-        literals = self._literal_spans(text)
         content=[]; calls=[]; cursor=0
         try:
             choice = self.request.get('tool_choice','auto')
@@ -519,23 +522,25 @@ class ToolOutputGuard:
             if max_calls is not None and (type(max_calls) is not int or max_calls < 0):
                 raise ValueError('invalid_max_calls')
             while True:
-                m = self._marker.search(text,cursor)
+                # Resume prose scanning only AFTER the last envelope. Argument
+                # delimiters and nested markers are protocol data, never Markdown.
+                m = self._next_marker(text,cursor)
                 if not m:
                     content.append(text[cursor:]); break
                 start = m.start()
-                literal_end = next((b for a,b in literals if a <= start < b), None)
+                literal_end = None
                 line_start = text.rfind('\n',0,start)+1
                 line_end = text.find('\n',start)
                 if line_end < 0:
                     line_end = len(text)
                 prefix = text[line_start:start].rstrip()
-                if (prefix and self._opening_quote(start,text)
+                if (prefix and self._opening_quote(start,text,cursor)
                         and text[start:line_end].rstrip().endswith(prefix[-1])
                         and self._marker.search(text,m.end(),line_end) is None):
                     # A line-quoted example can itself be truncated/malformed.
                     # Never extend its literal exemption past the quoted line.
                     literal_end = line_end
-                if literal_end is not None or re.fullmatch(r'[ \t]*(?:>[ \t]*)+',text[line_start:start]):
+                if literal_end is not None or re.match(r'[ \t]*>',text[line_start:start]):
                     # A malformed example must not consume executable output AFTER
                     # its fence/line. Skip only the actual literal span.
                     stop = literal_end if literal_end is not None else text.find('\n',start)
@@ -562,8 +567,11 @@ class ToolOutputGuard:
                     ds_close = '</｜DSML｜tool_calls>' if ds_open == '<｜DSML｜tool_calls>' else '</｜DSML｜ calls>'
                     close = text.find(ds_close,start)
                     stop = close+len(ds_close) if close>=0 else len(text)
-                if self._literal(start,stop,text,literals):
+                quoted_end = self._quoted_end(start,stop,text,cursor)
+                if quoted_end is not None:
                     # A literal malformed JSON example need not even be decodable.
+                    # Consume its closing quote too: it cannot open a new literal.
+                    stop=quoted_end
                     content.append(text[cursor:stop]); cursor=stop; continue
                 content.append(text[cursor:start])
                 if opening:
@@ -602,32 +610,59 @@ class ToolOutputGuard:
             self._reject(text,'invalid_executable_tool_output')
         return ''.join(content), calls or None
 
-    @staticmethod
-    def _literal_spans(text: str) -> list[tuple[int, int]]:
-        spans=[]; fence=None; offset=0
-        for line in text.splitlines(keepends=True):
-            marker=re.match(r'[ \t]*(`{3,}|~{3,})',line)
-            if marker:
-                token=marker.group(1)
-                if fence is None:
-                    fence=(token[0],len(token),offset)
-                elif token[0]==fence[0] and len(token)>=fence[1] and not line[marker.end():].strip():
-                    spans.append((fence[2],offset+len(line))); fence=None
-            offset+=len(line)
-        if fence is not None:
-            spans.append((fence[2],len(text)))
-        cursor=0
-        for m in re.finditer(r'`+',text):
-            if m.start()<cursor or any(a<=m.start()<b for a,b in spans):
+    @classmethod
+    def _next_marker(cls, text, cursor):
+        """Scan prose literals up to, but never through, an executable opener.
+
+        A literal opened in prose owns its contents (including malformed examples).
+        Otherwise the caller must consume/validate the whole protocol envelope
+        before invoking this scanner again. No state originates in call arguments.
+        """
+        while (token := cls._prose_token.search(text,cursor)) is not None:
+            raw=token.group()
+            if raw.lstrip(' \t').startswith('>'):
+                # The complete quoted line owns all its delimiters. None can
+                # open inline/fenced state around a later unquoted attempt.
+                cursor=token.end()
                 continue
-            close=re.search(r'(?<!`)`{'+str(len(m.group()))+r'}(?!`)',text[m.end():])
-            if close:
-                cursor=m.end()+close.end(); spans.append((m.start(),cursor))
-        return spans
+            if raw.startswith('<'):
+                return token
+            cursor=token.end()
+            line_start=text.rfind('\n',0,token.start())+1
+            if len(raw)>=3 and not text[line_start:token.start()].strip():
+                # Unclosed fences remain literal to end-of-answer. Closing runs
+                # must use the same character, be at least as long, and stand alone.
+                # Search the original string: slicing at cursor invents a line
+                # start inside the opening fence's info string (e.g. ~~~ ~~~).
+                for close in cls._fence_close.finditer(text,cursor):
+                    run=close.group(1)
+                    if run[0]==raw[0] and len(run)>=len(raw) and not close.group(2).strip():
+                        cursor=close.end()
+                        break
+                else:
+                    return None
+            elif raw[0]=='`':
+                # Compare runs directly, not a model-sized dynamic regex repeat.
+                # A block fence takes precedence over inline code. Do not let
+                # a stray prose backtick close inside a later fence and expose
+                # its literal examples (including an unclosed fence).
+                for close in cls._inline_boundary.finditer(text,cursor):
+                    run=close.group()
+                    if not run.strip() or run.lstrip(' \t').startswith('>'):
+                        # Quoted containers and paragraph breaks terminate this
+                        # prose lookup; their delimiters cannot close it either.
+                        break
+                    line_start=text.rfind('\n',0,close.start())+1
+                    if len(run)>=3 and not text[line_start:close.start()].strip():
+                        break
+                    if run[0]=='`' and len(run)==len(raw):
+                        cursor=close.end()
+                        break
+        return None
 
     @staticmethod
-    def _opening_quote(start,text):
-        prefix=text[text.rfind('\n',0,start)+1:start].rstrip()
+    def _opening_quote(start,text,context_start=0):
+        prefix=text[max(context_start,text.rfind('\n',0,start)+1):start].rstrip()
         if not prefix or prefix[-1] not in "\"'":
             return False
         quote=prefix[-1]; count=0; escaped=False
@@ -644,11 +679,8 @@ class ToolOutputGuard:
         return count % 2 == 1 and not escaped
 
     @staticmethod
-    def _literal(start,stop,text,spans):
-        if any(a<=start<b for a,b in spans):
-            return True
-        before,after=text[:start].rstrip(),text[stop:].lstrip()
-        if ToolOutputGuard._opening_quote(start,text) and before and after and after[0]==before[-1]:
-            return True
-        line_start=text.rfind('\n',0,start)+1
-        return re.fullmatch(r'[ \t]*(?:>[ \t]*)+',text[line_start:start]) is not None
+    def _quoted_end(start,stop,text,context_start):
+        before,after=text[context_start:start].rstrip(),text[stop:].lstrip()
+        if ToolOutputGuard._opening_quote(start,text,context_start) and before and after and after[0]==before[-1]:
+            return len(text)-len(after)+1
+        return None

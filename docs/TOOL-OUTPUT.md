@@ -23,10 +23,19 @@ checks for the narrower unoffered-tool guard do not validate this revision.
 - JSON, Qwen function/parameter XML, GLM argument tags and both spaced and
   unspaced DeepSeek DSML wrappers are supported. Duplicate JSON/parameter keys,
   nonfinite numbers, unexpected envelope fields and unparsed residue reject.
-- Explicit quotes, inline code, fenced code and Markdown blockquotes remain
-  literal content. A malformed literal example cannot hide a later executable
+- Explicit quotes, inline code, fenced code and lines with an explicit leading
+  Markdown blockquote marker remain literal content (including prose before a
+  marker on that quoted line). Delimiters on explicitly quoted lines cannot
+  open or close inline state in unquoted prose. Inline spans cannot cross a
+  quoted-line, blank-paragraph or block-fence boundary; multiline spans within
+  uninterrupted prose remain supported. Lazy quote continuation is not inferred. A
+  malformed literal example cannot hide a later executable
   attempt outside its literal span. Protocol markers inside an argument string
-  remain data. Unquoted markup is an attempted call, not a guaranteed example.
+  remain data. Markdown scanning resumes only after a whole accepted protocol
+  envelope: backticks, fence runs and quotes in its arguments cannot start
+  literal state around a later call. True prose fences, including unclosed
+  fences, still protect their examples. Unquoted markup is an attempted call,
+  not a guaranteed example.
 - Supplied IDs are preserved exactly, not normalized or replaced. Empty,
   non-string or duplicate IDs reject; an absent ID receives a new generated ID.
 
@@ -47,7 +56,11 @@ another logical branch. Invalid schemas, recursive-depth failures and exhausted
 work budgets are terminal across every combinator. Each call shares a 10,000
 step budget across structural validation, branches, references and equality
 checks. Schema and argument JSON serializations are each limited to 262,144
-characters and nesting depth is capped at 64.
+characters. Schema structure and recursive schema-evaluation depth are capped
+at 64; this is **not** a cap on full argument-instance nesting. Unconstrained
+subtrees (for example, additional properties allowed by `true` or the default)
+are not recursively evaluated and may exceed 64 levels, subject to serialized
+size and Python's JSON parser/serializer recursion limits.
 
 Regexes are a deliberately restricted Python `re` subset: sequences of literal,
 dot, character-class and simple escaped atoms; optional outer `^`/`$`; fixed

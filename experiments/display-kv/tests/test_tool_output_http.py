@@ -281,6 +281,70 @@ class ToolOutputHttpTests(unittest.TestCase):
         self.assertEqual(text.count("data: [DONE]"), 1)
         self.assertEqual(len(app.engine.calls), 1)
 
+    def test_fence_info_and_blockquote_literals_never_emit_executable_calls(self):
+        xml = '<tool_call><function=task><parameter=value>1</parameter></function></tool_call>'
+        dsml = '<｜DSML｜tool_calls><｜DSML｜invoke name="task"><｜DSML｜parameter name="value" string="false">1</｜DSML｜parameter></｜DSML｜invoke></｜DSML｜tool_calls>'
+        literals = []
+        for opener in ('~~~ ~~~', '~~~ ~~~~', '~~~~ ~~~~', '~~~ ~~~ info'):
+            closing = opener.split()[0]
+            for body in (KNOWN, xml, dsml, UNKNOWN, '<tool_call>{broken'):
+                for closed in (False, True):
+                    literals.append(opener + '\n' + body + ('\n' + closing if closed else ''))
+        literals.extend('> Example: ' + body for body in (KNOWN, UNKNOWN, '<tool_call>{broken'))
+        for stream in (False, True):
+            app = app_for(self.ds_app, self.server)
+            with http_server(self.http, app) as port:
+                for literal in literals:
+                    with self.subTest(stream=stream, literal=literal):
+                        status, _, wire = post(port, self.request('C', tools=TOOLS, stream=stream, fixture_text=literal))
+                        self.assertEqual(status, 200)
+                        if stream:
+                            payloads = frames(wire)
+                            self.assertFalse(any('error' in item for item in payloads))
+                            choices = [choice for item in payloads for choice in item.get('choices', [])]
+                            self.assertFalse(any(choice.get('delta', {}).get('tool_calls') for choice in choices))
+                            self.assertFalse(any(choice.get('finish_reason') == 'tool_calls' for choice in choices))
+                            content = ''.join(choice.get('delta', {}).get('content') or '' for choice in choices)
+                            self.assertEqual(wire.count('data: [DONE]'), 1)
+                        else:
+                            message = json.loads(wire)['choices'][0]['message']
+                            self.assertFalse(message.get('tool_calls'))
+                            content = message['content']
+                        self.assertEqual(content, literal)
+            self.assertEqual(len(app.engine.calls), len(literals))
+
+    def test_quote_owned_inline_state_cannot_mask_unquoted_rejection(self):
+        strict_tools = [{"type": "function", "function": {"name": "task", "parameters": {
+            "type": "object", "properties": {"value": {"type": "integer"}},
+            "required": ["value"], "additionalProperties": False}}}]
+        bads = ('<tool_call>{broken', UNKNOWN, '<tool_call>{"name":"task","arguments":{"value":"wrong"}}</tool_call>')
+        cases = []
+        for bad in bads:
+            for prefix in ('> ', '> Example: ', '  > > Quoted: '):
+                for run in ('`', '``'):
+                    cases.append(prefix + run + '<tool_call>{broken\n' + bad + '\n' + run)
+            cases.extend(('`\n' + bad + '\n> closing `', '`\n' + bad + '\n> quoted prose\n`', '`\n' + bad + '\n\n`'))
+        for stream in (False, True):
+            app = app_for(self.ds_app, self.server)
+            with http_server(self.http, app) as port:
+                for text in cases:
+                    for valid_prefix in ('', KNOWN + '\n'):
+                        with self.subTest(stream=stream, text=text, valid_prefix=bool(valid_prefix)):
+                            status, _, wire = post(port, self.request('C', tools=strict_tools, stream=stream, fixture_text=valid_prefix + text))
+                            self.assertEqual(status, 200 if stream else 500)
+                            if stream:
+                                payloads = frames(wire)
+                                self.assertEqual(len([item for item in payloads if 'error' in item]), 1)
+                                self.assertFalse(any(choice.get('delta', {}).get(key)
+                                    for item in payloads for choice in item.get('choices', []) for key in ('content', 'tool_calls')))
+                                self.assertEqual(wire.count('data: [DONE]'), 1)
+                            else:
+                                self.assertEqual(json.loads(wire)['error']['source'], 'tensorfold.tool_output_guard')
+                status, _, wire = post(port, self.request('C', stream=stream))
+                self.assertEqual(status, 200)
+                self.assertIn('ordinary answer', wire)
+            self.assertEqual(len(app.engine.calls), len(cases) * 2 + 1)
+
     def test_atomic_mixed_and_literal_calls(self):
         app = app_for(self.ds_app, self.server)
         with http_server(self.http, app) as port:
@@ -347,6 +411,73 @@ class ToolOutputHttpTests(unittest.TestCase):
                     self.assertEqual(status, 200)
                     self.assertIn("ordinary answer", wire)
             self.assertEqual(len(app.engine.calls), 2 * len(cases))
+
+    def test_argument_literal_contamination_rejects_without_release(self):
+        from test_tool_output import TEXT_TOOLS, contamination_cases
+        for stream in (False, True):
+            app = app_for(self.ds_app, self.server)
+            with http_server(self.http, app) as port:
+                for label, text in contamination_cases():
+                    with self.subTest(stream=stream,label=label):
+                        status, headers, wire = post(port, self.request('C', tools=TEXT_TOOLS,
+                            stream=stream, fixture_text='NO_CONTENT_RELEASE'+text))
+                        self.assertEqual(status, 200 if stream else 500)
+                        payloads = frames(wire) if stream else [json.loads(wire)]
+                        errors = [p['error'] for p in payloads if 'error' in p]
+                        self.assertEqual(len(errors),1)
+                        self.assertEqual(errors[0]['type'],'model_output_error')
+                        self.assertEqual(errors[0]['reason'],'invalid_executable_tool_output')
+                        self.assertEqual(errors[0]['source'],'tensorfold.tool_output_guard')
+                        self.assertFalse(any(c.get('delta',{}).get(key)
+                            for p in payloads for c in p.get('choices',[])
+                            for key in ('content','tool_calls')))
+                        self.assertFalse(any(c.get('finish_reason')
+                            for p in payloads for c in p.get('choices',[])))
+                        for sentinel in ('NO_CONTENT_RELEASE','r1_exact','unoffered','secret'):
+                            self.assertNotIn(sentinel,wire)
+                        if stream:
+                            self.assertEqual(wire.count('data: [DONE]'),1)
+                        else:
+                            self.assertNotIn('choices',payloads[0])
+                            self.assertEqual(headers.get('x-should-retry'),'false')
+
+    def test_argument_literals_preserved_in_installed_output(self):
+        from test_tool_output import TEXT_TOOLS, text_call, literal_controls
+        value = '`<tool_call>{broken}</tool_call><｜DSML｜ calls>~~~'
+        cases = [(literal,literal,[]) for literal in literal_controls()]
+        cases += [(text_call(value),'',[value])]
+        for form in ('json','nested','encoded','xml','glm','dsml','dsml4'):
+            for value in ('`','``','```','line\n```\nend','line\n~~~\nend'):
+                cases.append((text_call(value,form)+'\n'+text_call(value,form,'r1_second'),
+                              '\n',[value,value]))
+        for literal in literal_controls():
+            cases.append((text_call('`')+'\n'+literal,'\n'+literal,['`']))
+        for stream in (False,True):
+            app = app_for(self.ds_app,self.server)
+            with http_server(self.http,app) as port:
+                for text, expected_content, expected_values in cases:
+                    with self.subTest(stream=stream,text=text):
+                        status, _, wire = post(port,self.request('C',tools=TEXT_TOOLS,
+                            stream=stream,fixture_text=text))
+                        self.assertEqual(status,200)
+                        payloads = frames(wire) if stream else [json.loads(wire)]
+                        self.assertFalse(any('error' in p for p in payloads))
+                        messages = [c.get('delta',{}) if stream else c['message']
+                            for p in payloads for c in p.get('choices',[])]
+                        content = ''.join(m.get('content') or '' for m in messages)
+                        calls = [call for m in messages for call in m.get('tool_calls') or []]
+                        self.assertEqual(content,expected_content)
+                        self.assertEqual([json.loads(c['function']['arguments'])['text']
+                                          for c in calls],expected_values)
+                        if calls and text.startswith('<tool_call>{'):
+                            self.assertEqual(calls[0]['id'],'r1_exact')
+                            if len(calls)==2:
+                                self.assertEqual(calls[1]['id'],'r1_second')
+                        if stream:
+                            self.assertEqual(wire.count('data: [DONE]'),1)
+                            self.assertTrue(any(c.get('finish_reason') ==
+                                ('tool_calls' if calls else 'stop')
+                                for p in payloads for c in p.get('choices',[])))
 
     def test_nullable_parallel_and_explicit_false(self):
         twice = KNOWN + KNOWN.replace("call_exact", "call_second")

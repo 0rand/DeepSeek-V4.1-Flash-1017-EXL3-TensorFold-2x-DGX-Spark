@@ -47,6 +47,48 @@ class Native(unittest.TestCase):
         nested = '<tool_call>'+json.dumps({'name':'terminal','arguments':{'x':7},'id':'copy_exact'})+'</tool_call>'
         self.assertEqual(self.guard().parse(nested)[1][0]['id'], 'copy_exact')
 
+    def test_fence_info_cannot_be_its_own_closing_fence(self):
+        xml = '<tool_call><function=terminal><parameter=x>7</parameter></function></tool_call>'
+        dsml = '<｜DSML｜tool_calls><｜DSML｜invoke name="terminal"><｜DSML｜parameter name="x" string="false">7</｜DSML｜parameter></｜DSML｜invoke></｜DSML｜tool_calls>'
+        bodies = (GOOD, xml, dsml, '<tool_call>{broken', '<tool_call>{"name":"missing","arguments":{}}</tool_call>')
+        for opener in ('~~~ ~~~', '~~~ ~~~~', '~~~~ ~~~~', '~~~ ~~~ info'):
+            closing = opener.split()[0]
+            for body in bodies:
+                for closed in (False, True):
+                    literal = opener + '\n' + body + ('\n' + closing if closed else '')
+                    with self.subTest(opener=opener, body=body, closed=closed):
+                        self.assertEqual(self.guard().parse(literal), (literal, None))
+                        if closed:
+                            content, calls = self.guard().parse(literal + '\n' + GOOD)
+                            self.assertEqual(content, literal + '\n')
+                            self.assertEqual(calls[0]['id'], 'call_fixture_exact')
+                            with self.assertRaises(ModelOutputError):
+                                self.guard().parse(literal + '\n<tool_call>{broken')
+
+    def test_blockquote_prose_is_literal_only_on_its_own_line(self):
+        for prefix in ('> Example: ', '> > Quoted example: ', '  > Description '):
+            for body in (GOOD, '<tool_call>{broken'):
+                literal = prefix + body
+                with self.subTest(prefix=prefix, body=body):
+                    self.assertEqual(self.guard().parse(literal), (literal, None))
+                    with self.assertRaises(ModelOutputError):
+                        self.guard().parse(literal + '\n<tool_call>{broken')
+
+    def test_quoted_lines_cannot_own_unquoted_inline_state(self):
+        bads = ('<tool_call>{broken', '<tool_call>{"name":"missing","arguments":{}}</tool_call>', '<tool_call>{"name":"terminal","arguments":{"x":"wrong"}}</tool_call>')
+        for bad in bads:
+            cases = []
+            for prefix in ('> ', '> Example: ', '  > > Quoted: '):
+                for run in ('`', '``'):
+                    cases.append(prefix + run + '<tool_call>{broken\n' + bad + '\n' + run)
+            cases.extend(('`\n' + bad + '\n> closing `', '`\n' + bad + '\n> quoted prose\n`', '`\n' + bad + '\n\n`'))
+            for text in cases:
+                for valid_prefix in ('', GOOD + '\n'):
+                    with self.subTest(text=text, valid_prefix=bool(valid_prefix)), self.assertRaises(ModelOutputError):
+                        self.guard().parse(valid_prefix + text)
+        for literal in ('`\n' + GOOD + '\n`', '`> ' + GOOD + '`', 'before `> ' + GOOD + '`'):
+            self.assertEqual(self.guard().parse(literal), (literal, None))
+
     def test_dsml_and_xml(self):
         ds = '<｜DSML｜ calls><｜DSML｜ invoke name="terminal"><｜DSML｜ parameter name="x" string="false">7</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>'
         xml = '<tool_call><function=terminal><parameter=x>7</parameter></function></tool_call>'
@@ -120,5 +162,103 @@ class Native(unittest.TestCase):
         calls = ToolOutputGuard(tools).parse(text)[1]
         self.assertEqual(json.loads(calls[0]['function']['arguments'])['text'], value)
         self.assertEqual(calls[0]['id'],'nested_exact')
+
+# Shared by portable parser and actual-installed JSON/SSE tests.
+TEXT_TOOLS = [{'type':'function','function':{'name':'task','parameters':{
+    'type':'object','properties':{'text':{'type':'string'}},
+    'required':['text'],'additionalProperties':False}}}]
+
+
+def text_call(value, form='json', ident='r1_exact'):
+    payload = {'id':ident,'name':'task','arguments':{'text':value}}
+    if form == 'nested':
+        payload = {'id':ident,'type':'function','function':{
+            'name':'task','arguments':{'text':value}}}
+    elif form == 'encoded':
+        payload['arguments'] = json.dumps(payload['arguments'])
+    if form in ('json','nested','encoded'):
+        return '<tool_call>'+json.dumps(payload)+'</tool_call>'
+    if form == 'xml':
+        return '<tool_call><function=task><parameter=text>'+value+'</parameter></function></tool_call>'
+    if form == 'glm':
+        return '<tool_call>task<arg_key>text</arg_key><arg_value>'+value+'</arg_value></tool_call>'
+    gap = ' ' if form == 'dsml' else ''
+    def tag(name): return '｜DSML｜'+gap+name
+    outer = 'calls' if gap else 'tool_calls'
+    return ('<'+tag(outer)+'><'+tag('invoke')+' name="task"><'+tag('parameter')+
+            ' name="text" string="true">'+value+'</'+tag('parameter')+'></'+
+            tag('invoke')+'></'+tag(outer)+'>')
+
+
+def contamination_cases():
+    suffixes = [('<tool_call>{broken', 'malformed'),
+                ('<tool_call>{"name":"unoffered","arguments":{"secret":1}}</tool_call>', 'unavailable'),
+                ('<tool_call>{"name":"task","arguments":{"text":7}}</tool_call>', 'schema')]
+    # Preserve the independent review's exact original reproducer, without an ID.
+    original = '<tool_call>{"name":"task","arguments":{"text":"`"}}</tool_call>'
+    for suffix, failure in suffixes:
+        yield ('original', '`', failure), original+'\n'+suffix+'\n`'
+    for form in ('json','nested','encoded','xml','glm','dsml','dsml4'):
+        for value, closer in [('`','`'), ('``','``'), ('```','```'),
+                              ('line\n```\nend','\n```'), ('line\n~~~\nend','\n~~~')]:
+            for suffix, failure in suffixes:
+                yield (form, value, failure), text_call(value,form)+'\n'+suffix+'\n'+closer
+
+
+def literal_controls():
+    bad = '<tool_call>{broken'
+    return ['`'+bad+'`', '``'+bad+'``', '```\n'+bad+'\n```',
+            '~~~\n'+bad+'\n~~~', '```\n'+bad, '~~~\n'+bad,
+            '> '+bad, "'"+bad+"'", '"'+bad+'"',
+            '````\n`'+bad+'`\n```\nstill literal',
+            '~~~\n```\n'+bad+'\n~~~',
+            'intro `\n~~~\n`\n'+bad+'\n~~~',
+            'intro `\n```\n`\n'+bad]
+
+
+class ArgumentLiteralIsolation(unittest.TestCase):
+    def test_atomic_contamination_regressions(self):
+        for label, text in contamination_cases():
+            with self.subTest(label=label):
+                with self.assertRaises(ModelOutputError) as caught:
+                    ToolOutputGuard(TEXT_TOOLS).parse(text)
+                self.assertEqual(caught.exception.error['reason'],'invalid_executable_tool_output')
+
+    def test_cross_envelope_arguments_are_not_markdown(self):
+        for form in ('json','nested','encoded','xml','glm','dsml','dsml4'):
+            for value in ('`','``','```','line\n```\nend','line\n~~~\nend'):
+                with self.subTest(form=form,value=value):
+                    text = text_call(value,form)+'\n'+text_call(value,form,'r1_second')
+                    content, calls = ToolOutputGuard(TEXT_TOOLS).parse(text)
+                    self.assertEqual(content,'\n')
+                    self.assertEqual(len(calls),2)
+                    for call in calls:
+                        self.assertEqual(json.loads(call['function']['arguments']),{'text':value})
+                    if form in ('json','nested','encoded'):
+                        self.assertEqual([c['id'] for c in calls],['r1_exact','r1_second'])
+
+    def test_literal_controls_and_nested_markers(self):
+        for literal in literal_controls():
+            with self.subTest(literal=literal):
+                self.assertEqual(ToolOutputGuard(TEXT_TOOLS).parse(literal),(literal,None))
+                content, calls = ToolOutputGuard(TEXT_TOOLS).parse(text_call('`')+'\n'+literal)
+                self.assertEqual(content,'\n'+literal)
+                self.assertEqual(calls[0]['id'],'r1_exact')
+        value = '`<tool_call>{broken}</tool_call><｜DSML｜ calls>~~~'
+        content, calls = ToolOutputGuard(TEXT_TOOLS).parse(text_call(value))
+        self.assertEqual(content,'')
+        self.assertEqual(json.loads(calls[0]['function']['arguments']),{'text':value})
+        self.assertEqual(calls[0]['id'],'r1_exact')
+
+
+    def test_quote_state_cannot_originate_in_arguments(self):
+        for value in ("'", '"', "'`", '"~~~'):
+            literal = "'<tool_call>{broken'"
+            content, calls = ToolOutputGuard(TEXT_TOOLS).parse(text_call(value)+' '+literal)
+            self.assertEqual(content,' '+literal)
+            self.assertEqual(json.loads(calls[0]['function']['arguments']),{'text':value})
+            with self.assertRaises(ModelOutputError):
+                ToolOutputGuard(TEXT_TOOLS).parse(text_call(value)+" '<tool_call>{broken")
+
 
 if __name__ == '__main__': unittest.main(verbosity=2)
