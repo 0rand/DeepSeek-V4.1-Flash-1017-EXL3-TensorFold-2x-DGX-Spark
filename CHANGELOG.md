@@ -16,6 +16,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Changed
 
+- `scripts/preflight.sh` shows a `[warn]` line when a node has an NVIDIA driver older than the tested 580.178.04 (#24). `docs/OPERATIONS.md` gives the node-hang log signature from #24 and the recovery steps.
 - `docs/OPERATIONS.md`: what to do when earlyoom stops the engine under concurrent load (#21): `PARALLEL=2`, and do not raise `MEM_FLOOR_GIB`.
 
 ### Fixed

@@ -246,7 +246,7 @@ Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 | Base image | `nvcr.io/nvidia/pytorch:26.07-py3` |
 | Chat template | MiaAI kit `files/chat_template.jinja` @ `6f7d1590` + [our patch](runs/2026-10-17/template-patch.diff) |
 | vLLM comparison | MiaAI kit @ `6f7d1590`, image `sha256:2f0cf3ad...` |
-| Tested on | DGX OS (Ubuntu 24.04.5), driver 580.178.04, CUDA 13.0, Docker 29.6.2 |
+| Tested on | DGX OS (Ubuntu 24.04.5), kernel 7.0.0-1019-nvidia, driver 580.178.04, CUDA 13.0, Docker 29.6.2, CX7 firmware 28.45.4028. Use driver 580.178.04 or newer: `scripts/preflight.sh` warns on an older one ([#24](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/24)). |
 
 Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROVENANCE.md).
 

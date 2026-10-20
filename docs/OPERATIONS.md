@@ -57,6 +57,18 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   3. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
 
   Issue #21 tracks the memory trace and the engine fix.
+- **The whole node stops (no ssh, no ping above the link).** One report ([#24](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/24)) shows this kernel log on the head just before the hang:
+
+  ```text
+  mlx5_core 0002:01:00.0: PCIe Bus Error: severity=Uncorrectable (Non-Fatal) ...
+  mlx5_core 0002:01:00.0:    [14] CmpltTO
+  arm-smmu-v3 arm-smmu-v3.0.auto: CMD_SYNC timeout at ...
+  ```
+
+  Only a power cycle recovered the node. The cause is not known. That setup used driver 580.173.02. This recipe is tested on 580.178.04 and kernel 7.0.0-1019-nvidia, and our pair has no such event in 20 days of this load. `scripts/preflight.sh` shows a `[warn]` line for a driver older than 580.178.04.
+  1. Update the driver to 580.178.04 or newer on both nodes before you use this recipe.
+  2. After the power cycle, if the node stops at a `grub>` prompt, the file system needs a check. Start the node from recovery media and run `fsck -f` on the root partition.
+  3. Save `journalctl -k -b -1` from the node that stopped, and add it to #24 with the driver, kernel and CX7 firmware (`ethtool -i <netdev>`).
 - **Boot.** Do not let a second server also start at boot (a vLLM unit, another model). Both servers want port 8888 and ~100 GB per node, and the second one fails or runs a node out of memory.
 
 ## Things that hurt on DGX Spark

@@ -19,6 +19,15 @@ check_node() {  # $1 = label, $2 = command runner ("" for here, wssh for the wor
   local who=$1 run=$2 out
   out=$($run bash -s <<EOF
 set -u
+# The tested driver is 580.178.04 (README). Issue #24 reports node hangs on 580.173.02 (a CX7 PCIe completion
+# timeout, then an SMMU stall); the cause is not confirmed, so an older driver is a warning, not a failure.
+drv=\$(cat /sys/module/nvidia/version 2>/dev/null)
+if [ -z "\$drv" ]; then echo "WARN cannot read the NVIDIA driver version"
+elif [ "\$(printf '%s\n' 580.178.04 "\$drv" | sort -V | head -1)" = 580.178.04 ]; then
+  echo "OK driver \$drv, kernel \$(uname -r)"
+else
+  echo "WARN driver \$drv is older than the tested 580.178.04 (kernel \$(uname -r)): update it, see issue #24"
+fi
 for d in "$MODEL_VIEW/model" "$MODEL_VIEW/engram"; do [ -d "\$d" ] || echo "FAIL missing \$d"; done
 [ -f "$MODEL_VIEW/model/chat_template.jinja" ] || echo "FAIL missing $MODEL_VIEW/model/chat_template.jinja"
 n=\$(ls "$MODEL_VIEW"/model/*.safetensors 2>/dev/null | wc -l); [ "\$n" -ge 43 ] || echo "FAIL \$n of 43 weight shards"
@@ -69,6 +78,7 @@ EOF
     case "$line" in
       FAIL*) no "$who: ${line#FAIL }" ;;
       OK*) ok "$who: ${line#OK }" ;;
+      WARN*) echo "[warn] $who: ${line#WARN }" ;;
       IMAGE*) echo "${line#IMAGE }" > "/tmp/tfv41-image-$who" ;;
     esac
   done <<< "$out"
