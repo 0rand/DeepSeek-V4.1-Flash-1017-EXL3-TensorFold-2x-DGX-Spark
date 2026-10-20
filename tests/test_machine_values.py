@@ -22,7 +22,9 @@ ALLOWED_HOME_IN_FILE = {
     ("runs/2026-10-18/gate/suite-ht.log", "elevatormusic"),
     ("runs/2026-10-18/gate/suite-odirect2.log", "elevatormusic"),
 }
-HOME_PATH = re.compile(r"(?:/home/|/Users/|[A-Za-z]:\\Users\\)([A-Za-z0-9._-]+)")
+# /home/<name>, /Users/<name> and C:\Users\<name>. Windows paths match in any letter case, also with the doubled
+# backslashes of JSON. The POSIX forms stay case-sensitive, so a URL path such as /users/123 does not match.
+HOME_PATH = re.compile(r"(?:/home/|/Users/|[A-Za-z]:(?:\\\\|\\|/)(?i:users)(?:\\\\|\\|/))([A-Za-z0-9._-]+)")
 IPV4 = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?![\w.])")
 # An IPv6 candidate: hex groups with 2 to 7 colons. ipaddress decides if it is a valid address.
 IPV6 = re.compile(r"(?<![\w:.])([0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7})(?![\w:])")
@@ -47,7 +49,8 @@ def public_ip(text: str) -> bool:
         ip = ipaddress.ip_address(text)
     except ValueError:
         return False                                          # a version such as 1.2.300.4, or a time such as 12:30:00
-    return ip.is_global and str(ip) not in ALLOWED_IPS
+    # Multicast addresses (224.0.0.1, ff02::1) are protocol constants, not a machine's address.
+    return ip.is_global and not ip.is_multicast and str(ip) not in ALLOWED_IPS
 
 
 def ip_candidates(text: str):
@@ -95,9 +98,18 @@ class Detection(unittest.TestCase):
 
     def test_not_addresses(self):
         for text in ("10.100.80.1", "fe80::1", "::1", "12:30:45", "2026-10-18T21:01:32Z", "aa:bb:cc:dd:ee:ff",
-                     "std::vector", "ruff==0.17.1", "pkg==1.7.12.25", "driver 580.178.04", "fd00::5"):
+                     "std::vector", "ruff==0.17.1", "pkg==1.7.12.25", "driver 580.178.04", "fd00::5",
+                     "224.0.0.1", "239.255.255.250", "ff02::1", "ff05::1:3"):
             with self.subTest(text=text):
                 self.assertEqual(self.found(text), [])
+
+    def test_home_paths(self):
+        for text, user in (("/home/alice/x", "alice"), ("/Users/Bob/x", "Bob"), (r"C:\Users\Carol\run.log", "Carol"),
+                           (r"c:\users\dave\run.log", "dave"), (r'"C:\\Users\\Erin\\run.log"', "Erin"),
+                           ("C:/Users/Fay/run.log", "Fay"), ("D:\\USERS\\Gus\\x", "Gus")):
+            with self.subTest(text=text):
+                self.assertEqual([m.group(1) for m in HOME_PATH.finditer(text)], [user])
+        self.assertEqual(list(HOME_PATH.finditer("GET https://api.example.com/users/123")), [])
 
 
 if __name__ == "__main__":
