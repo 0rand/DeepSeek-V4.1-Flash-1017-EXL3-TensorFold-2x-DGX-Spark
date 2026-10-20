@@ -10,6 +10,10 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ## [Unreleased]
 
+### Added
+
+- `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
+
 ### Fixed
 
 - `./start.sh` stopped with "Permission denied" on a new clone: `scripts/build_extensions.sh` had no executable bit (#15).
