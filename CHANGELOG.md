@@ -10,6 +10,8 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ## [Unreleased]
 
+- Add an independent opt-in [cache metrics experiment](experiments/cache-metrics/README.md) for health and Prometheus accounting. The ordinary engine stays unchanged.
+
 ### Added
 
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
