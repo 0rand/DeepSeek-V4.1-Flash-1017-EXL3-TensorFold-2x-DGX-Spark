@@ -26,3 +26,11 @@ Files:
 - The worker went down to 2,009 MiB (run 2). The lowest values on the worker were 2.0 to 2.4 GiB.
 - **Caveat for run 3:** its long prompts took 5 s to 17 s, against 55 s to 439 s in run 1. The prefix-cache spill (`SPILL_GIB=64`) kept them on disk after the restart, so run 3 loaded them and did not fill them again. Runs 1 and 3 are therefore not a clean A/B for the long prompts.
 - `scripts/` holds the two scripts exactly as they ran (sha256 `a95537dc...89e7cbe` for `oom_trace.py`, `5f0f23be...e7c7c89` for `val_checks.py`). Runs 2 and 3 used these files. Run 1 used an earlier `oom_trace.py` without the `try` around the image request; that copy stopped on the first failed request and lost its samples. They are a record, not a general tool: they send requests to `172.17.0.1:8888` from 127.0.0.1 (that pair's docker bridge address) and read the worker at `10.100.80.2`. Their earlyoom filter keeps only the `low memory` and `sending` lines, so `oom/earlyoom-head.txt` was taken again from the journal with the `mem avail` lines.
+
+## Tester report: display-KV position budget and overload (pull request #6)
+
+Reported by Sora39831 on two Spark nodes. The maintainers did not measure these numbers. The file keeps the numbers with the caveats of the author.
+
+| Run | What it measured | File |
+|---|---|---|
+| 20 Oct (UTC) | KV positions of the stock lane and the display lane, and 3 to 6 simultaneous 1M-token streams. The hard allocator cap was on in the display build | `display-kv-tester-kv-budget.md` |

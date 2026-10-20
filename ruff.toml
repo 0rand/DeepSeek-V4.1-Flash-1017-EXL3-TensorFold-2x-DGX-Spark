@@ -6,3 +6,8 @@ extend-exclude = ["runs"]
 
 [lint]
 select = ["E4", "E7", "E9", "F"]
+
+# The display-KV overlay and its tests use a compact style (one statement after a colon). The files stay
+# as the author wrote them. Only the style rules for this folder are relaxed; the error rules stay on.
+[lint.per-file-ignores]
+"experiments/display-kv/**" = ["E401", "E701", "E702"]

@@ -6,4 +6,3 @@ __pycache__/
 .display-kv-image
 .display-kv-image.tmp
 /data/benchmarks.sqlite*
-runs/*

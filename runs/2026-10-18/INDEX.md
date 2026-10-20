@@ -146,3 +146,14 @@ What the measurements showed:
 - **Kernel counters** for one 64K prompt (`scripts/vmd.sh`): with default compaction, 548 direct compaction stalls on the head; after step 4, 7. Without the page drop the worker reclaimed ~2.2M pages a 64K prompt; with it, ~0.5M.
 - **Drive** (`scripts/randread.c` on the worker, idle server): 4 KiB random reads at 514K/s buffered (128 threads) and 0.9-1.6M/s with O_DIRECT. A chunk needs ~49K of them, so the drive is not the limit.
 - **GPU clock and rails**: 2,360-2,500 MHz under load, no throttle reason set; both RoCE rails carry equal traffic.
+
+## Display-KV benchmark files (pull request #6)
+
+Files of the display-backed KV author (0rand), moved here from a `runs/2026/10/` folder. They are records, not evidence for a number in the README or the docs. The tool-eval-bench client wrote them; the host name inside is replaced by `<head>`. The files do not record the engine image, the launcher or the `.env` values, so they do not show whether the display lane or the ordinary lane served the requests. Do not use them for a claim about display KV.
+
+| Run | What it measured | Files |
+|---|---|---|
+| 21:01Z | Speculative decoding benchmark at depth 0, 4096 and 8192 (prose, code, structured), 3 runs per cell | `display-kv-bench/2026-10-18T21-01-32.003488Z_6104ad81.md` |
+| 21:22Z to 22:46Z | Eight throughput-only runs: prefill and decode at depth 0 to 256,000 tokens, with 1 to 4 requests at the same time | `display-kv-bench/2026-10-18T2*.md` (8 files) |
+
+The author's 5,963-line tool-call benchmark transcript of 21:04Z is not kept: nothing in the docs refers to it.
