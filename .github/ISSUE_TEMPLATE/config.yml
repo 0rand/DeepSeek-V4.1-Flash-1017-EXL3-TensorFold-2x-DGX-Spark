@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Ask a question
+    url: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/discussions/categories/q-a
+    about: Questions about setup, settings or results. Use Discussions, not an issue.
   - name: Setup and operations guide
     url: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/blob/main/docs/OPERATIONS.md
     about: Read this first if the server does not start or stops.
