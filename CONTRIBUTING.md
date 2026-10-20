@@ -164,7 +164,9 @@ tests/run_all.sh
 
 ## AI disclosure
 
-If an AI helped with your pull request or issue, paste this block at the very bottom. If no AI helped, write `AI: none` in it.
+**Pull requests:** if an AI helped, paste this block at the very bottom. If no AI helped, write `AI: none` in it. The template already has the block.
+
+**Issues:** the last field of each issue form asks for the same information. It starts empty and you must fill it in. Write `none` if no AI helped.
 
 ```html
 <details>
