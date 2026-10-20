@@ -59,9 +59,12 @@ def tracked_text(path: Path):
     if path.is_symlink():
         return os.readlink(path)                              # Git stores the link target, not the file it points to
     try:
-        return path.read_text(encoding="utf-8")
-    except (UnicodeDecodeError, OSError):
+        data = path.read_bytes()
+    except OSError:
         return None
+    if b"\0" in data[:8000]:
+        return None                                           # binary, by the same test that Git uses
+    return data.decode("utf-8", errors="replace")             # one bad byte must not hide the rest of a log
 
 
 def public_ip(text: str) -> bool:
@@ -143,6 +146,15 @@ class Detection(unittest.TestCase):
             except (OSError, NotImplementedError):
                 self.skipTest("cannot make a symlink here")
             self.assertEqual(tracked_text(link), "/home/alice/model")
+
+    def test_bad_byte_does_not_hide_a_log(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "run.log"
+            log.write_bytes(b"progress \xff\n/home/alice/run\n")
+            self.assertIn("/home/alice/run", tracked_text(log))
+            blob = Path(tmp) / "model.bin"
+            blob.write_bytes(b"\0/home/alice/run")
+            self.assertIsNone(tracked_text(blob))
 
 
 if __name__ == "__main__":
