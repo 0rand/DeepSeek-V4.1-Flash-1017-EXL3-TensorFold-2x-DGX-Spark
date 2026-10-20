@@ -1,1 +1,0 @@
-grep -E "^(compact_stall|compact_migrate_scanned|compact_free_scanned|compact_isolated|compact_daemon_wake|thp_fault_alloc|thp_collapse_alloc|pgmigrate_success|pgsteal_kswapd|pgsteal_direct|pgscan_kswapd|pswpout|kswapd_inodesteal|pageoutrun|numa_hint_faults|pgfault|pgmajfault) " /proc/vmstat
