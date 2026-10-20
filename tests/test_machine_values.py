@@ -38,7 +38,7 @@ HOME_PATH = re.compile(
     r"(?:/home/|/Users/|[A-Za-z]:(?:\\\\|\\|/)(?i:users)(?:\\\\|\\|/)|(?<![\w/~])~(?=[A-Za-z]))"
     r"([A-Za-z0-9._-]+)"
 )
-IPV4 = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?![\w.])")
+IPV4 = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?!\w|\.\d)")     # a sentence may end with a dot after it
 # An IPv6 candidate: hex groups with 2 to 7 colons, and an optional IPv4 tail (::ffff:10.100.80.1) that is part of
 # the same address. ipaddress decides if it is a valid address.
 IPV6 = re.compile(r"(?<![\w:.])([0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7}(?:\.\d{1,3}){0,3})(?![\w:]|\.\d)")
@@ -136,6 +136,8 @@ class Detection(unittest.TestCase):
     def test_public_addresses_found(self):
         self.assertEqual(self.found("head 203.0.113.7 ok"), [])          # documentation range: not global
         self.assertEqual(self.found("peer 34.117.59.81 up"), ["34.117.59.81"])
+        self.assertEqual(self.found("The peer is 34.117.59.81."), ["34.117.59.81"])
+        self.assertEqual(self.found("build 1.34.117.59.81"), [])                      # five parts: not an address
         self.assertEqual(self.found("addr 2a01:4f8:c17:1234::1 up"), ["2a01:4f8:c17:1234::1"])
         self.assertEqual(self.found("peer ::ffff:34.117.59.81 up"), ["::ffff:34.117.59.81"])
 
