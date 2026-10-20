@@ -53,10 +53,20 @@ jobs:
 
             const disclosure = /<summary>\s*AI disclosure\s*<\/summary>([\s\S]*?)<\/details>/i.exec(body);
             const ai = disclosure && /^\s*AI:\s*(.+)$/m.exec(disclosure[1]);
+            const checked = disclosure && /^\s*Checked:\s*(.*)$/m.exec(disclosure[1]);
+            const placeholder = /<[^<>]+>/;                   // an unchanged template value, e.g. <harness>
             if (!disclosure) {
               problems.push('Add the "AI disclosure" block at the bottom (see "AI disclosure" in CONTRIBUTING.md).');
-            } else if (!ai || ai[1].includes('<model and size>')) {
-              problems.push('Fill in the "AI:" line of the AI disclosure block, or write "AI: none".');
+            } else if (!ai || placeholder.test(ai[1])) {
+              problems.push('Fill in the "AI:" line of the AI disclosure block (model and size via harness), '
+                            + 'or write "AI: none".');
+            } else if (!/^none\b/i.test(ai[1].trim())) {
+              if (!/\svia\s+\S/i.test(ai[1])) {
+                problems.push('Name the harness on the "AI:" line, for example "Qwen3-8B Q4 via Aider".');
+              }
+              if (!checked || !checked[1].trim() || placeholder.test(checked[1])) {
+                problems.push('Fill in the "Checked:" line: what you checked yourself.');
+              }
             }
 
             if (problems.length) {
