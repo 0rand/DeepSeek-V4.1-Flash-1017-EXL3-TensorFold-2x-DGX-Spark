@@ -364,6 +364,30 @@ class StartDisplayKvTest(unittest.TestCase):
         self.assertNotIn("sudo -v", commands)
         self.assertNotIn("bundle-start", commands)
 
+    def test_head_with_passwordless_sudo_never_asks_for_a_password(self):
+        result = self.invoke(TEST_UID=1000)
+        commands = self.commands()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("sudo -n true", commands)
+        self.assertNotIn("sudo -v", commands)
+        self.assertTrue(any(line.startswith("sudo -n bash ") and line.endswith(" on") for line in commands), commands)
+
+    def test_head_without_passwordless_sudo_falls_back_to_one_password_prompt(self):
+        result = self.invoke(TEST_UID=1000, SUDO_FAIL=1)
+        commands = self.commands()
+        self.assertIn("sudo -n true", commands)
+        self.assertIn("sudo -v", commands)
+        self.assert_before("sudo -n true", "sudo -v", commands)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_head_sudo_failure_changes_no_drm_setting(self):
+        result = self.invoke(TEST_UID=1000, SUDO_FAIL=1, SUDO_V_FAIL=1)
+        commands = "\n".join(self.commands())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("head sudo authorization failed", commands)
+        self.assertNotIn("drm:worker:on", commands)
+        self.assertNotIn("bundle-start", commands)
+
     def test_prepare_and_probe_failures_restore_drm_without_starting(self):
         for settings in ({"PREPARE_FAIL": 1}, {"HEAD_PROBE_FAIL": 1}, {"WORKER_PROBE_FAIL": 1}):
             with self.subTest(settings=settings):

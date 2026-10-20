@@ -34,6 +34,9 @@ fi
 '''
     start = start.replace(anchor, anchor + guard)
     # Non-forced removal cannot kill a rank started concurrently by another launcher.
+    # start.sh has exactly two such commands (rank 0 and rank 1): another count means start.sh changed.
+    if start.count("docker rm -f tfv41-") != 2:
+        raise ValueError("start.sh docker rm anchors changed; review the experiment")
     start = start.replace("docker rm -f tfv41-", "docker rm tfv41-")
     anchor = "--device /dev/infiniband --cap-add IPC_LOCK"
     if start.count(anchor) != 1:
