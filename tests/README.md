@@ -15,6 +15,20 @@ It runs `host_tuning_test.sh` (see below) and the Python `unittest` files (`test
 `test_repo_rules.py` checks the repo rules of [CONTRIBUTING.md](../CONTRIBUTING.md): git tracks `runs/`, each entry in `runs/` is a `YYYY-MM-DD` folder with an `INDEX.md`, and `.env.example` sources cleanly and holds no token.
 A test that needs a GPU, a server or the `tensorfold` package skips itself.
 
+## Display-only experiment checks
+
+The offline runner includes `experiments/display-kv/tests/`. These tests use temporary fixtures, not the active `.env`. They check installer rejection without partial writes, the display-only overlay list, private spill-off and prefill-512 settings, and startup guard ordering. The copied display, DRM and launcher tests use mocks. They do not prove hardware safety or correct two-node serving.
+
+The six source integration tests skip unless `TF_DISPLAY_SOURCE` names an explicit checkout at the pinned revision. To run them without a GPU or service:
+
+```bash
+TF_DISPLAY_SOURCE=/path/to/pinned/tensorfold python3 -m unittest discover -s experiments/display-kv/tests -p test_integration.py -v
+```
+
+This command reads source files but does not modify that checkout. Hermetic installer tests still run without it. Full hardware validation is pending. See [the display guide](../docs/DISPLAY-KV.md).
+
+## Tool-output experiment checks
+
 The opt-in tool-output guard has CPU, loopback HTTP and fake-engine tests in
 `experiments/tool-output/tests/`. Source integration tests run only when
 `TF_TOOL_SOURCE` names an explicit pinned checkout. See
