@@ -80,11 +80,22 @@ def public_ip(text: str) -> bool:
 
 
 def ip_candidates(text: str):
+    ipv6 = [m for m in IPV6.finditer(text) if valid_ip(m.group(1))]
     for m in IPV4.finditer(text):
         if text[max(0, m.start() - 2):m.start()] in ("==", "~=", ">=", "<="):
             continue                                          # a pinned version such as pkg==1.7.12.25
+        if any(v.start() <= m.start() and m.end() <= v.end() for v in ipv6):
+            continue                                          # the tail of fd00::34.117.59.81: the IPv6 address decides
         yield m
-    yield from IPV6.finditer(text)
+    yield from ipv6
+
+
+def valid_ip(text: str) -> bool:
+    try:
+        ipaddress.ip_address(text)
+    except ValueError:
+        return False
+    return True
 
 
 @unittest.skipUnless(shutil.which("git") and (ROOT / ".git").exists(), "needs a git checkout")
@@ -121,13 +132,13 @@ class Detection(unittest.TestCase):
         self.assertEqual(self.found("head 203.0.113.7 ok"), [])          # documentation range: not global
         self.assertEqual(self.found("peer 34.117.59.81 up"), ["34.117.59.81"])
         self.assertEqual(self.found("addr 2a01:4f8:c17:1234::1 up"), ["2a01:4f8:c17:1234::1"])
-        self.assertEqual(self.found("peer ::ffff:34.117.59.81 up"), ["34.117.59.81", "::ffff:34.117.59.81"])
+        self.assertEqual(self.found("peer ::ffff:34.117.59.81 up"), ["::ffff:34.117.59.81"])
 
     def test_not_addresses(self):
         for text in ("10.100.80.1", "fe80::1", "::1", "12:30:45", "2026-10-18T21:01:32Z", "aa:bb:cc:dd:ee:ff",
                      "std::vector", "ruff==0.17.1", "pkg==1.7.12.25", "driver 580.178.04", "fd00::5",
                      "224.0.0.1", "239.255.255.250", "ff02::1", "ff05::1:3", "::ffff:10.100.80.1",
-                     "::FFFF:192.168.1.5", "see fe80::1."):
+                     "::FFFF:192.168.1.5", "see fe80::1.", "fd00::34.117.59.81", "2001:db8::34.117.59.81"):
             with self.subTest(text=text):
                 self.assertEqual(self.found(text), [])
 
