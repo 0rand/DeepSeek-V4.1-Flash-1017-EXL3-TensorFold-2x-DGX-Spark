@@ -17,6 +17,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 ### Changed
 
 - `docs/OPERATIONS.md`: what to do when earlyoom stops the engine under concurrent load (#21): `PARALLEL=2`, and do not raise `MEM_FLOOR_GIB`.
+- `docs/OPERATIONS.md`: the out-of-memory steps now use the measured traces from #21 (`runs/2026-10-20/`). `PARALLEL=2` does not prevent the failure with image requests. The steps now say to send fewer images at the same time, or to set `VISION=0` when you do not need images.
 
 ### Fixed
 
