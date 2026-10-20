@@ -117,7 +117,7 @@ Use these three settings in any app that supports a custom OpenAI endpoint:
 | Model | `DeepSeek-V4.1-Flash-1017` |
 | API key | any text (or your key, if you set one) |
 
-Thinking is off by default. Turn it on per request with `"reasoning_effort": "high"`, or for every request with `THINKING=1` in `.env`. Agents and tool-call benchmarks score clearly higher with thinking on.
+Thinking is off by default. Turn it on per request with `"reasoning_effort": "high"`, or for every request with `THINKING=1` in `.env`. A benchmark that sends no thinking field runs with thinking off.
 
 [The connection guide](docs/CONNECT.md) covers thinking levels, tool calls, structured output, and use from other computers.
 
