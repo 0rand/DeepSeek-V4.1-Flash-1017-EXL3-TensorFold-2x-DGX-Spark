@@ -117,8 +117,10 @@ def install(checkout: Path) -> None:
             raise ValueError(f"{destination}: display-KV is already installed")
     originals = {path: (checkout / path).read_text() for path in FILES}
     for path, text in originals.items():
-        if hashlib.sha256(text.encode()).hexdigest() != FILES[path]:
-            raise ValueError(f"{path}: source fingerprint differs from pinned revision")
+        actual = hashlib.sha256(text.encode()).hexdigest()
+        if actual != FILES[path]:
+            raise ValueError(f"{path}: source fingerprint differs from pinned revision "
+                             f"(expected sha256 {FILES[path]}, found sha256 {actual})")
     edits = {path: transform(path, text) for path, text in originals.items()}
     for path, text in (edits | additions).items():
         ast.parse(text, filename=str(path))

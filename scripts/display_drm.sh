@@ -225,6 +225,8 @@ reload_module() {
             sleep 1
         done
         printf 'NVIDIA DRM card did not reappear after display reload\n' >&2
+        # The display module is loaded: a plain modprobe would do nothing, so unload it first.
+        rmmod nvidia_drm || printf 'failed to unload nvidia_drm before the restore\n' >&2
         restore_default
         return 1
     fi

@@ -257,8 +257,11 @@ class InstallerValidationTest(unittest.TestCase):
     def test_hash_rejection_leaves_checkout_unchanged(self):
         (self.checkout / next(iter(self.originals))).write_text("changed = True\n")
         before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "fingerprint"):
+        with self.assertRaisesRegex(ValueError, "fingerprint") as raised:
             apply.install(self.checkout)
+        message = str(raised.exception)                      # a user can compare both hashes with a local patch
+        self.assertIn(f"expected sha256 {apply.FILES[next(iter(self.originals))]}", message)
+        self.assertRegex(message, r"found sha256 [0-9a-f]{64}")
         self.assertEqual(self.snapshot(), before)
 
     def test_bad_anchor_leaves_checkout_unchanged(self):

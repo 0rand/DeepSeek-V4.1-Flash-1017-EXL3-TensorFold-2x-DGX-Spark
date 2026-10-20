@@ -10,12 +10,16 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ## [Unreleased]
 
+- Add an independent opt-in [cache metrics experiment](experiments/cache-metrics/README.md) for health and Prometheus accounting. The ordinary engine stays unchanged.
+
 ### Added
 
 - Add an opt-in display-backed KV launcher with a private bundle, spill disabled and offline safety tests. Full hardware validation is pending. Ordinary launch defaults do not change.
-
+- Add a separate memory/top-k image with bounded key scratch and an opt-in live allocator policy. Ordinary startup keeps its original ceiling. See [Memory and top-k](docs/MEMORY-TOPK.md).
+- `PREFILL_CHUNK` in `.env`: set a positive integer for both ranks. The default stays `2048`.
 - Opt-in `experiments/display-spill` image: add display-safe SSD spill to display KV. It keeps `SPILL_GIB` from `.env`, drains queued writes on shutdown, and rejects corrupt entries. The ordinary image and defaults do not change. See `docs/SPILL.md`.
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
+- Opt-in preflight check: set `PREFLIGHT_NCCL_BOOTSTRAP=1` in `.env` and preflight runs a bounded NCCL socket-bootstrap check in the engine image on each node (20 s, then KILL after 5 s more, with an init process in the container so that signals reach the probe). It is off by default, so `./start.sh` behaves as before. It checks that NCCL can create a unique ID with `NCCL_SOCKET_IFNAME`; it does not test the RDMA data path or allocate GPU memory. A failure names the interface and points to `.env`.
 
 ### Changed
 
@@ -25,6 +29,9 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Fixed
 
+- README: the free disk you need is about 650 GB (the model view is 414 GB, the first start needs 110 GiB more for the cache, and the default prompt spill can use 64 GiB), not 500 GB. With `SPILL_GIB=0`, about 550 GB is enough.
+- README: the concurrency columns are now "aggregate throughput" (all completion tokens divided by the batch wall time, TTFT included), not "aggregate decode".
+- `docs/CONNECT.md`: the examples show how to send your key when you set `API_KEY_FILE`.
 - `./start.sh` stopped with "Permission denied" on a new clone: `scripts/build_extensions.sh` had no executable bit (#15).
 - Preflight now checks that RoCE has MTU 4096 on both nodes. At the default MTU 1500, the RDMA gather failed with "transport retry counter exceeded" (#15). `docs/NETWORK.md` tells you to set MTU 9000.
 

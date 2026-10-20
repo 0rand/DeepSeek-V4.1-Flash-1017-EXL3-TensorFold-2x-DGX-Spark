@@ -54,7 +54,8 @@ prepare_drm() {
   # Preauthorize before changing either node; sudo -v alone need not be allowed remotely.
   wssh 'sudo -n true' || { log "worker needs passwordless sudo for DRM preparation"; return 1; }
   if [ "$(id -u)" != 0 ]; then
-    sudo -v || { log "head sudo authorization failed; no DRM changes made"; return 1; }
+    # sudo -v asks for a password even with NOPASSWD and needs a TTY: try the non-interactive check first.
+    sudo -n true 2>/dev/null || sudo -v || { log "head sudo authorization failed; no DRM changes made"; return 1; }
   fi
   log "worker: runtime DRM $mode"
   ssh "${ssh_args[@]}" "$WORKER_SSH" "sudo -n bash -s -- $mode" < "$helper" || remote_rc=$?

@@ -61,6 +61,35 @@ To return to the ordinary engine after all GPU and DRM clients have stopped:
 ./start.sh
 ```
 
+## Measured cost (tester report, not repeated)
+
+A tester measured the combined display build of pull request #6 on one pair of
+Spark nodes. That build had display KV and also a patched SSD spill, a tool-output
+guard and a memory guard, which this experiment does not include. The maintainers
+did not repeat the runs. The saved report, with setup and caveats, is
+[`runs/2026-10-19/display-kv-tester-ab.md`](../runs/2026-10-19/display-kv-tester-ab.md).
+Credit: Sora39831 for the runs, and hjasond for an early report.
+
+| Measure | Stock lane | Display lane |
+|---|---|---|
+| Cold prefill, 32K / 128K / about 1M tokens | 2,124 / 1,923 / 1,299 tok/s | 1,680 / 1,534 / 1,092 tok/s |
+| Change in prefill tok/s | | -20.9% / -20.2% / -15.9% |
+| Decode, one stream | 51 to 62 tok/s | 48 to 59 tok/s |
+| Prefix cache hit, 54K prompt, TTFT | 0.73 s | 0.46 s |
+| Minimum host MemAvailable, 1M prefill | 1.96 GiB | 2.01 GiB |
+
+- The display lane gives about the same KV positions (2,109,440 against 2,097,152) and no more free host memory. It moves the KV out of host RAM.
+- The prefill gap is not isolated. The display bundle fixes the prefill chunk at 512 (it ignores `PREFILL_CHUNK` in `.env`) and the stock lane used 2048. The stock image of the test also carried a local patch, and the runs were sequential with one run per size.
+- The SSD spill never evicted in these runs. This experiment keeps `SPILL_GIB=0`.
+
+## Switches of the bundle
+
+The private bundle sets `SPILL_GIB=0` and the prefill chunk 512 and ignores the `.env` values of both. Everything else comes from `.env`, as `./start.sh` reads it.
+
+## Head sudo and source drift
+
+The launcher tries `sudo -n true` on the head first and calls `sudo -v` only when that fails, so a user with passwordless sudo can run it without a terminal. If both fail, it stops before any DRM change. A source-drift error names the file and shows the expected and the found SHA-256 values. A base image with a local patch counts as drift: build a pristine base from the committed Dockerfile first.
+
 ## Validation status
 
 Offline tests use temporary fixtures and mocks. Optional source tests need an
