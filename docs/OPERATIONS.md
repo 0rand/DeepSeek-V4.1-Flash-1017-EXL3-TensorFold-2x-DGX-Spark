@@ -51,22 +51,23 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   . ./.env; watch -n 1 "grep MemAvailable /proc/meminfo; ssh -o BatchMode=yes $WORKER_SSH grep MemAvailable /proc/meminfo"
   ```
 
-  In the traces in [runs/2026-10-20/INDEX.md](../runs/2026-10-20/INDEX.md), image requests made the head run out first. The head runs the vision tower and decodes the images. The worker stayed above 2.3 GiB.
+  In the traces in [runs/2026-10-20/INDEX.md](../runs/2026-10-20/INDEX.md), image requests made the head run out first. The head runs the vision tower and decodes the images. The worker went down to about 2.0 GiB.
 
   | Load | `PARALLEL` | Head lowest `MemAvailable` | Result |
   |---|---|---|---|
   | 4 long prompts, then 4 requests with 8 images each at the same time | 4 | 1,009 MiB | earlyoom stopped the engine |
   | 4 requests with 8 images each, on a new engine | 4 | 1,379 MiB | all passed |
   | 4 long prompts (loaded from the spill cache), then 4 requests with 8 images each | 2 | 1,356 MiB | all passed |
-  | then 4 requests with 16 images each | 2 | 1,064 MiB | earlyoom stopped the engine |
+  | then 4 requests with 16 images each (needs `--vision-max-images`; the recipe allows 8) | 2 | 1,064 MiB | earlyoom stopped the engine |
 
-  `PARALLEL=2` does not prevent the failure, and it does not lower the head's peak with image requests. Each image request had about 20K tokens of text as well.
+  Each image request had about 20K tokens of text as well. With 8 images in each request (the recipe's limit), `PARALLEL=2` passed the load that failed with `PARALLEL=4`. This is not a clean A/B: in the `PARALLEL=2` run the long prompts came from the spill cache and were not filled again. With 16 images in each request, `PARALLEL=2` also failed.
 
   If `MemAvailable` on either node goes near 1 GiB (1,048,576 kB):
-  1. Send fewer images at the same time. Keep the images in each request low (the server accepts at most 8), and do not send many image requests at the same time. For an agent, send screenshots one at a time, not as a batch.
-  2. If you do not need image input, set `VISION=0` in `.env`, then run `./stop.sh && ./start.sh`. The vision tower then does not load on the head (about 1 GiB).
-  3. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
-  4. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
+  1. Set `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. Each request still gets the full context.
+  2. Send fewer images at the same time. Keep the images in each request low (the server accepts at most 8), and do not send many image requests at the same time. For an agent, send screenshots one at a time, not as a batch.
+  3. If you do not need image input, set `VISION=0` in `.env`, then run `./stop.sh && ./start.sh`. The vision tower then does not load on the head (about 1 GiB).
+  4. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
+  5. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
 
   Issue #21 tracks the engine fix.
 - **Boot.** Do not let a second server also start at boot (a vLLM unit, another model). Both servers want port 8888 and ~100 GB per node, and the second one fails or runs a node out of memory.
