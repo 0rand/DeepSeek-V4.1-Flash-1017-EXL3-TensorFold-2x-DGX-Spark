@@ -55,10 +55,17 @@ class ToolOutputTests(unittest.TestCase):
         self.assertEqual(self.guard().parse(literal), (literal, None))
         self.assertEqual(guard.stream(literal + '<tool_call>{'), "```\n")
 
-    def test_blockquote_line_with_a_call_still_streams(self):
-        text = '> <tool_call>{"name":"unoffered"}</tool_call>\nafter'
-        self.assertEqual(self.guard().stream(text), text)
-        self.assertEqual(self.guard().parse(text), (text, None))
+    def test_a_quote_line_ends_at_a_blank_line_inside_the_call(self):
+        call = '<tool_call>\n\n{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        guard = self.guard()
+        for size in range(1, len(call) + 3):
+            shown = guard.stream("> " + call[:size])
+            self.assertNotIn("PRIVATE", shown)
+            self.assertNotIn("<tool_call>", shown)
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse("> " + call)
+        literal = '> <tool_call>{"name":"unoffered"}</tool_call>\nafter'          # no blank line: still a quote
+        self.assertEqual(self.guard().parse(literal), (literal, None))
 
     def test_real_argument_backticks_do_not_hide_later_calls(self):
         for argument in ("`", "```\n", "~~~\n", '"', "</tool_call> `", "``a ` b"):
@@ -336,6 +343,28 @@ class ToolOutputTests(unittest.TestCase):
                     self.guard().parse(text)
         # An escaped backslash does not escape the mark: this quote is real.
         text = f'Example: \\\\" {envelope} "tail'
+        self.assertEqual(self.guard().parse(text), (text, None))
+
+    def test_an_escaped_backtick_does_not_open_inline_code(self):
+        envelope = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse("Example: \\` " + envelope)
+        text = "Example: \\\\` " + envelope + " `"                  # an escaped backslash: the backtick is real
+        self.assertEqual(self.guard().parse(text), (text, None))
+        # Inside a code span a backslash does nothing: this backtick closes the span, so the call is real.
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse("`a\\` " + envelope)
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse("``a\\`` " + envelope)
+
+    def test_delimiters_after_the_one_close_inside_a_call_are_data(self):
+        offered = "<tool_call><function=task><parameter=note>a`b\n```\nc</parameter></function></tool_call>"
+        real = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse("`" + offered + "\n" + real)
+        # Without a close inside the call, the code stays open and both calls stay literal.
+        quiet = "<tool_call><function=task><parameter=note>a</parameter></function></tool_call>"
+        text = "`" + quiet + "\n" + real
         self.assertEqual(self.guard().parse(text), (text, None))
 
     def test_malformed_and_truncated_wrappers_are_not_misclassified(self):
