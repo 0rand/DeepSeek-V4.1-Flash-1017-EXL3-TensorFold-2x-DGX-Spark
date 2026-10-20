@@ -688,14 +688,16 @@ class SpillStore:
 
     def find(self, prompt: Sequence[int], *, grid: int = 0, whole_needs_head: bool = True,
              usable: Callable[[Entry], bool] | None = None) -> Entry | None:
-        """The longest stored prompt that ``prompt`` extends (or equals, when its head row was stored)."""
+        """The longest stored prompt that ``prompt`` extends (or equals, when its head row was stored). A rank-local
+        ``bad`` mark does not hide an entry: every rank must pick the same candidate, and then the failed read
+        makes every rank forget it together."""
 
         arr = np.asarray(prompt, dtype=np.int64)
         best = None
         with self.lock:
             entries = list(self.index.values())
         for e in entries:
-            if e.ids is None or e.bad or e.n > len(arr) or (e.n == len(arr) and whole_needs_head and not e.head):
+            if e.ids is None or e.n > len(arr) or (e.n == len(arr) and whole_needs_head and not e.head):
                 continue
             if (best is not None and e.n <= best.n) or (grid and e.n % grid):
                 continue

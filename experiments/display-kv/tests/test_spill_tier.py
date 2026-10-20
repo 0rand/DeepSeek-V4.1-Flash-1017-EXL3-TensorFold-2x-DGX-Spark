@@ -245,6 +245,20 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(store.info()["load_failed"], 1)
             self.assertEqual(store.info()["crc_failed"], 1)
 
+    def test_a_rank_local_write_failure_does_not_change_the_candidate(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, _ = self.stored(root)
+            before = store.find(ids, whole_needs_head=False)
+            self.assertIsNotNone(before)
+            before.bad = True                      # this rank failed to write it; the other rank did not
+            after = store.find(ids, whole_needs_head=False)
+            self.assertIs(after, before)           # both ranks must pick it, then the read fails here and both forget
+            with self.assertRaises(Exception):
+                store.load_async(before.key, lambda name, shape, dt: None)
+            self.assertEqual(store.info()["load_failed"], 1)
+            store.forget(before.key)
+            self.assertIsNone(store.find(ids, whole_needs_head=False))
+
     def test_good_restore_counts_no_failure(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, _ = self.stored(root)
