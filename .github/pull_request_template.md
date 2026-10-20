@@ -7,6 +7,17 @@ Read CONTRIBUTING.md first: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash
 
 <!-- What does this pull request change, and why? One focused change only. Link the issue, if there is one. -->
 
+## Type
+
+<!-- Tick exactly one. The maintainer adds the matching label. See "Labels" in CONTRIBUTING.md. -->
+
+- [ ] `type: fix`: a bug fix, or a fix after review findings
+- [ ] `type: feature`: new code (a feature, tool or add-on)
+- [ ] `type: docs`: docs only
+- [ ] `type: results`: run results or a close-out
+- [ ] `type: research`: a study or failure research, with no fix
+- [ ] `type: spec`: a plan or spec before the work
+
 ## Default behaviour
 
 <!-- Does a user who runs ./start.sh with .env.example get a different server after this change? -->
