@@ -10,6 +10,10 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ## [Unreleased]
 
+### Changed
+
+- `docs/OPERATIONS.md`: what to do when earlyoom stops the engine under concurrent load (#21).
+
 ### Fixed
 
 - `./start.sh` stopped with "Permission denied" on a new clone: `scripts/build_extensions.sh` had no executable bit (#15).

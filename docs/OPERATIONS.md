@@ -44,6 +44,19 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   - The simplest supervisor is a systemd unit on the head that runs `./start.sh`, with `ExecStop=./stop.sh` and `Restart=on-failure`, and that checks `./status.sh`.
   - `RESTART_POLICY=on-failure` in `.env` (docker's own restart) restarts each container alone. It works when rank 0 comes back first, but no tool enforces that order.
 - **Out of memory.** With `scripts/host_tuning.sh`, earlyoom stops the engine when a node has less than 1 GiB available, so the node stays reachable by ssh. `journalctl -u earlyoom` shows when it did. Then restart by hand as above.
+- **Out of memory under load.** Some users see earlyoom stop the engine with several long requests at the same time, or with many images in one agent session ([#21](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/21)).
+  Short tests often do not show it. To find it, run this on the head while the load runs:
+
+  ```bash
+  watch -n 1 "grep MemAvailable /proc/meminfo"
+  ```
+
+  If `MemAvailable` goes near 1 GiB (1,048,576 kB), change one setting in `.env` at a time, then run `./stop.sh && ./start.sh`:
+  1. `PARALLEL=2`: fewer prompts fill at the same time, so the peak is lower. Each request still gets the full context.
+  2. `MEM_FLOOR_GIB=3`: the engine stops its growth earlier, so more memory stays free for peaks.
+  3. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
+
+  These settings are not measured on this recipe yet. Issue #21 tracks the memory trace and the engine fix.
 - **Boot.** Do not let a second server also start at boot (a vLLM unit, another model). Both servers want port 8888 and ~100 GB per node, and the second one fails or runs a node out of memory.
 
 ## Things that hurt on DGX Spark
