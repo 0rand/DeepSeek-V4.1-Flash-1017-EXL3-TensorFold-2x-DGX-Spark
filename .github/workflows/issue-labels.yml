@@ -8,7 +8,9 @@ name: issue-labels
 
 on:
   issues:
-    types: [opened, edited, reopened]
+    # labeled: a maintainer who sets a type by hand also ends needs-triage. Labels that this workflow adds with
+    # GITHUB_TOKEN do not start a new run, so there is no loop.
+    types: [opened, edited, reopened, labeled]
 
 permissions:
   contents: read
