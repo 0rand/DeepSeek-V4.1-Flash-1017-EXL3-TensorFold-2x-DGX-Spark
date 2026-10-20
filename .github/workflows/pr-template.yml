@@ -5,7 +5,8 @@
 name: pr-template
 
 on:
-  pull_request_target:
+  # Needed for labels on fork pull requests. Safe here: no checkout, no PR code runs (see the comment above).
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [opened, edited, reopened, synchronize, ready_for_review]
 
 permissions:
