@@ -21,7 +21,7 @@ Files:
 
 ## What the runs show
 
-- The head runs out first. Rank 0 runs the vision tower (0.95 GiB) and decodes the images. At idle, the head had 0.4 to 0.6 GiB less available than the worker.
+- The head runs out first. Rank 0 runs the vision tower (0.95 GiB in the engine log, `oom/run2-engine-vision.txt`) and decodes the images. At idle, the head had 0.4 to 0.6 GiB less available than the worker.
 - With 4 x 8 images (8 is the recipe's limit), `PARALLEL=2` passed (run 3) where `PARALLEL=4` failed (run 1). The cache state differs (see the caveat), so this is not a clean A/B. The head's lowest point for 4 x 8 images was 1,356 MiB in run 3 and 1,379 MiB in run 2 (a new engine with no long prompts). With 4 x 16 images, which needs `--vision-max-images`, `PARALLEL=2` also failed.
 - The worker went down to 2,009 MiB (run 2). The lowest values on the worker were 2.0 to 2.4 GiB.
 - **Caveat for run 3:** its long prompts took 5 s to 17 s, against 55 s to 439 s in run 1. The prefix-cache spill (`SPILL_GIB=64`) kept them on disk after the restart, so run 3 loaded them and did not fill them again. Runs 1 and 3 are therefore not a clean A/B for the long prompts.

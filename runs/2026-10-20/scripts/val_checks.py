@@ -107,7 +107,8 @@ def check_tools():
         out[label] = {"status": s, "content": content[:400], "tool_calls": [c["function"]["name"] for c in m.get("tool_calls") or []],
                       "markup_in_content": any(t in content for t in ("<tool_call>", "DSML", "apply_patch\"")),
                       "finish": d["choices"][0].get("finish_reason") if s == 200 else None}
-    ok = all(v["status"] == 200 and not v["markup_in_content"] for v in out.values())
+    ok = all(v["status"] == 200 and not v["markup_in_content"] and "apply_patch" not in v["tool_calls"]
+             for v in out.values())
     return ok, out
 
 
