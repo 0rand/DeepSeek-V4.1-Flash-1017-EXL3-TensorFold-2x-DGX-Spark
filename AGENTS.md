@@ -4,7 +4,7 @@ You can set up and run this recipe for a user. Follow these steps in this order.
 
 ## Setup
 
-1. Check that the two nodes are cabled and reach each other (NVIDIA's [Connect Two Sparks](https://build.nvidia.com/spark/connect-two-sparks) guide; [docs/NETWORK.md](docs/NETWORK.md)). `ibdev2netdev` must show the CX7 ports as Up on both nodes.
+1. Check that the two nodes are cabled and reach each other (NVIDIA's [Connect Two Sparks](https://build.nvidia.com/spark/connect-two-sparks) guide; [docs/NETWORK.md](docs/NETWORK.md)). `ibdev2netdev` must show the CX7 ports as Up on both nodes. Set MTU 9000 on the CX7 netdevs on both nodes ([docs/NETWORK.md](docs/NETWORK.md#mtu)): at the default MTU 1500, the start fails.
 2. `cp .env.example .env`, then fill in the values from `ibdev2netdev`, `ip -br addr` and `show_gids`. Ask the user for paths you cannot find.
 3. `scripts/download.sh` (~400 GB; resumable: run it again after a break). If a download needs a Hugging Face login, ask the user to run `hf auth login`. Never type a token yourself.
 4. `scripts/patch_template.py --worker`
