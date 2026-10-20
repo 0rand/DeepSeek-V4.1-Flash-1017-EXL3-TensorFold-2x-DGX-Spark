@@ -12,6 +12,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Added
 
+- `PREFILL_CHUNK` in `.env`: set a positive integer for both ranks. The default stays `2048`.
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
 
 ### Changed
