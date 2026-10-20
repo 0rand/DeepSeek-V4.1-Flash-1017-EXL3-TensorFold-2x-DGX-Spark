@@ -7,6 +7,17 @@ Read CONTRIBUTING.md first: https://github.com/Elevatormusic/DeepSeek-V4.1-Flash
 
 <!-- What does this pull request change, and why? One focused change only. Link the issue, if there is one. -->
 
+## Type
+
+<!-- Tick exactly one. The maintainer adds the matching label. See "Labels" in CONTRIBUTING.md. -->
+
+- [ ] `type: fix`: a bug fix, or a fix after review findings
+- [ ] `type: feature`: new code (a feature, tool or add-on)
+- [ ] `type: docs`: docs only
+- [ ] `type: results`: run results or a close-out
+- [ ] `type: research`: a study or failure research, with no fix
+- [ ] `type: spec`: a plan or spec before the work
+
 ## Default behaviour
 
 <!-- Does a user who runs ./start.sh with .env.example get a different server after this change? -->
@@ -67,3 +78,12 @@ Write "no performance claim" if this pull request has none.
 - [ ] A new feature is off by default, or it has its own start script.
 - [ ] No secrets, keys, tokens or machine-specific values (host names, user names, home paths, public IP addresses).
 - [ ] New docs use ASD-STE100 Simplified Technical English and the standard serving terms.
+
+<!-- Keep this at the very bottom. Write "AI: none" if no AI helped. See CONTRIBUTING.md. -->
+<details>
+<summary>AI disclosure</summary>
+
+AI: <model and size> via <harness>, e.g. "Qwen3-8B Q4 via Aider" or "Claude Opus 5.5 via Claude Code"
+Checked: <what you did yourself, e.g. "read every line, ran tests">
+
+</details>

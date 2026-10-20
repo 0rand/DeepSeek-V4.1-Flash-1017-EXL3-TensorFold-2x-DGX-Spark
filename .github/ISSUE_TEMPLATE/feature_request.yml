@@ -42,3 +42,11 @@ body:
     attributes:
       label: Other solutions
       description: What other solutions did you think about?
+  - type: input
+    id: ai_disclosure
+    attributes:
+      label: AI disclosure
+      description: 'Write "none" if no AI helped. Else give the model and size, the harness, and what you checked yourself. See CONTRIBUTING.md.'
+      placeholder: 'none, or for example: Qwen3-8B Q4 via Aider, I read every line and ran the tests'
+    validations:
+      required: true

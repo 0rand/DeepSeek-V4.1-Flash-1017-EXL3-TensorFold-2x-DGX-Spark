@@ -22,6 +22,35 @@ The maintainer reviews each pull request. An automatic review bot can also comme
 - **Do not mix a refactor with a change in behaviour.** Put each one in its own pull request.
 - **Do not change unrelated files.** Do not reformat files that your change does not need.
 
+## Labels
+
+### Pull requests
+
+Each pull request gets exactly one type label. Tick the type in the template. The maintainer adds the label.
+
+| Label | Use it for |
+|---|---|
+| `type: fix` | a bug fix, or a fix after review findings |
+| `type: feature` | new code: a feature, tool or add-on |
+| `type: docs` | docs only: README, guides, roadmap |
+| `type: results` | run results or a close-out |
+| `type: research` | a study or failure research, with no fix |
+| `type: spec` | a plan or spec before the work |
+
+If your change needs two types, it is two pull requests.
+
+### Issues
+
+Use the issue form that fits. The form adds the label.
+
+| Form | Label | Use it for |
+|---|---|---|
+| Bug report | `bug` | the server does not start, fails a check, gives wrong output or stops |
+| Feature request | `enhancement` | a new setting, mode or tool |
+| Performance report | `performance` | a speed or memory result, or a regression |
+
+The maintainer can add more labels, for example `good first issue` or `duplicate`.
+
 ## Default behaviour
 
 Users run `./start.sh` with the values in `.env.example`. A change to a default changes the server of every user after `git pull`.
@@ -132,6 +161,25 @@ tests/run_all.sh
 - Use the standard serving terms as they are: prefill, decode, TTFT, tok/s, median, prefix cache, structured output.
 - If you add a setting, document it in `.env.example` and in the doc in `docs/` that is about it.
 - If you add a doc, link it from the README or from another doc. CI checks the local links in all Markdown files.
+
+## AI disclosure
+
+**Pull requests:** if an AI helped, paste this block at the very bottom. If no AI helped, write `AI: none` in it. The template already has the block.
+
+**Issues:** the last field of each issue form asks for the same information. It starts empty and you must fill it in. Write `none` if no AI helped.
+
+```html
+<details>
+<summary>AI disclosure</summary>
+
+AI: <model and size> via <harness>, e.g. "Qwen3-8B Q4 via Aider" or "Claude Opus 5.5 via Claude Code"
+Checked: <what you did yourself, e.g. "read every line, ran tests">
+
+</details>
+```
+
+This does not cause a rejection. It tells reviewers how carefully to check your work.
+Keep the empty lines after `<summary>` and before `</details>`. Without them, GitHub does not format the text.
 
 ## Licence
 
