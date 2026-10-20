@@ -18,8 +18,16 @@ docker build -f experiments/memory-topk/Dockerfile \
 The base must contain pristine TensorFold revision
 `07aa02585f64cfb04c60a96de6554c0d4708ed46`. An image with other source edits is
 not a supported base. This overlay has no display dependency. Copy the same
-image to the worker with your normal image transfer method. Set
-`IMAGE=tensorfold-dsv41:memory-topk` in `.env` on the head to select it.
+image to the worker with the helper below. Do not use `docker/build.sh` for this: it rebuilds
+the ordinary image under the same tag first, so both nodes would then lack the overlay and
+preflight would still pass. The helper copies the tag that you built and checks that both
+nodes hold the same image ID:
+
+```bash
+experiments/memory-topk/transfer.sh tensorfold-dsv41:memory-topk
+```
+
+Set `IMAGE=tensorfold-dsv41:memory-topk` in `.env` on the head to select it.
 The default `IMAGE` and `TF_COMMIT` stay unchanged.
 
 ## Bounded top-k scratch
@@ -63,6 +71,10 @@ The first unreadable `MemAvailable` read fails initialization of the new policy.
 A later unreadable read keeps the last budget and prints a warning. This budget
 can become stale. Returning to `MEM_CAP=0` and the ordinary image requires a
 normal server restart. Do not run both images at the same time.
+
+## Tester report on the allocator policy
+
+A tester ran the earlier combined display build, where this policy was on by default, on one pair of Spark nodes ([report](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/pull/6#issuecomment-6282611548)). The maintainers did not repeat the runs. With 6 simultaneous 1M-token streams the policy ended in a CUDA out-of-memory error and exit code 75 (a rank was lost). With 3 to 5 streams and the policy off, the tester saw no lane failure, but no memory spike was large enough to make earlyoom act, so that is no proof that the policy is not needed. This is why `MEM_CAP` stays `0` by default: turn it on only for a test, and expect exit 75 near the floor.
 
 ## Validation limits
 
