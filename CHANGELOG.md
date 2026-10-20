@@ -14,6 +14,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 - Add an opt-in display-backed KV launcher with a private bundle, spill disabled and offline safety tests. Full hardware validation is pending. Ordinary launch defaults do not change.
 
+- Opt-in `experiments/display-spill` image: add display-safe SSD spill to display KV. It keeps `SPILL_GIB` from `.env`, drains queued writes on shutdown, and rejects corrupt entries. The ordinary image and defaults do not change. See `docs/SPILL.md`.
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
 
 ### Changed
