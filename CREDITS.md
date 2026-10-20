@@ -17,6 +17,10 @@ This recipe stands on other people's work. The table lists what each project giv
 
 The OpenAI Codex review bot reviewed every engine change; its findings and our fixes are on the three fork pull requests.
 
+## Display mapping experiment
+
+The optional `experiments/display-kv/overlay/display_kv.py` adapts Gilesco's display-memory mapping technique and credits coolbho3k's display-reserve allocator. See [the display NOTICE](experiments/display-kv/NOTICE.md) for the source references and license notes. This display-only variant does not include the separate SSD spill port or NVFP4 C toolkit.
+
 ## This repo's licence
 
 Apache-2.0 (see [LICENSE](LICENSE)), the same as TensorFold. It covers the scripts, tests and documents in this repo only. The model weights, the chat template and the engine keep their own licences.
