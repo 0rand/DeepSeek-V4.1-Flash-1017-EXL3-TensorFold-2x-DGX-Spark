@@ -28,7 +28,7 @@ ALLOWED_HOME_IN_FILE = {
 SELF = "tests/test_machine_values.py"
 FIXTURE_HOMES = {"alice", "bob", "carol", "dave", "erin", "fay", "gus", "hal", "ivy", "jo", "kim", "lee"}
 ALLOWED_HOME_IN_FILE |= {(SELF, user) for user in FIXTURE_HOMES}
-ALLOWED_IP_IN_FILE = {(SELF, "34.117.59.81"), (SELF, "2a01:4f8:c17:1234::1")}
+ALLOWED_IP_IN_FILE = {(SELF, "34.117.59.81"), (SELF, "2a01:4f8:c17:1234::1"), (SELF, "::ffff:34.117.59.81")}
 # /home/<name>, /Users/<name> and C:\Users\<name>. Windows paths match in any letter case, also with the doubled
 # backslashes of JSON. The POSIX forms stay case-sensitive, so a URL path such as /users/123 does not match.
 # ~<name> is the home of a named user, also with no slash after it (cd ~alice, HOME=~alice).
@@ -38,8 +38,9 @@ HOME_PATH = re.compile(
     r"([A-Za-z0-9._-]+)"
 )
 IPV4 = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?![\w.])")
-# An IPv6 candidate: hex groups with 2 to 7 colons. ipaddress decides if it is a valid address.
-IPV6 = re.compile(r"(?<![\w:.])([0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7})(?![\w:])")
+# An IPv6 candidate: hex groups with 2 to 7 colons, and an optional IPv4 tail (::ffff:10.100.80.1) that is part of
+# the same address. ipaddress decides if it is a valid address.
+IPV6 = re.compile(r"(?<![\w:.])([0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7}(?:\.\d{1,3}){0,3})(?![\w:]|\.\d)")
 # Public addresses that may appear: well-known resolvers in network docs.
 ALLOWED_IPS = {"1.1.1.1", "8.8.8.8", "8.8.4.4", "2606:4700:4700::1111", "2001:4860:4860::8888"}
 
@@ -70,6 +71,8 @@ def tracked_text(path: Path):
 def public_ip(text: str) -> bool:
     try:
         ip = ipaddress.ip_address(text)
+        if ip.version == 6 and ip.ipv4_mapped:
+            ip = ip.ipv4_mapped                               # ::ffff:10.100.80.1 is the private 10.100.80.1
     except ValueError:
         return False                                          # a version such as 1.2.300.4, or a time such as 12:30:00
     # Multicast addresses (224.0.0.1, ff02::1) are protocol constants, not a machine's address.
@@ -118,11 +121,13 @@ class Detection(unittest.TestCase):
         self.assertEqual(self.found("head 203.0.113.7 ok"), [])          # documentation range: not global
         self.assertEqual(self.found("peer 34.117.59.81 up"), ["34.117.59.81"])
         self.assertEqual(self.found("addr 2a01:4f8:c17:1234::1 up"), ["2a01:4f8:c17:1234::1"])
+        self.assertEqual(self.found("peer ::ffff:34.117.59.81 up"), ["34.117.59.81", "::ffff:34.117.59.81"])
 
     def test_not_addresses(self):
         for text in ("10.100.80.1", "fe80::1", "::1", "12:30:45", "2026-10-18T21:01:32Z", "aa:bb:cc:dd:ee:ff",
                      "std::vector", "ruff==0.17.1", "pkg==1.7.12.25", "driver 580.178.04", "fd00::5",
-                     "224.0.0.1", "239.255.255.250", "ff02::1", "ff05::1:3"):
+                     "224.0.0.1", "239.255.255.250", "ff02::1", "ff05::1:3", "::ffff:10.100.80.1",
+                     "::FFFF:192.168.1.5", "see fe80::1."):
             with self.subTest(text=text):
                 self.assertEqual(self.found(text), [])
 
