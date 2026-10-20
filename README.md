@@ -217,9 +217,7 @@ Use these three settings in any app that supports a custom OpenAI endpoint:
 | Model | `DeepSeek-V4.1-Flash-1017` |
 | API key | any text (or your key, if you set one) |
 
-Thinking is on by default at high effort. Set `THINKING=1` and
-`REASONING_EFFORT=high` in `.env` to configure these server defaults; requests can
-override them. Use `THINKING=0` for a non-thinking default.
+Thinking is off by default. Turn it on per request with `"reasoning_effort": "high"`, or for every request with `THINKING=1` in `.env`. A benchmark that sends no thinking field runs with thinking off.
 
 [The connection guide](docs/CONNECT.md) covers thinking levels, tool calls, structured output, and use from other computers.
 
@@ -372,7 +370,7 @@ Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 | Base image | `nvcr.io/nvidia/pytorch:26.07-py3` |
 | Chat template | MiaAI kit `files/chat_template.jinja` @ `6f7d1590` + [our patch](runs/2026-10-17/template-patch.diff) |
 | vLLM comparison | MiaAI kit @ `6f7d1590`, image `sha256:2f0cf3ad...` |
-| Tested on | DGX OS (Ubuntu 24.04.5), driver 580.178.04, CUDA 13.0, Docker 29.6.2 |
+| Tested on | DGX OS (Ubuntu 24.04.5), kernel 7.0.0-1019-nvidia, driver 580.178.04, CUDA 13.0, Docker 29.6.2, CX7 firmware 28.45.4028. Use driver 580.178.04 or newer: `scripts/preflight.sh` warns on an older one ([#24](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/24)). |
 
 Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROVENANCE.md).
 
@@ -387,10 +385,17 @@ Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROV
 | `scripts/` | download, template fix, setup checks, safe engine install (`_raw_*`: the scripts as they ran on the tested pair) |
 | `docker/` | the engine build |
 | `tests/` | the 32 agent tests, the format check, the benchmark, the prompt tests, the Hermes test ([guide](tests/README.md)) |
+| `.github/` | CI (offline tests, ruff, shellcheck, link check), the pull request and issue templates |
 | `runs/2026-10-17/` | every log and result behind this page |
 | `docs/` | how to connect your app, the full story, benchmarks, network, operations, known limits |
 
 </details>
+
+---
+
+## Contribute
+
+Pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first: it gives the evidence rule for performance numbers and the offline tests. Report security problems in private ([SECURITY.md](SECURITY.md)). This project uses a [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 

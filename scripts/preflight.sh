@@ -19,6 +19,15 @@ check_node() {  # $1 = label, $2 = command runner ("" for here, wssh for the wor
   local who=$1 run=$2 out
   out=$($run bash -s <<EOF
 set -u
+# The tested driver is 580.178.04 (README). Issue #24 reports node hangs on 580.173.02 (a CX7 PCIe completion
+# timeout, then an SMMU stall); the cause is not confirmed, so an older driver is a warning, not a failure.
+drv=\$(cat /sys/module/nvidia/version 2>/dev/null)
+if [ -z "\$drv" ]; then echo "WARN cannot read the NVIDIA driver version"
+elif [ "\$(printf '%s\n' 580.178.04 "\$drv" | sort -V | head -1)" = 580.178.04 ]; then
+  echo "OK driver \$drv, kernel \$(uname -r)"
+else
+  echo "WARN driver \$drv is older than the tested 580.178.04 (kernel \$(uname -r)): update it, see issue #24"
+fi
 for d in "$MODEL_VIEW/model" "$MODEL_VIEW/engram"; do [ -d "\$d" ] || echo "FAIL missing \$d"; done
 [ -f "$MODEL_VIEW/model/chat_template.jinja" ] || echo "FAIL missing $MODEL_VIEW/model/chat_template.jinja"
 n=\$(ls "$MODEL_VIEW"/model/*.safetensors 2>/dev/null | wc -l); [ "\$n" -ge 43 ] || echo "FAIL \$n of 43 weight shards"
@@ -30,6 +39,18 @@ else
   echo "FAIL NCCL socket bootstrap ($NCCL_SOCKET_IFNAME): \$(echo "\$bootstrap" | tr '\\n' ' '); check NCCL_SOCKET_IFNAME in .env"
 fi
 for dev in \$(echo "$RDMA_DEVICES" | tr ',' ' '); do
+  # The engine's RDMA gather sends 4096-byte packets. RoCE gets that MTU only when the netdev MTU is ~4200 or more
+  # (9000 is usual). At the default 1500, the gather fails with "transport retry counter exceeded" (issue #15).
+  nd=\$(ls /sys/class/infiniband/\$dev/device/net 2>/dev/null | head -1)
+  mtu=\$(cat /sys/class/net/\$nd/mtu 2>/dev/null || echo 0)
+  am=\$(ibv_devinfo -d \$dev -i 1 2>/dev/null | awk '/active_mtu/ {print \$2; exit}')
+  if [ -n "\$am" ] && [ "\$am" != 4096 ]; then
+    echo "FAIL \$dev RoCE MTU is \$am, not 4096: set MTU 9000 on \${nd:-its netdev} (docs/NETWORK.md)"
+  elif [ -z "\$am" ] && [ "\$mtu" -lt 4200 ]; then
+    echo "FAIL \$dev netdev \${nd:-?} has MTU \$mtu, need 9000: see docs/NETWORK.md"
+  else
+    echo "OK \$dev RoCE MTU 4096 (\$nd MTU \$mtu)"
+  fi
   if [ "$GID_INDEX" = "-1" ]; then echo "OK gid auto (\$dev)"; continue; fi
   g=\$(cat /sys/class/infiniband/\$dev/ports/1/gids/$GID_INDEX 2>/dev/null)
   t=\$(cat /sys/class/infiniband/\$dev/ports/1/gid_attrs/types/$GID_INDEX 2>/dev/null)
@@ -63,6 +84,7 @@ EOF
     case "$line" in
       FAIL*) no "$who: ${line#FAIL }" ;;
       OK*) ok "$who: ${line#OK }" ;;
+      WARN*) echo "[warn] $who: ${line#WARN }" ;;
       IMAGE*) echo "${line#IMAGE }" > "/tmp/tfv41-image-$who" ;;
     esac
   done <<< "$out"

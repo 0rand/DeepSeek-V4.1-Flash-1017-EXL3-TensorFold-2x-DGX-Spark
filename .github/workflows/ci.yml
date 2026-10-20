@@ -1,0 +1,102 @@
+# Offline checks for every pull request and every push to main. They run on GitHub-hosted runners with no GPU,
+# no server and no .env. Tests that need a GPU, a server or the tensorfold package skip themselves.
+# The job names (shellcheck, python, markdown-links, workflows) are required status checks of the main ruleset:
+# if you rename a job, change the ruleset too. The secret scan (job secrets) is in secret-scan.yml: it must run from
+# the base branch.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install shellcheck
+        run: python -m pip install --disable-pip-version-check -r .github/requirements-ci.txt
+      # runs/ holds the scripts as they ran, and scripts/_raw_* are raw copies from the tested pair: CI does not lint them.
+      - name: shellcheck (errors and warnings)
+        run: |
+          mapfile -t files < <(git ls-files '*.sh' ':!:runs/**' ':!:scripts/_raw_*')
+          printf 'checking %s\n' "${files[@]}"
+          shellcheck --version
+          shellcheck -x -S warning "${files[@]}"
+
+  python:
+    name: python
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install ruff
+        run: python -m pip install --disable-pip-version-check -r .github/requirements-ci.txt
+      - name: ruff check
+        run: ruff check --output-format github .
+      - name: Offline tests (tests/run_offline.sh)
+        run: PYTHON=python tests/run_offline.sh
+
+  markdown-links:
+    name: markdown-links
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Local links only (files, folders, heading anchors). External sites can be down or block bots, so a
+      # separate weekly job (links-external.yml) checks them and does not block pull requests.
+      - name: Check local links in Markdown files
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --offline --no-progress --include-fragments
+            --root-dir ${{ github.workspace }}
+            './**/*.md'
+          fail: true
+          jobSummary: true
+
+  workflows:
+    name: workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install actionlint and zizmor
+        run: python -m pip install --disable-pip-version-check -r .github/requirements-ci.txt
+      # actionlint: syntax, expressions and shell steps of each workflow.
+      - name: actionlint
+        run: actionlint -color
+      # zizmor: security audit of each workflow (injection, unsafe triggers, unpinned or impostor actions).
+      # A finding that is safe by design needs an inline "# zizmor: ignore[<audit>]" with the reason.
+      - name: zizmor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: zizmor --format github .github/workflows/

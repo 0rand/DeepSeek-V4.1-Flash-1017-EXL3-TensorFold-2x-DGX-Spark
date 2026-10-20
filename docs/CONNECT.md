@@ -33,9 +33,11 @@ print(reply.choices[0].message.content)
 
 ## Thinking
 
-Thinking defaults to **on**, with **high** effort, through `THINKING=1` and
-`REASONING_EFFORT=high` in `.env`. A restart applies changes to those defaults.
-Requests can override them using these fields:
+Thinking is **off** unless a request turns it on. To turn it on for every request that does not say, set `THINKING=1` in `.env` and run `./start.sh` again. `REASONING_EFFORT` sets the effort for those requests (empty: `high`).
+
+A benchmark that sends no thinking field runs with thinking off. Set the field, or `THINKING=1`, before you compare scores with another server.
+
+Per request, use one of these fields:
 
 | Field | Values | Example |
 |---|---|---|
