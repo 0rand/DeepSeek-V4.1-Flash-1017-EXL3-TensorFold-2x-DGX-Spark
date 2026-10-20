@@ -409,7 +409,7 @@ def transform(relative: str | Path, text: str) -> str:
             "\n"
             "        while True:\n",
             "    def follow(self, link: Link) -> None:\n"
-            "        \"\"\"A follower rank: rank 0's steps until SIGTERM (docker stop), then its queued spill writes are drained.\"\"\"\n"
+            "        \"\"\"A follower rank: rank 0's steps until SIGTERM or until the link closes, then its queued spill writes are drained.\"\"\"\n"
             "\n"
             "        import signal\n"
             "\n"
@@ -423,6 +423,8 @@ def transform(relative: str | Path, text: str) -> str:
             "        try:\n"
             "            self._follow_steps(link)\n"
             "        except KeyboardInterrupt:\n"
+            "            pass                                     # SIGTERM from docker stop\n"
+            "        finally:                                     # also when rank 0 closed the link first (stop.sh stops rank 0 first)\n"
             "            if self.spill is not None:\n"
             "                self.spill.shutdown_drain()\n"
             "\n"

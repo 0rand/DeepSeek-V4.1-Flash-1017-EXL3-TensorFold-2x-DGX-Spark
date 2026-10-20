@@ -425,6 +425,36 @@ def _read_header_file(f) -> tuple[dict, int]:
     return json.loads(f.read(size)), 8 + size
 
 
+def _check_table(header: dict) -> int:
+    """Check the tensor descriptors of a spill header and return the end of the data. Each tensor needs a known dtype, a
+    shape of non-negative integers, and a span that holds exactly ``prod(shape) * element size`` bytes. The spans must
+    follow each other from 0 without a gap or an overlap. A header that fails this is not trusted: the CRC covers only
+    the span bytes, so a shape larger than its span would leave part of a new tensor uninitialized."""
+
+    spans = []
+    for name, d in header.items():
+        if name == "__metadata__":
+            continue
+        dt = _TD.get(d.get("dtype")) if isinstance(d, dict) else None
+        shape, offsets = d.get("shape"), d.get("data_offsets")
+        if dt is None or not isinstance(shape, list) or not isinstance(offsets, list) or len(offsets) != 2:
+            raise ValueError(f"{name}: bad tensor descriptor")
+        if any(type(x) is not int or x < 0 for x in list(shape) + offsets) or offsets[1] < offsets[0]:
+            raise ValueError(f"{name}: bad shape or offsets")
+        count = 1
+        for x in shape:
+            count *= x
+        if count * torch.empty((), dtype=dt).element_size() != offsets[1] - offsets[0]:
+            raise ValueError(f"{name}: the shape does not fill the data span")
+        spans.append((offsets[0], offsets[1]))
+    end = 0
+    for start, stop in sorted(spans):
+        if start != end:
+            raise ValueError("tensor spans leave a gap or overlap")
+        end = stop
+    return end
+
+
 def _parse_header(raw: bytes) -> tuple[dict, int]:
     (size,) = struct.unpack("<Q", raw[:8])
     return json.loads(raw[8:8 + size]), 8 + size
@@ -589,8 +619,7 @@ class SpillStore:
                     meta = header.get("__metadata__") or {}
                     if meta.get("format") != FORMAT or meta.get("compat") != self.compat:
                         raise ValueError("another format")
-                    want = data_at + max([v["data_offsets"][1] for k, v in header.items() if k != "__metadata__"]
-                                         or [0])
+                    want = data_at + _check_table(header)
                     if os.fstat(f.fileno()).st_size != want:
                         raise ValueError("size does not match the header")
                 ids = _decode_ids(meta.get("keyed") or meta["tokens"])
@@ -1086,6 +1115,7 @@ class SpillStore:
         meta = header.get("__metadata__") or {}
         if meta.get("format") != FORMAT or meta.get("compat") != self.compat:
             raise ValueError(f"{path}: another format or build")
+        _check_table(header)                                  # before any allocation: the header is not trusted yet
         dests = {}
         for name, d in header.items():
             if name == "__metadata__":

@@ -25,7 +25,7 @@ class DisplayDrmTest(unittest.TestCase):
         self.stub("id", '#!/bin/sh\nprintf "%s\\n" "${TEST_UID:-0}"\n')
         self.stub("nvidia-smi", '#!/bin/sh\n[ "${SMI_FAIL:-0}" = 1 ] && exit 1\nprintf "%s" "${COMPUTE_PIDS:-}"\n')
         self.stub("rmmod", '#!/bin/sh\nprintf "rmmod %s\\n" "$*" >> "$COMMAND_LOG"\n')
-        self.stub("modprobe", '#!/bin/sh\nprintf "modprobe %s\\n" "$*" >> "$COMMAND_LOG"\nif [ "${MODPROBE_FAIL:-}" = "$*" ]; then exit 1; fi\nexit 0\n')
+        self.stub("modprobe", '#!/bin/sh\nprintf "modprobe %s\\n" "$*" >> "$COMMAND_LOG"\nif [ "${MODPROBE_FAIL:-}" = "$*" ]; then exit 1; fi\nif [ -n "${HIDE_CARD_VENDOR:-}" ] && [ "$*" = "nvidia_drm modeset=1 fbdev=0" ]; then printf "0x1234\\n" > "$HIDE_CARD_VENDOR"; fi\nexit 0\n')
         self.stub("sleep", '#!/bin/sh\n: \n')
 
     def tearDown(self):
@@ -159,6 +159,14 @@ class DisplayDrmTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("failed to load", result.stderr)
         self.assertEqual(self.commands(), "rmmod nvidia_drm\nmodprobe nvidia_drm modeset=1 fbdev=0\nmodprobe nvidia_drm\n")
+
+    def test_card_that_does_not_reappear_unloads_the_failed_module_before_the_defaults(self):
+        vendor = self.sysfs / "class/drm/card7/device/vendor"
+        result = self.invoke("on", HIDE_CARD_VENDOR=str(vendor))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("did not reappear", result.stderr)
+        # A plain modprobe does nothing while the failed module is still loaded, so the module goes first.
+        self.assertEqual(self.commands(), "rmmod nvidia_drm\nmodprobe nvidia_drm modeset=1 fbdev=0\nrmmod nvidia_drm\nmodprobe nvidia_drm\n")
 
     def test_no_nvidia_card_refuses(self):
         (self.sysfs / "class/drm/card7/device/vendor").write_text("0x1234\n")

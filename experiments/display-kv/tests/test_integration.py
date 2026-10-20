@@ -316,6 +316,29 @@ class DisplayKvIntegrationTest(unittest.TestCase):
             signal.signal(signal.SIGTERM, previous)
         self.assertEqual(Spill.drained, 1)
 
+    def test_follower_drains_its_spill_writes_when_rank_0_closes_the_link_first(self):
+        import signal
+
+        class Spill:
+            drained = 0
+
+            def shutdown_drain(self):
+                Spill.drained += 1
+
+        previous = signal.getsignal(signal.SIGTERM)
+        try:
+            decoder = self.follower(Spill())
+
+            def broken(link):
+                raise RuntimeError("rank 0's step link closed")      # stop.sh stops rank 0 first
+
+            decoder._follow_steps = broken
+            with self.assertRaises(RuntimeError):
+                decoder.follow(object())
+        finally:
+            signal.signal(signal.SIGTERM, previous)
+        self.assertEqual(Spill.drained, 1)
+
     def test_follower_without_a_spill_tier_stops_cleanly_and_other_errors_pass_through(self):
         import signal
 

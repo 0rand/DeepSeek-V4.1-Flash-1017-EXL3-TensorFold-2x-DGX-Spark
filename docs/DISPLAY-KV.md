@@ -231,7 +231,11 @@ CPU reads or copy engines.
 - `docker stop` sends SIGTERM. Both ranks drain the queued writes before they exit.
   The wait is `TF_SPILL_FLUSH_S`, but never more than 55 seconds, below the
   `docker stop -t 60` limit. Rank 0 uses the SIGTERM handler of the pinned
-  `serve()`. Rank 1 has its own handler in the follower loop.
+  `serve()`. Rank 1 has its own handler in the follower loop, and it also drains
+  when rank 0 closes the link first (`stop.sh` stops rank 0 first).
+- The restore code checks the tensor descriptors of a spill file before it
+  allocates: known dtype, non-negative shape, a span of exactly the shape's size,
+  and spans without gap or overlap. A file that fails is dropped.
 - The stored token ids use base64. A 1M-token prompt needs far less time to
   write than with a JSON list. Spill files from an older format are not read.
 - The spill signature ignores the driver version, so nodes with different driver

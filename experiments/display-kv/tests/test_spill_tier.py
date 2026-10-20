@@ -259,6 +259,41 @@ class SpillTierTests(unittest.TestCase):
             store.forget(before.key)
             self.assertIsNone(store.find(ids, whole_needs_head=False))
 
+    def test_header_with_a_shape_larger_than_its_span_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            path = self.entry_path(store)
+            with open(path, "rb") as f:
+                raw = f.read()
+            self.assertEqual(raw.count(b'"shape":[100,4]'), 1)
+            with open(path, "wb") as f:                  # same length, so the file size and the CRC bytes still fit
+                f.write(raw.replace(b'"shape":[100,4]', b'"shape":[100,5]'))
+            with self.assertRaises(ValueError):
+                store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            self.assertEqual(store.info()["load_failed"], 1)
+            again = self.sp.SpillStore(store.cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            self.assertEqual(again.info()["entries"], 0)        # the start scan does not trust the header either
+
+    def test_descriptor_check_refuses_gaps_overlaps_negative_numbers_and_unknown_dtypes(self):
+        good = {"__metadata__": {}, "a": {"dtype": next(iter(self.sp._TD)), "shape": [2], "data_offsets": [0, 0]}}
+        code = good["a"]["dtype"]
+        size = torch.empty((), dtype=self.sp._TD[code]).element_size()
+        good["a"]["data_offsets"] = [0, 2 * size]
+        self.assertEqual(self.sp._check_table(good), 2 * size)
+        second = {"dtype": code, "shape": [1], "data_offsets": [2 * size, 3 * size]}
+        self.assertEqual(self.sp._check_table({**good, "b": second}), 3 * size)
+        bad = [
+            {**good, "b": {**second, "data_offsets": [3 * size, 4 * size]}},          # a gap
+            {**good, "b": {**second, "data_offsets": [size, 2 * size]}},               # an overlap
+            {"a": {**good["a"], "shape": [-2], "data_offsets": [0, 2 * size]}},         # a negative shape
+            {"a": {**good["a"], "dtype": "nope"}},                                      # an unknown dtype
+            {"a": {**good["a"], "shape": [10 ** 12], "data_offsets": [0, 2 * size]}},   # a huge shape
+        ]
+        for header in bad:
+            with self.subTest(header=header):
+                with self.assertRaises(ValueError):
+                    self.sp._check_table(header)
+
     def test_good_restore_counts_no_failure(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, _ = self.stored(root)
