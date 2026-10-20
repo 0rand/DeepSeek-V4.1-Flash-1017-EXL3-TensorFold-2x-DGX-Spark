@@ -12,6 +12,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Added
 
+- Add a separate memory/top-k image with bounded key scratch and an opt-in live allocator policy. Ordinary startup keeps its original ceiling. See [Memory and top-k](docs/MEMORY-TOPK.md).
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
 
 ### Changed

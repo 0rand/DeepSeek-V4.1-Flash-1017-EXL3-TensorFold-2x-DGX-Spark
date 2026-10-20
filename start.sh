@@ -6,6 +6,12 @@ set -euo pipefail
 # shellcheck source=scripts/common.sh
 . "$(dirname "$0")/scripts/common.sh"
 
+# Only the separately selected memory-topk image uses this opt-in policy.
+case "${MEM_CAP-0}" in
+  0|1) ;;
+  *) echo "MEM_CAP must be 0 or 1" >&2; exit 1 ;;
+esac
+
 if [ "${PREFLIGHT:-1}" = 1 ]; then
   "$ROOT/scripts/preflight.sh" || exit 1
 fi
@@ -25,6 +31,7 @@ run_args() {  # $1 = rank. Every TF_DS_* setting below is explained in docs/WHAT
 -e TF_DS_WARM_LENGTHS=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,33,131,514,1024,2113 -e TF_DS_ENGRAM=/engram
 -e TF_DS_SPILL_GIB=${SPILL_GIB:-64} -e TF_DS_SPILL_DIR=/cache/tf-ds-spill
 -e TF_DS_ENGRAM_DONTNEED=1 -e TF_DS_MEM_FLOOR_GIB=${MEM_FLOOR_GIB:-1.5}
+$( [ "${MEM_CAP:-0}" = 1 ] && echo '-e TF_DS_MEM_CAP=1' )
 -e TRITON_CACHE_DIR=/cache/triton -e CUDA_CACHE_PATH=/cache/nv
 -e TF_RDMA_DEVICES=$RDMA_DEVICES -e TF_RDMA_GID_INDEX=$GID_INDEX
 -e NCCL_IB_HCA=$NCCL_IB_HCA -e NCCL_IB_GID_INDEX=$GID_INDEX -e NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME
