@@ -33,7 +33,11 @@ print(reply.choices[0].message.content)
 
 ## Thinking
 
-Thinking is **off** unless a request turns it on. Use one of these fields:
+Thinking is **off** unless a request turns it on. To turn it on for every request that does not say, set `THINKING=1` in `.env` and run `./start.sh` again. `REASONING_EFFORT` sets the effort for those requests (empty: `high`).
+
+A tool-call benchmark that sends no thinking field runs with thinking off. On the forum, one user scored 87/100 that way and 93/100 with `reasoning_effort` `high` (tool-eval-bench, 92 scenarios). Set the field, or `THINKING=1`, before you compare scores.
+
+Per request, use one of these fields:
 
 | Field | Values | Example |
 |---|---|---|
