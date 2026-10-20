@@ -36,7 +36,7 @@ docker image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null | sed 's/^/IMAGE /'
 # run shows it is safe for every setup). This checks NCCL's socket bootstrap only, not the RDMA data path. It
 # allocates no GPU memory. The next line expands here, on the head, before the script runs on the node.
 if [ "${PREFLIGHT_NCCL_BOOTSTRAP:-0}" = 1 ]; then
-if bootstrap=\$(timeout 20s docker run --rm --network host -e NCCL_DEBUG=WARN -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME" \
+if bootstrap=\$(timeout --kill-after=5s 20s docker run --rm --init --network host -e NCCL_DEBUG=WARN -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME" \
     --entrypoint python3 "$IMAGE" -c 'import ctypes; lib = ctypes.CDLL("libnccl.so.2"); uid = ctypes.create_string_buffer(128); raise SystemExit(lib.ncclGetUniqueId(ctypes.byref(uid)))' 2>&1); then
   echo "OK NCCL socket bootstrap ($NCCL_SOCKET_IFNAME)"
 else

@@ -25,8 +25,8 @@ class NcclBootstrapTests(unittest.TestCase):
                               'printf "fixture bootstrap\\nsecond line\\n"\nexit "$PROBE_STATUS"\n')
             docker.chmod(0o755)
             timeout = root / "timeout"
-            timeout.write_text('#!/bin/sh\n[ "$1" = 20s ] || exit 99\n'
-                               '[ "$TIMED_OUT" != 1 ] || exit 124\nshift\nexec "$@"\n')
+            timeout.write_text('#!/bin/sh\n[ "$1" = --kill-after=5s ] && [ "$2" = 20s ] || exit 99\n'
+                               '[ "$TIMED_OUT" != 1 ] || exit 124\nshift 2\nexec "$@"\n')
             timeout.chmod(0o755)
             env = os.environ | {
                 "PATH": str(root) + os.pathsep + os.environ["PATH"],
@@ -51,6 +51,7 @@ class NcclBootstrapTests(unittest.TestCase):
         self.assertIn("fixture:image", args)
         self.assertIn("--network", args)
         self.assertNotIn("--gpus", args)
+        self.assertIn("--init", args)             # signals reach python, which is not PID 1 in the container
         self.assertNotIn("exec", args)
         self.assertIn("ncclGetUniqueId", args[-1])
 
