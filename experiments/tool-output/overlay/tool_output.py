@@ -45,6 +45,7 @@ class ToolOutputGuard:
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self._stream_cut: int | None = None
         self._stream_scanned = 0      # no opener starts before this offset of the cumulative answer
+        self._stream_seen = ""        # the answer of the last stream() call
         self.tools = tools or []
         self.declared_tools = (request.get("tools") or []) if request is not None else self.tools
         self.tools_field = ("omitted" if request is not None and "tools" not in request else
@@ -66,9 +67,13 @@ class ToolOutputGuard:
         executable opener occurs, the rest waits for final atomic validation.
         No call delta can escape before a later unoffered call is checked.
         """
+        if not text.startswith(self._stream_seen):
+            # The text does not extend the text of the last call (a reset or a rewrite): trust nothing, scan again.
+            self._stream_cut, self._stream_scanned = None, 0
+        self._stream_seen = text
         if self._stream_cut is not None:
             return text[:self._stream_cut]
-        # The answer only grows, so each call scans the new text plus the longest opener prefix again.
+        # Normally the answer only grows, so each call scans the new text plus the longest opener prefix again.
         longest = max(len(tag) for tag in self._openers)
         first = min(self._stream_scanned, len(text))
         for opening in self._opener_re.finditer(text, first):
@@ -98,14 +103,38 @@ class ToolOutputGuard:
         return count % 2 == 0
 
     @staticmethod
-    def _literal_prefix(prefix: str, suffix: str | None = None) -> bool:
+    def _closes_inside(prefix: str, body: str) -> bool:
+        """True when a code fence or inline code open at the end of ``prefix`` closes inside ``body``."""
+        return (ToolOutputGuard._markdown_open(prefix)
+                and not ToolOutputGuard._markdown_open(prefix + body))
+
+    @staticmethod
+    def _literal_prefix(prefix: str, suffix: str | None = None, body: str | None = None) -> bool:
         """Read Markdown before a call, never inside a real argument body.
 
         Unclosed inline backticks are conservative literals. An envelope counts as quoted only when the same
         quote mark stands right before it (spaces and tabs allowed, no newline) and right after it. That check
         needs ``suffix``, the text after the envelope. While streaming there is no suffix, so a quote never
-        makes the rest literal there. This is a tool-markup guard, not a Markdown renderer.
+        makes the rest literal there. A code fence or inline code that closes inside ``body`` (the envelope)
+        does not make the envelope literal: a Markdown reader sees the code end there. This is a tool-markup
+        guard, not a Markdown renderer.
         """
+        code = ToolOutputGuard._markdown_open(prefix)
+        if code and body is not None and ToolOutputGuard._closes_inside(prefix, body):
+            code = False
+        last_line = prefix.rsplit("\n", 1)[-1]
+        quoted = False
+        if suffix is not None:
+            before = last_line.rstrip(" \t")
+            quoted = (bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
+                      and ToolOutputGuard._opens_quote(before[:-1], before[-1]))
+        return (code
+                or bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", last_line))
+                or quoted)
+
+    @staticmethod
+    def _markdown_open(prefix: str) -> bool:
+        """True when ``prefix`` ends inside a code fence or inside inline code."""
         fence = None
         inline = None
         for line in prefix.splitlines(keepends=True):
@@ -124,15 +153,7 @@ class ToolOutputGuard:
                     inline = width
                 elif inline == width:
                     inline = None
-        last_line = prefix.rsplit("\n", 1)[-1]
-        quoted = False
-        if suffix is not None:
-            before = last_line.rstrip(" \t")
-            quoted = (bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
-                      and ToolOutputGuard._opens_quote(before[:-1], before[-1]))
-        return (fence is not None or inline is not None
-                or bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", last_line))
-                or quoted)
+        return fence is not None or inline is not None
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
         """Return CUDA's parsed result, or fail atomically on an unavailable complete call."""
@@ -169,10 +190,13 @@ class ToolOutputGuard:
             if start < end:
                 continue
             end = stop
-            is_literal = self._literal_prefix(masked[:start], masked[stop:])
+            body = text[start:stop]
+            is_literal = self._literal_prefix(masked[:start], masked[stop:], body)
             envelopes.append((start, stop, is_literal))
             # Argument text is data, not Markdown for later calls. Newlines stay, so line starts stay true.
-            masked = masked[:start] + re.sub(r"[^\n]", " ", masked[start:stop]) + masked[stop:]
+            # Exception: code that was open before the call and ends inside it also ends for later calls.
+            if not self._closes_inside(masked[:start], body):
+                masked = masked[:start] + re.sub(r"[^\n]", " ", masked[start:stop]) + masked[stop:]
             if is_literal:
                 continue
             for name in names:

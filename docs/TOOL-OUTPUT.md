@@ -39,7 +39,8 @@ No performance claim is made.
 - A possible opening tag at the end of a chunk waits for more text. Prose before it is released.
 - A real call envelope is held until the whole answer is validated.
 - Fenced, quoted and inline-code examples stay literal. Argument bodies are data, not Markdown. A call counts as quoted only when the same quote mark stands right before it and right after it, and the mark before it opens a quote (an even number of the same marks come before it on that line; a backslash escapes a mark, and a single quote between two letters is an apostrophe). Text of an example call is masked, so a backtick or a fence inside it cannot change the state for a later call. A quote mark at the end of the text before a call does not make the call literal. While streaming, text after a quote mark and a possible call opener waits for the check.
-- Streaming scans each new part of the answer once. It does not scan the whole answer again for each chunk.
+- Streaming scans each new part of the answer once. It does not scan the whole answer again for each chunk. If a new text does not extend the text of the last call, it scans from the start.
+- A code fence or inline code that was open before a call and ends inside the call does not make that call or the next call literal.
 - The content of a guarded reply passes through the same `ToolCallPolicy.content()` step as before. With `parallel_tool_calls: false`, that step removes tool text that is not a complete call.
 - A flat JSON call with an empty nested `function` object is read by its top-level `name`.
 - An unoffered call returns one safe error. It does not expose tool arguments.

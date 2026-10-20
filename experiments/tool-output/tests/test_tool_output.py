@@ -268,6 +268,34 @@ class ToolOutputTests(unittest.TestCase):
                 for size in range(1, len(text) + 1):
                     self.assertEqual(guard.stream(text[:size]), self.guard().stream(text[:size]))
 
+    def test_stream_scans_again_when_the_text_does_not_extend_the_last_text(self):
+        call = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        for first, second in (("x" * 60, call + "x" * 60),            # rewritten, same length or longer
+                              ("x" * 60, call[:20]),                   # shorter than the last text
+                              ("y" * 40 + " ", call + " tail")):       # a new buffer with a call before the old end
+            with self.subTest(second=second[:30]):
+                guard = self.guard()
+                guard.stream(first)
+                shown = guard.stream(second)
+                self.assertNotIn("PRIVATE", shown)
+                self.assertNotIn("<tool_call>", shown)
+        guard = self.guard()                                           # also after the cut was set
+        guard.stream("ok " + call)
+        self.assertEqual(guard.stream("fresh text"), "fresh text")
+        self.assertNotIn("<tool_call>", guard.stream(call + " more"))
+
+    def test_code_that_ends_inside_a_call_does_not_hide_the_next_call(self):
+        offered = "<tool_call><function=task><parameter=note>{}</parameter></function></tool_call>"
+        real = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        for opening, inside in (("```\n", "x\n```\ny"), ("`", "x`y"), ("~~~\n", "x\n~~~\ny")):
+            text = opening + offered.format(inside) + "\n" + real
+            with self.subTest(opening=opening):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+        # A fence that stays open through the call keeps both calls literal.
+        text = "```\n" + offered.format("x") + "\n" + real
+        self.assertEqual(self.guard().parse(text), (text, None))
+
     def test_malformed_and_truncated_wrappers_are_not_misclassified(self):
         for text in (
             '<tool_call>{"name":}</tool_call>',
