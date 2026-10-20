@@ -24,9 +24,10 @@ ALLOWED_HOME_IN_FILE = {
 }
 # /home/<name>, /Users/<name> and C:\Users\<name>. Windows paths match in any letter case, also with the doubled
 # backslashes of JSON. The POSIX forms stay case-sensitive, so a URL path such as /users/123 does not match.
-# ~<name>/ is the home of a named user. A plain ~/ is allowed: it names no user.
+# ~<name> is the home of a named user, also with no slash after it (cd ~alice, HOME=~alice).
+# A plain ~ or ~/ is allowed: it names no user.
 HOME_PATH = re.compile(
-    r"(?:/home/|/Users/|[A-Za-z]:(?:\\\\|\\|/)(?i:users)(?:\\\\|\\|/)|(?<![\w/~])~(?=[A-Za-z][A-Za-z0-9._-]*/))"
+    r"(?:/home/|/Users/|[A-Za-z]:(?:\\\\|\\|/)(?i:users)(?:\\\\|\\|/)|(?<![\w/~])~(?=[A-Za-z]))"
     r"([A-Za-z0-9._-]+)"
 )
 IPV4 = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?![\w.])")
@@ -111,10 +112,11 @@ class Detection(unittest.TestCase):
         for text, user in (("/home/alice/x", "alice"), ("/Users/Bob/x", "Bob"), (r"C:\Users\Carol\run.log", "Carol"),
                            (r"c:\users\dave\run.log", "dave"), (r'"C:\\Users\\Erin\\run.log"', "Erin"),
                            ("C:/Users/Fay/run.log", "Fay"), ("D:\\USERS\\Gus\\x", "Gus"),
-                           ("~hal/run.log", "hal"), ("cd ~ivy/deploy", "ivy")):
+                           ("~hal/run.log", "hal"), ("cd ~ivy/deploy", "ivy"), ("cd ~jo", "jo"),
+                           ("HOME=~kim", "kim"), ('"~lee"', "lee")):
             with self.subTest(text=text):
                 self.assertEqual([m.group(1) for m in HOME_PATH.finditer(text)], [user])
-        for text in ("GET https://api.example.com/users/123", "~/deploy/x", "about ~15 min", "a~b/c", "~~x/y"):
+        for text in ("GET https://api.example.com/users/123", "~/deploy/x", "about ~15 min", "a~b/c", "~~x/y", "cd ~ && ls"):
             with self.subTest(text=text):
                 self.assertEqual(list(HOME_PATH.finditer(text)), [])
 
