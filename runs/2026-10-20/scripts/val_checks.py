@@ -1,20 +1,25 @@
 """Live checks for fork PRs #13 (overlapping image requests), #14 (--vision-max-images) and #15
 (TF_DROP_UNOFFERED_TOOL_CALLS), plus the server's thinking default (recipe PR #20).
 
-Run on the head: python3 -I val_checks.py TAG [checks...]   checks: images limit tools thinking (default: all but thinking)
+Run on the head, with the recipe's .env loaded (set -a; . ./.env; set +a):
+  python3 -I val_checks.py TAG [checks...]   checks: images limit tools thinking (default: all but thinking)
 Writes val-TAG.json next to this file and prints one line for each check.
 """
 import base64
 import concurrent.futures as cf
 import http.client
 import json
+import os
 import struct
 import sys
 import time
 import zlib
 from pathlib import Path
 
-HOST, PORT = "172.17.0.1", 8888
+# As scripts/common.sh: BIND_HOST and PORT from .env, 0.0.0.0 reached as 127.0.0.1. API_HOST overrides the host
+# (the 2026-10-20 runs used API_HOST=172.17.0.1, the docker bridge address of that server).
+HOST = os.environ.get("API_HOST") or os.environ.get("BIND_HOST", "127.0.0.1").replace("0.0.0.0", "127.0.0.1")
+PORT = int(os.environ.get("PORT", "8888"))
 
 
 def post(body, timeout=900):

@@ -1,11 +1,14 @@
 """Memory trace for recipe issue #21: MemAvailable on both nodes every second while the engine serves
 (1) 4 long prompts at the same time and (2) image-heavy requests at the same time.
 
-Run on the head: python3 -I oom_trace.py TAG
+Run on the head, with the recipe's .env loaded (set -a; . ./.env; set +a):
+  python3 -I oom_trace.py TAG [long+images|images]
+The worker is WORKER_SSH from .env. The report says worker_ok: false when no worker sample arrived.
 Writes oom-TAG.csv (t, head_kib, worker_kib, phase) and oom-TAG.json (requests, minimums, earlyoom lines).
 """
 import concurrent.futures as cf
 import json
+import os
 import random
 import subprocess
 import sys
@@ -17,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from val_checks import image_msg, post  # noqa: E402
 
 TAG = sys.argv[1]
+WORKER = os.environ.get("WORKER_SSH") or sys.exit("set WORKER_SSH (load the recipe .env first)")
 OUT = Path(__file__).parent
 phase = ["idle"]
 rows = []
@@ -33,7 +37,7 @@ def head_avail():
 
 
 def sampler():
-    w = subprocess.Popen(["ssh", "-o", "BatchMode=yes", "10.100.80.2",
+    w = subprocess.Popen(["ssh", "-o", "BatchMode=yes", WORKER,
                           "while true; do awk '/MemAvailable/{print $2; fflush()}' /proc/meminfo; sleep 1; done"],
                          stdout=subprocess.PIPE, text=True)
     last_w = [-1]
@@ -61,9 +65,12 @@ def long_text(tokens, seed):
 
 def long_req(tokens, seed):
     t = time.time()
-    s, d = post({"messages": [{"role": "user", "content": long_text(tokens, seed)
-                               + "\n\nCount how often the word 'spark' appears above. Answer briefly."}],
-                 "max_tokens": 512, "chat_template_kwargs": {"enable_thinking": False}}, timeout=3600)
+    try:
+        s, d = post({"messages": [{"role": "user", "content": long_text(tokens, seed)
+                                   + "\n\nCount how often the word 'spark' appears above. Answer briefly."}],
+                     "max_tokens": 512, "chat_template_kwargs": {"enable_thinking": False}}, timeout=3600)
+    except Exception as exc:  # noqa: BLE001  the engine died: record it
+        s, d = -1, {"exception": repr(exc)[:200]}
     u = d.get("usage", {})
     return {"kind": f"text~{tokens // 1000}K", "status": s, "seconds": round(time.time() - t, 1),
             "prompt_tokens": u.get("prompt_tokens"), "completion_tokens": u.get("completion_tokens"),
@@ -117,11 +124,14 @@ if __name__ == "__main__":
     time.sleep(2)
     eo = subprocess.run(["journalctl", "-u", "earlyoom", "--since", started, "--no-pager", "-q"],
                         capture_output=True, text=True).stdout.splitlines()
-    weo = subprocess.run(["ssh", "-n", "-o", "BatchMode=yes", "10.100.80.2",
+    weo = subprocess.run(["ssh", "-n", "-o", "BatchMode=yes", WORKER,
                           f"journalctl -u earlyoom --since '{started}' --no-pager -q"],
                          capture_output=True, text=True).stdout.splitlines()
     phases = list(dict.fromkeys(r[3] for r in rows))
-    report = {"tag": TAG, "started": started, "requests": reqs, "phases": {p: phase_min(p) for p in phases},
+    worker_ok = any(r[2] > 0 for r in rows)
+    if not worker_ok:
+        print(f"WARNING: no MemAvailable sample from the worker ({WORKER}): the worker values are not valid", flush=True)
+    report = {"tag": TAG, "started": started, "worker_ok": worker_ok, "requests": reqs, "phases": {p: phase_min(p) for p in phases},
               "earlyoom_head": [line for line in eo if "sending" in line.lower() or "low memory" in line.lower()][:20],
               "earlyoom_worker": [line for line in weo if "sending" in line.lower() or "low memory" in line.lower()][:20]}
     (OUT / f"oom-{TAG}.csv").write_text("t,head_kib,worker_kib,phase\n" + "\n".join(",".join(map(str, r)) for r in rows))
