@@ -32,6 +32,13 @@ for d in "$MODEL_VIEW/model" "$MODEL_VIEW/engram"; do [ -d "\$d" ] || echo "FAIL
 [ -f "$MODEL_VIEW/model/chat_template.jinja" ] || echo "FAIL missing $MODEL_VIEW/model/chat_template.jinja"
 n=\$(ls "$MODEL_VIEW"/model/*.safetensors 2>/dev/null | wc -l); [ "\$n" -ge 43 ] || echo "FAIL \$n of 43 weight shards"
 docker image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null | sed 's/^/IMAGE /' || echo "FAIL no image $IMAGE"
+# This checks NCCL's socket bootstrap only, not the RDMA data path. It allocates no GPU memory.
+if bootstrap=\$(timeout 20s docker run --rm --network host -e NCCL_DEBUG=WARN -e NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME" \
+    --entrypoint python3 "$IMAGE" -c 'import ctypes; lib = ctypes.CDLL("libnccl.so.2"); uid = ctypes.create_string_buffer(128); raise SystemExit(lib.ncclGetUniqueId(ctypes.byref(uid)))' 2>&1); then
+  echo "OK NCCL socket bootstrap ($NCCL_SOCKET_IFNAME)"
+else
+  echo "FAIL NCCL socket bootstrap ($NCCL_SOCKET_IFNAME): \$(echo "\$bootstrap" | tr '\\n' ' '); check NCCL_SOCKET_IFNAME in .env"
+fi
 for dev in \$(echo "$RDMA_DEVICES" | tr ',' ' '); do
   # The engine's RDMA gather sends 4096-byte packets. RoCE gets that MTU only when the netdev MTU is ~4200 or more
   # (9000 is usual). At the default 1500, the gather fails with "transport retry counter exceeded" (issue #15).
