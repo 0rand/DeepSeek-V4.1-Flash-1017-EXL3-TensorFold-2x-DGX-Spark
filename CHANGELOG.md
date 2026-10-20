@@ -20,6 +20,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 - CI: a defaults guard test, a home-path and public-IP scan, workflow checks (actionlint, zizmor) and a secret scan (gitleaks).
 - CI: the secret scan refuses a `.gitleaksignore` in the checkout, because gitleaks loads it in any case.
 - AGENTS.md: rules for AI agents that open issues and pull requests, with links to CONTRIBUTING.md, the templates and SECURITY.md.
+- Issues: the `issue-labels` workflow adds a type label from the title prefix (`[bug]`, `[feature]`, `[perf]`), also for an issue made without a form. An issue with no prefix gets `needs-triage`.
 
 ## [1.0.0] - 2026-10-19
 
