@@ -1,5 +1,7 @@
 # DeepSeek V4.1 Flash on two DGX Spark
 
+Optional: [display-backed KV experiment](docs/DISPLAY-KV.md). Spill is disabled in this variant. Full hardware validation is pending.
+
 **Run DeepSeek's V4.1 Flash model on two NVIDIA DGX Spark computers with about 2× the decode and prefill speed of the standard vLLM setup, ready for AI agents.**
 
 Also on Hugging Face: [Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster](https://huggingface.co/Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster). The engine is [my TensorFold fork](https://github.com/Elevatormusic/TensorFold) (branch `deepseek-v41-tp2`).

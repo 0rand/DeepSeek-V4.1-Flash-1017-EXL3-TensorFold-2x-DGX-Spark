@@ -15,6 +15,18 @@ It runs `host_tuning_test.sh` (see below) and the Python `unittest` files (`test
 `test_repo_rules.py` checks the repo rules of [CONTRIBUTING.md](../CONTRIBUTING.md): git tracks `runs/`, each entry in `runs/` is a `YYYY-MM-DD` folder with an `INDEX.md`, and `.env.example` sources cleanly and holds no token.
 A test that needs a GPU, a server or the `tensorfold` package skips itself.
 
+## Display-only experiment checks
+
+The offline runner includes `experiments/display-kv/tests/`. These tests use temporary fixtures, not the active `.env`. They check installer rejection without partial writes, the display-only overlay list, private spill-off and prefill-512 settings, and startup guard ordering. The copied display, DRM and launcher tests use mocks. They do not prove hardware safety or correct two-node serving.
+
+The six source integration tests skip unless `TF_DISPLAY_SOURCE` names an explicit checkout at the pinned revision. To run them without a GPU or service:
+
+```bash
+TF_DISPLAY_SOURCE=/path/to/pinned/tensorfold python3 -m unittest discover -s experiments/display-kv/tests -p test_integration.py -v
+```
+
+This command reads source files but does not modify that checkout. Hermetic installer tests still run without it. Full hardware validation is pending. See [the display guide](../docs/DISPLAY-KV.md).
+
 ## Script check (no server needed)
 
 `bash tests/host_tuning_test.sh` runs the node part of `scripts/host_tuning.sh` in a temporary folder, with stub `sysctl` and `systemctl` commands. It changes nothing on the node. It checks that the first run keeps the old sysctl values, that `--undo` puts them back, that a missing or stopped earlyoom stops the setup, that a failed setup puts the node back, and that transparent huge pages go off with a systemd unit and come back on with `--undo`.
