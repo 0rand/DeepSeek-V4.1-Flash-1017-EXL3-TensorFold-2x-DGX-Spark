@@ -155,7 +155,13 @@ class ToolOutputHttpTests(unittest.TestCase):
         return body
 
     def test_family_capability_and_generic_legacy_behavior(self):
-        self.assertTrue(self.ds_app.strict_tool_output)
+        app = app_for(self.ds_app, self.server)
+        with patch.dict(os.environ):
+            os.environ.pop("TF_DS_STRICT_TOOL_OUTPUT", None)
+            self.assertIs(app.strict_tool_output, True)                 # on unless the switch says 0
+            for value, expected in (("1", True), ("0", False), ("", True)):
+                os.environ["TF_DS_STRICT_TOOL_OUTPUT"] = value
+                self.assertIs(app.strict_tool_output, expected)
         self.assertFalse(hasattr(self.server.App, "strict_tool_output"))
         generic = app_for(self.server.App, self.server)
         with http_server(self.http, generic) as port:
@@ -163,11 +169,17 @@ class ToolOutputHttpTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("unoffered", json.loads(text)["choices"][0]["message"]["content"])
 
-    def test_nonstream_unknown_is_safe_500_and_recovers(self):
+    def test_switch_zero_leaves_the_original_parser_behavior(self):
+        app = app_for(self.ds_app, self.server)
+        with patch.dict(os.environ, {"TF_DS_STRICT_TOOL_OUTPUT": "0"}), http_server(self.http, app) as port:
+            status, _, text = post(port, self.request("B", tools=TOOLS))
+        self.assertEqual(status, 200)                                   # no 422: the guard is off
+
+    def test_nonstream_unknown_is_safe_422_and_recovers(self):
         app = app_for(self.ds_app, self.server)
         with http_server(self.http, app) as port:
             status, _, text = post(port, self.request("B", tools=TOOLS))
-            self.assertEqual(status, 500)
+            self.assertEqual(status, 422)
             error = json.loads(text)["error"]
             self.assertEqual(error["type"], "model_output_error")
             self.assertEqual(error["code"], "unavailable_tool_call")
@@ -288,9 +300,9 @@ class ToolOutputHttpTests(unittest.TestCase):
             self.assertEqual(message["content"], "answer")
             self.assertIn("unoffered", message["reasoning_content"])
             status, _, text = post(port, self.request("B", tools=TOOLS, tool_choice="none"))
-            self.assertEqual(status, 500)
+            self.assertEqual(status, 422)
             status, _, text = post(port, self.request("B"))
-        self.assertEqual(status, 500)
+        self.assertEqual(status, 422)
         self.assertEqual(json.loads(text)["error"]["code"], "unavailable_tool_call")
 
     def test_strict_path_never_constructs_incremental_tool_streamer(self):
@@ -321,7 +333,7 @@ class ToolOutputHttpTests(unittest.TestCase):
                 thread.start()
             for thread in threads:
                 thread.join()
-        self.assertEqual(sorted(status for status, _, _ in answers), [200, 500])
+        self.assertEqual(sorted(status for status, _, _ in answers), [200, 422])
         self.assertEqual(sorted(call[0] for call in app.engine.calls), ["A", "A"])
 
 

@@ -88,9 +88,9 @@ class ToolOutputHttpTests(unittest.TestCase):
             self.assertIn('"content": "p"', text)
         self.assertEqual(len(self.runs), 3)
 
-    def test_nonstream_safe_500_then_allowed_call_recovers(self):
+    def test_nonstream_safe_422_then_allowed_call_recovers(self):
         status, text = self.post({"answer": UNKNOWN, "tools": TOOLS})
-        self.assertEqual(status, 500)
+        self.assertEqual(status, 422)
         self.assertEqual(json.loads(text)["error"]["type"], "model_output_error")
         status, text = self.post({"answer": KNOWN, "tools": TOOLS})
         self.assertEqual(status, 200)

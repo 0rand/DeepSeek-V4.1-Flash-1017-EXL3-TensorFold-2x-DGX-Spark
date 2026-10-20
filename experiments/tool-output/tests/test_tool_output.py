@@ -172,6 +172,37 @@ class ToolOutputTests(unittest.TestCase):
                 self.assertEqual(content, text)
                 self.assertIsNone(calls)
 
+    def test_a_quote_in_the_prose_before_a_call_does_not_make_the_call_literal(self):
+        call = '{"name":"unoffered","arguments":{"secret":"PRIVATE"}}'
+        envelope = f"<tool_call>{call}</tool_call>"
+        for text in (f'The user said "go"\n{envelope}', f"It's done '\n{envelope}",
+                     f'He said "go" {envelope}',
+                     f'"{envelope}',                                     # no closing quote after the call
+                     f'"{envelope}\''):                                  # another quote mark after the call
+            with self.subTest(text=text):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+
+    def test_streaming_never_releases_a_call_that_follows_a_quote_mark(self):
+        call = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        for text in (f'He said "go"\n{call}', f'"{call}"'):
+            with self.subTest(text=text):
+                guard = self.guard()
+                for size in range(1, len(text) + 1):
+                    shown = guard.stream(text[:size])
+                    self.assertNotIn("PRIVATE", shown)
+                    self.assertNotIn("<tool_call>", shown)
+
+    def test_flat_name_is_used_when_the_nested_function_object_is_empty(self):
+        for payload in ('{"name":"unoffered","function":{},"arguments":{"secret":"PRIVATE"}}',
+                        '{"name":"unoffered","function":{"name":""},"arguments":{}}',
+                        '{"name":"unoffered","function":"x","arguments":{}}'):
+            with self.subTest(payload=payload):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(f"<tool_call>{payload}</tool_call>")
+        content, calls = self.guard().parse('<tool_call>{"name":"task","function":{},"arguments":{}}</tool_call>')
+        self.assertEqual(calls[0]["function"]["name"], "task")
+
     def test_long_inline_delimiters_tilde_fences_and_spaced_quotes(self):
         text = '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
         for literal in (f'``{text}``', f'~~~json\n{text}\n~~~\n', f'"  {text}  "', f'>> {text}'):

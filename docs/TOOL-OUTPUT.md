@@ -19,7 +19,12 @@ docker build -t tensorfold-dsv41:07aa02585f64-tool-output experiments/tool-outpu
 ```
 
 Stop the current server before you select another image.
-Copy the new image to the worker with the normal image transfer procedure.
+Copy the new image to the worker. `docker/build.sh` cannot do this: it rebuilds the ordinary image first. Use this helper, which copies the tag that you built and checks that both nodes hold the same image ID:
+
+```bash
+experiments/tool-output/transfer.sh tensorfold-dsv41:07aa02585f64-tool-output
+```
+
 Set `IMAGE=tensorfold-dsv41:07aa02585f64-tool-output` in your local `.env` on the head.
 Keep `BIND_HOST=127.0.0.1`. Start only one model server.
 Run `./verify.sh`. Use the authentication settings in [CONNECT](../../docs/CONNECT.md).
@@ -33,12 +38,17 @@ No performance claim is made.
 - Ordinary prose streams as before, including when tools are offered.
 - A possible opening tag at the end of a chunk waits for more text. Prose before it is released.
 - A real call envelope is held until the whole answer is validated.
-- Fenced, quoted and inline-code examples stay literal. Argument bodies are data, not Markdown.
+- Fenced, quoted and inline-code examples stay literal. Argument bodies are data, not Markdown. A call counts as quoted only when the same quote mark stands right before it and right after it. A quote mark at the end of the text before a call does not make the call literal. While streaming, text after a quote mark and a possible call opener waits for the check.
+- A flat JSON call with an empty nested `function` object is read by its top-level `name`.
 - An unoffered call returns one safe error. It does not expose tool arguments.
 - A stream sends one error frame and one done frame. It sends no call delta and no finish reason.
-- A non-stream request returns HTTP 500 with `model_output_error`.
+- A non-stream request returns HTTP 422 with `model_output_error`. A client may retry a 5xx response, and this response cannot change on a retry.
 - The next valid request is not affected.
 - Generic `App` behavior is unchanged. Only the DeepSeek V4.1 family enables the guard.
+
+## Switch
+
+The guard is on in this image. To turn it off, set `STRICT_TOOL_OUTPUT=0` in `.env`. `./start.sh` then passes `TF_DS_STRICT_TOOL_OUTPUT=0` to both ranks, and the image keeps the original parser. Only `0` and `1` are valid. Another value stops `start.sh` before any command. With the ordinary image the setting does nothing, and `./start.sh` adds no argument when the setting is absent or `1`. A restart applies a change.
 
 The guard is a tool-markup check, not a full Markdown renderer. A model that writes
 unusual formatting can still be rejected or held. Review the diagnostics before use.

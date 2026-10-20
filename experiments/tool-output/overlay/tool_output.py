@@ -76,11 +76,13 @@ class ToolOutputGuard:
         return text[:-held] if held else text
 
     @staticmethod
-    def _literal_prefix(prefix: str) -> bool:
+    def _literal_prefix(prefix: str, suffix: str | None = None) -> bool:
         """Read Markdown before a call, never inside a real argument body.
 
-        Unclosed inline backticks and quote-prefixed envelopes are conservative
-        literals. This is a tool-markup guard, not a Markdown renderer.
+        Unclosed inline backticks are conservative literals. An envelope counts as quoted only when the same
+        quote mark stands right before it (spaces and tabs allowed, no newline) and right after it. That check
+        needs ``suffix``, the text after the envelope. While streaming there is no suffix, so a quote never
+        makes the rest literal there. This is a tool-markup guard, not a Markdown renderer.
         """
         fence = None
         inline = None
@@ -101,9 +103,13 @@ class ToolOutputGuard:
                 elif inline == width:
                     inline = None
         last_line = prefix.rsplit("\n", 1)[-1]
+        quoted = False
+        if suffix is not None:
+            before = last_line.rstrip(" \t")
+            quoted = bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
         return (fence is not None or inline is not None
                 or bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", last_line))
-                or prefix.rstrip().endswith(('"', "'")))
+                or quoted)
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
         """Return CUDA's parsed result, or fail atomically on an unavailable complete call."""
@@ -140,7 +146,7 @@ class ToolOutputGuard:
             if start < end:
                 continue
             end = stop
-            is_literal = self._literal_prefix(masked[:start])
+            is_literal = self._literal_prefix(masked[:start], masked[stop:])
             envelopes.append((start, stop, is_literal))
             if is_literal:
                 continue
@@ -186,10 +192,10 @@ class ToolOutputGuard:
             payload = None
         if isinstance(payload, dict):
             function = payload.get("function")
-            source = function if isinstance(function, dict) else payload
-            name = source.get("name")
-            if isinstance(name, str) and name.strip():
-                return name.strip()
+            for source in (function, payload):         # an empty nested object falls back to the flat form
+                name = source.get("name") if isinstance(source, dict) else None
+                if isinstance(name, str) and name.strip():
+                    return name.strip()
         xml = self._xml_re.fullmatch(block)
         if xml and not self._parameters_re.sub("", xml.group(2)).strip():
             return xml.group(1).strip()

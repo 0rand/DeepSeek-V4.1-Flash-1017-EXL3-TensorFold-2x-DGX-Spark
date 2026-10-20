@@ -6,6 +6,12 @@ set -euo pipefail
 # shellcheck source=scripts/common.sh
 . "$(dirname "$0")/scripts/common.sh"
 
+# Only the separately selected tool-output image uses this switch. Its guard is on unless this is 0.
+case "${STRICT_TOOL_OUTPUT-1}" in
+  0|1) ;;
+  *) echo "STRICT_TOOL_OUTPUT must be 0 or 1" >&2; exit 1 ;;
+esac
+
 if [ "${PREFLIGHT:-1}" = 1 ]; then
   "$ROOT/scripts/preflight.sh" || exit 1
 fi
@@ -28,6 +34,7 @@ run_args() {  # $1 = rank. Every TF_DS_* setting below is explained in docs/WHAT
 -e TRITON_CACHE_DIR=/cache/triton -e CUDA_CACHE_PATH=/cache/nv
 -e TF_RDMA_DEVICES=$RDMA_DEVICES -e TF_RDMA_GID_INDEX=$GID_INDEX
 -e NCCL_IB_HCA=$NCCL_IB_HCA -e NCCL_IB_GID_INDEX=$GID_INDEX -e NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME
+$( [ "${STRICT_TOOL_OUTPUT:-1}" = 0 ] && echo '-e TF_DS_STRICT_TOOL_OUTPUT=0' )
 -e TORCH_EXTENSIONS_DIR=/cache/torch_extensions -e HF_HUB_OFFLINE=1
 --entrypoint tensorfold $IMAGE serve /model --tp 2 --rank $r --master $HEAD_IP
 --host $BIND_HOST --port $PORT --name $SERVED_NAME $( [ -n "${SERVED_ALIAS:-}" ] && echo "--alias $SERVED_ALIAS" )

@@ -13,7 +13,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 ### Added
 
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
-- Opt-in `experiments/tool-output` image: reject a complete model tool call that the request did not offer. It returns a safe error and does not expose tool arguments. Ordinary prose still streams. The ordinary image and defaults do not change. See `docs/TOOL-OUTPUT.md`.
+- Opt-in `experiments/tool-output` image: reject a complete model tool call that the request did not offer. It returns a safe error (HTTP 422) and does not expose tool arguments. Ordinary prose still streams. The guard is on in that image; `STRICT_TOOL_OUTPUT=0` in `.env` turns it off. The ordinary image and defaults do not change. See `docs/TOOL-OUTPUT.md`.
 
 ### Changed
 

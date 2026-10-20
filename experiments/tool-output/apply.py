@@ -30,8 +30,13 @@ def transform(relative: str | Path, text: str) -> str:
     """Transform pristine text, without reading or changing the source tree."""
     relative = Path(relative)
     if relative == APP:
+        # The guard is on in this image. TF_DS_STRICT_TOOL_OUTPUT=0 (STRICT_TOOL_OUTPUT=0 in .env, see start.sh) turns
+        # it off. server.py reads the property for each request.
         return replace(text, "class DsApp(App):\n    reads_ignore_eos = True\n",
-                       "class DsApp(App):\n    reads_ignore_eos = True\n    strict_tool_output = True\n")
+                       "class DsApp(App):\n    reads_ignore_eos = True\n\n"
+                       "    @property\n    def strict_tool_output(self) -> bool:\n"
+                       "        import os\n\n"
+                       "        return os.environ.get(\"TF_DS_STRICT_TOOL_OUTPUT\", \"1\") != \"0\"\n\n")
     if relative == SERVER:
         text = replace(text, "from tensorfold.cuda.turns import Turns, Yield\n",
                        "from tensorfold.cuda.turns import Turns, Yield\nfrom tensorfold.cuda.tool_output import ToolOutputGuard\n")
@@ -69,7 +74,7 @@ def transform(relative: str | Path, text: str) -> str:
                        "                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n"
                        "            except ModelOutputError as exc:\n"
                        "                print(exc.log_line(), flush=True)\n"
-                       "                return self._json(500, {'error': exc.error})\n"
+                       "                return self._json(422, {'error': exc.error})\n"
                        "            except RequestCancelled:\n")
     return text
 
