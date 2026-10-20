@@ -35,7 +35,7 @@ Prefill with cold prompts (bertholomus's kit_bench client, median of 3 runs):
 - **About 2× the decode speed** of the standard vLLM setup: 57 vs 27 tok/s on prose, 92 vs 40 tok/s on code.
 - **Fast prefill.** About 2,000 to 2,200 tok/s for prompts up to 64K tokens.
 - **Ready for AI agents.** Forced tool calls (`tool_choice` set to `required` or to one tool) and structured output (a JSON schema, a regex or a list of choices).
-- **4 concurrent requests.** Up to 4 requests share the two computers. Aggregate decode reaches 140 tok/s on code.
+- **4 concurrent requests.** Up to 4 requests share the two computers. Aggregate throughput reaches 140 tok/s on code.
 - **Prefix cache.** A second question about the same long document has a TTFT of about 1 s instead of 13 s. Cached prompts also go to disk, so after a restart the TTFT is about 3 s.
 - **Fault isolation.** One failed request ends only that request, not the whole server.
 - **1M-token context.** The full 1,048,576-token context window. A needle test with a 1,035,020-token prompt passed.
@@ -47,7 +47,7 @@ Prefill with cold prompts (bertholomus's kit_bench client, median of 3 runs):
 You need:
 
 - **Two NVIDIA DGX Spark**, joined by one QSFP cable between their ConnectX-7 network ports. NVIDIA's [Connect Two Sparks](https://build.nvidia.com/spark/connect-two-sparks) guide shows how to cable them, set fixed addresses, and set up ssh.
-- **About 500 GB of free disk on each computer.** The model files use 385 GB. The first start uses 110 GB more.
+- **About 650 GB of free disk on each computer.** The model files use 414 GB (385 GiB). The first start needs 110 GiB more for the cache (preflight checks this). With the default `SPILL_GIB=64`, cached prompts can use up to 64 GiB more. With `SPILL_GIB=0`, about 550 GB is enough.
 - **About 100 GB of free memory on each computer.** Close other AI programs first.
 - **A network setup** with fixed addresses on the cable link and ssh from the first computer to the second. Do NVIDIA's guide first, then read [our network notes](docs/NETWORK.md).
 - **Software on the head:** Docker with GPU support (DGX OS has it), Python 3, `curl`, `rsync`, and the [Hugging Face CLI](https://huggingface.co/docs/huggingface_hub/guides/cli) (`hf`). The worker needs Docker and `rsync`.
@@ -208,8 +208,8 @@ bertholomus's own benchmark client ([`kit_bench.py`](runs/2026-10-17/16_kit-benc
 |---|---:|---:|---:|
 | Decode, set a: code / prose / structured | 89.8 / 59.0 / 106.6 | 89.4 / 57.7 / 107.2 | 84.8 / 58.6 / 103.9 (\*\*\*) |
 | Decode, set b: code / prose / structured | 103.1 / 64.1 / 143.2 | 101.5 / 63.4 / 143.4 | 98.6 / 56.8 / 139.7 (\*\*\*) |
-| Aggregate decode, 2 / 4 concurrent requests | 83.1 / 118.9 | 79.8 / 113.0 | 81.5 / 116.7 |
-| Aggregate decode, 4 concurrent requests for 90 s | 142.0 | 125.3 | 120.0 |
+| Aggregate throughput, 2 / 4 concurrent requests | 83.1 / 118.9 | 79.8 / 113.0 | 81.5 / 116.7 |
+| Aggregate throughput, 4 concurrent requests for 90 s | 142.0 | 125.3 | 120.0 |
 | Prefill, cold prompt: 8K / 32K / 64K / 128K | 2,433 / 2,495 / 2,461 / 2,354 | 2,387 / 2,421 / 2,363 / 2,242 | 2,166 / 2,179 / 2,110 / 1,989 (\*\*) |
 | Decode after a 128K prompt | 100.1 | 49.8 | 61.8 (52-73, 3 runs) |
 
@@ -221,7 +221,9 @@ Their Zig engine does not have the agent features above (forced tool calls and s
 
 #### Concurrency (released engine)
 
-| Concurrent requests | Prose, aggregate decode | Code, aggregate decode | Code, per request |
+Aggregate throughput is all completion tokens of all requests divided by the wall time of the batch. The wall time includes the TTFT, so it is lower than the decode speed. See [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
+| Concurrent requests | Prose, aggregate throughput | Code, aggregate throughput | Code, per request |
 |---:|---:|---:|---:|
 | 1 | 29.6 tok/s (includes a 7.3 s TTFT on the first request) | 94.1 tok/s | 95.8 tok/s |
 | 2 | 73.5 tok/s | 106.6 tok/s | 57.2 tok/s |
