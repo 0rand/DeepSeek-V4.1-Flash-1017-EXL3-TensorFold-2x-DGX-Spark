@@ -114,11 +114,18 @@ jobs:
           fetch-depth: 0
       # gitleaks scans every commit for keys and tokens. The binary is pinned by version and SHA-256.
       # tests/test_machine_values.py (job "python") checks home paths and public IP addresses.
+      # The binary and its config stay in RUNNER_TEMP, outside the checkout. A pull request must not change them:
+      # a .gitleaks.toml or .gitleaksignore in the checkout could turn the default rules off.
       - name: Install gitleaks
         run: |
+          cd "$RUNNER_TEMP"
           f="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           curl -fsSLo "$f" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/$f"
           echo "${GITLEAKS_SHA256}  $f" | sha256sum -c -
           tar -xzf "$f" gitleaks
+          printf '[extend]\nuseDefault = true\n' > gitleaks.toml
+          mkdir -p no-ignore
       - name: gitleaks (all commits)
-        run: ./gitleaks git . --redact --no-banner --exit-code 1
+        run: >-
+          "$RUNNER_TEMP/gitleaks" git . --config "$RUNNER_TEMP/gitleaks.toml"
+          --gitleaks-ignore-path "$RUNNER_TEMP/no-ignore" --redact --no-banner --exit-code 1

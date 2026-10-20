@@ -28,7 +28,8 @@ ALLOWED_HOME_IN_FILE = {
 SELF = "tests/test_machine_values.py"
 FIXTURE_HOMES = {"alice", "bob", "carol", "dave", "erin", "fay", "gus", "hal", "ivy", "jo", "kim", "lee"}
 ALLOWED_HOME_IN_FILE |= {(SELF, user) for user in FIXTURE_HOMES}
-ALLOWED_IP_IN_FILE = {(SELF, "34.117.59.81"), (SELF, "2a01:4f8:c17:1234::1"), (SELF, "::ffff:34.117.59.81")}
+ALLOWED_IP_IN_FILE = {(SELF, "34.117.59.81"), (SELF, "2a01:4f8:c17:1234::1"), (SELF, "::ffff:34.117.59.81"),
+                      (SELF, "1.7.12.25")}
 # /home/<name>, /Users/<name> and C:\Users\<name>. Windows paths match in any letter case, also with the doubled
 # backslashes of JSON. The POSIX forms stay case-sensitive, so a URL path such as /users/123 does not match.
 # ~<name> is the home of a named user, also with no slash after it (cd ~alice, HOME=~alice).
@@ -79,10 +80,14 @@ def public_ip(text: str) -> bool:
     return ip.is_global and not ip.is_multicast and str(ip) not in ALLOWED_IPS
 
 
-def ip_candidates(text: str):
+# Dependency files, where a == pin can hold a four-part version such as actionlint-py==1.7.12.25.
+DEPENDENCY_FILE = re.compile(r"(?:requirements|constraints)[\w.-]*\.txt|pyproject\.toml")
+
+
+def ip_candidates(text: str, deps: bool = False):
     ipv6 = [m for m in IPV6.finditer(text) if valid_ip(m.group(1))]
     for m in IPV4.finditer(text):
-        if text[max(0, m.start() - 2):m.start()] in ("==", "~=", ">=", "<="):
+        if deps and text[max(0, m.start() - 2):m.start()] in ("==", "~=", ">=", "<="):
             continue                                          # a pinned version such as pkg==1.7.12.25
         if any(v.start() <= m.start() and m.end() <= v.end() for v in ipv6):
             continue                                          # the tail of fd00::34.117.59.81: the IPv6 address decides
@@ -114,7 +119,7 @@ class MachineValues(unittest.TestCase):
     def test_no_public_ip_addresses(self):
         hits = []
         for name, text in tracked_text_files():
-            for m in ip_candidates(text):
+            for m in ip_candidates(text, deps=bool(DEPENDENCY_FILE.fullmatch(Path(name).name))):
                 if public_ip(m.group(1)) and (name, m.group(1)) not in ALLOWED_IP_IN_FILE:
                     line = text.count("\n", 0, m.start()) + 1
                     hits.append(f"{name}:{line}: {m.group(1)}")
@@ -125,8 +130,8 @@ class MachineValues(unittest.TestCase):
 class Detection(unittest.TestCase):
     """The scan finds what it must find, and only that."""
 
-    def found(self, text):
-        return [m.group(1) for m in ip_candidates(text) if public_ip(m.group(1))]
+    def found(self, text, deps=False):
+        return [m.group(1) for m in ip_candidates(text, deps) if public_ip(m.group(1))]
 
     def test_public_addresses_found(self):
         self.assertEqual(self.found("head 203.0.113.7 ok"), [])          # documentation range: not global
@@ -134,9 +139,15 @@ class Detection(unittest.TestCase):
         self.assertEqual(self.found("addr 2a01:4f8:c17:1234::1 up"), ["2a01:4f8:c17:1234::1"])
         self.assertEqual(self.found("peer ::ffff:34.117.59.81 up"), ["::ffff:34.117.59.81"])
 
+    def test_version_pins(self):
+        self.assertEqual(self.found("actionlint-py==1.7.12.25", deps=True), [])
+        self.assertEqual(self.found("HOST==34.117.59.81"), ["34.117.59.81"])   # not a dependency file
+        self.assertTrue(DEPENDENCY_FILE.fullmatch("requirements-ci.txt"))
+        self.assertFalse(DEPENDENCY_FILE.fullmatch("start.sh"))
+
     def test_not_addresses(self):
         for text in ("10.100.80.1", "fe80::1", "::1", "12:30:45", "2026-10-18T21:01:32Z", "aa:bb:cc:dd:ee:ff",
-                     "std::vector", "ruff==0.17.1", "pkg==1.7.12.25", "driver 580.178.04", "fd00::5",
+                     "std::vector", "ruff==0.17.1", "driver 580.178.04", "fd00::5",
                      "224.0.0.1", "239.255.255.250", "ff02::1", "ff05::1:3", "::ffff:10.100.80.1",
                      "::FFFF:192.168.1.5", "see fe80::1.", "fd00::34.117.59.81", "2001:db8::34.117.59.81"):
             with self.subTest(text=text):
