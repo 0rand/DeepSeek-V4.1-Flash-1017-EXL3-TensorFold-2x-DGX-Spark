@@ -8,7 +8,8 @@ unchanged. Full two-node hardware validation is still pending.
 
 This image needs the display-KV feature. The composition installer validates the
 union of pristine source hashes once, applies the display transform first, then
-the spill transform, checks every generated Python file, and only then writes.
+the spill transform, checks every generated Python file, and only then writes. The spill transform also removes
+the guard that makes the display-only image refuse a nonzero `TF_DS_SPILL_GIB`.
 Do not run the two standalone installers in sequence on modified source.
 
 ## Build and use
@@ -62,7 +63,8 @@ Put a setting in `.env` to change it. The private bundle passes `TF_DS_SPILL_MIN
 `TF_DS_SPILL_KEEP_BUILDS`, `TF_SPILL_WRITERS`, `TF_SPILL_DIRECT` and `TF_SPILL_FLUSH_S` to both ranks, only when
 .env sets them. A write starts when a prompt leaves the kept set (write-through); there is no early-write threshold.
 The store writes safetensors files with a CRC-32 per 8 MiB, fsyncs, and renames
-from `.partial`. Token ids are stored as base64 int64 (format 3). A corrupt or short file is dropped. The
+from `.partial`. Token ids are stored as base64 int64. The header holds a CRC-32 of itself (`hcrc`, format 4), so a
+flipped bit in a count, a name or a flag is refused when the file is scanned or read. A corrupt or short file is dropped. The
 table of tensor descriptors is checked before any memory is allocated: gaps, overlaps, negative numbers and
 unknown dtypes are refused. Every rank agrees on the index and on each read. A read is used only when it
 worked on every rank. If a write failed on one rank only, `find()` keeps the entry, so the read fails on all

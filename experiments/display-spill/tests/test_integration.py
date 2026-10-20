@@ -56,6 +56,17 @@ class SpillIntegrationTests(unittest.TestCase):
         changed = self.changed(spill.HTTP)
         self.assertIn('hook = getattr(app, "on_exit", None)', changed)
 
+    def test_the_composed_engine_accepts_a_nonzero_spill_size(self):
+        guard = "display-only KV requires TF_DS_SPILL_GIB=0"
+        pristine = (SOURCE / spill.ENGINE).read_text()
+        displayed = display.transform(spill.ENGINE, pristine)
+        self.assertIn(guard, displayed)                      # the display-only image keeps its guard
+        composed = spill.transform(spill.ENGINE, displayed)
+        self.assertNotIn(guard, composed)
+        self.assertIn("display KV requires --parallel greater than 1 before weights load", composed)
+        self.assertIn("display KV requires TF_DS_KV=native packed storage", composed)
+        ast.parse(composed)
+
     def test_the_spill_config_has_no_highwater_and_ids_are_not_copied_to_a_list(self):
         changed = self.changed(spill.MULTI)
         self.assertNotIn("highwater", changed)

@@ -39,6 +39,7 @@ import importlib
 import json
 import os
 import queue
+import re
 import shutil
 import struct
 import threading
@@ -52,7 +53,7 @@ from typing import Any
 import numpy as np
 import torch
 
-FORMAT = "tensorfold-cuda-spill-3"          # 3: token ids as base64 int64 (2 wrote JSON lists, slow for 1M tokens)
+FORMAT = "tensorfold-cuda-spill-4"          # 4: a CRC-32 of the whole header (3: token ids as base64 int64; 2: JSON lists)
 SHUTDOWN_CAP_S = 55.0                  # most a shutdown drain waits: docker stop -t 60 (stop.sh) kills the process at 60 s
 CHUNK = 64 << 20                       # bytes a staging buffer
 ALIGN = 4096                           # O_DIRECT offsets, lengths and buffers
@@ -418,11 +419,27 @@ class LoadJob:
         self.meta = header.get("__metadata__", {}) or {}
 
 
+_HCRC_RE = re.compile(rb'"hcrc":"([0-9a-f]{8})"')
+_HCRC_ZERO = b'"hcrc":"00000000"'
+
+
+def _check_header_crc(raw: bytes) -> None:
+    """Check the CRC-32 that the header holds for itself (``hcrc``, counted with that field set to zeros). The CRCs of
+    the data blocks do not cover the header, so a flipped bit in a count, a name or a flag would pass without this."""
+
+    found = _HCRC_RE.findall(raw)
+    if len(found) != 1 or zlib.crc32(_HCRC_RE.sub(_HCRC_ZERO, raw)) != int(found[0], 16):
+        raise ValueError("the header does not match its CRC-32")
+
+
 def _read_header_file(f) -> tuple[dict, int]:
-    (size,) = struct.unpack("<Q", f.read(8))
+    prefix = f.read(8)
+    (size,) = struct.unpack("<Q", prefix)
     if size > 1 << 30:
         raise ValueError("not a spill file")
-    return json.loads(f.read(size)), 8 + size
+    body = f.read(size)
+    _check_header_crc(prefix + body)
+    return json.loads(body), 8 + size
 
 
 def _check_table(header: dict) -> int:
@@ -920,6 +937,9 @@ class SpillStore:
             final = job.header.replace(slot, b'"crc32":"' + crcs.hex().encode() + b'"')
             if job.header.count(slot) != 1 or len(final) != len(job.header):
                 raise RuntimeError("the header's CRC field is missing or changed length")
+            if final.count(_HCRC_ZERO) != 1:
+                raise RuntimeError("the header's own CRC field is missing")
+            final = final.replace(_HCRC_ZERO, b'"hcrc":"%08x"' % zlib.crc32(final))      # (counted with zeros)
             head = np.frombuffer(final, dtype=np.uint8)
             bufs[0][:len(head)].copy_(torch.from_numpy(head.copy()))
             self._pwrite_all(fd, memoryview(bufs[0].numpy())[:len(head)], 0)
@@ -1015,7 +1035,8 @@ class SpillStore:
                 "layers": json.dumps([layer] if layer else []),
                 "rows": json.dumps([nm for nm, _ in rows]), "head": "1" if head else "0",
                 "saved": f"{time.time():.3f}",
-                "crc32": _crc_placeholder(sum(t.numel() * t.element_size() for _, t in items)), **(meta or {})}
+                "crc32": _crc_placeholder(sum(t.numel() * t.element_size() for _, t in items)), "hcrc": "00000000",
+                **(meta or {})}
         header, data = _header(items, info)
         size = len(header) + data
         floor = int(self.cfg.min_free_gib * (1 << 30))

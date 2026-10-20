@@ -58,7 +58,7 @@ class SpillTierTests(unittest.TestCase):
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imports.add(node.module.split(".")[0])
         allowed = {"__future__", "base64", "contextlib", "dataclasses", "errno", "hashlib", "importlib", "json",
-                   "os", "queue", "shutil", "struct", "threading", "time", "zlib", "collections",
+                   "os", "queue", "re", "shutil", "struct", "threading", "time", "zlib", "collections",
                    "concurrent", "typing", "pathlib", "numpy", "torch", "tensorfold"}
         self.assertEqual(imports - allowed, set())
 
@@ -197,6 +197,39 @@ class SpillTierTests(unittest.TestCase):
 
     def entry_path(self, store):
         return os.path.join(store.dir, [n for n in os.listdir(store.dir) if n.endswith(".safetensors")][0])
+
+    def flip_in_header(self, path, old: bytes, new: bytes):
+        with open(path, "r+b") as f:
+            raw = f.read(1 << 16)
+            self.assertEqual(raw.count(old), 1, old)
+            f.seek(raw.index(old))
+            f.write(new)
+
+    def test_a_flipped_header_field_is_refused_by_the_scan_and_by_a_restore(self):
+        for old, new in ((b'"head":"0"', b'"head":"1"'), (b'"rows":"[]"', b'"rows":"[x]"'),
+                         (b'"n":"100"', b'"n":"101"')):
+            with self.subTest(field=old), tempfile.TemporaryDirectory() as root:
+                store, ids, classes = self.stored(root)
+                path = self.entry_path(store)
+                # A restart finds an intact file.
+                cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+                again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+                self.assertTrue(again.has(ids))
+                self.flip_in_header(path, old, new)
+                with self.assertRaises(Exception):
+                    again.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+                self.assertEqual(again.info()["load_failed"], 1)
+                # A restart drops the file.
+                third = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+                self.assertFalse(third.has(ids))
+                self.assertFalse(os.path.exists(path))
+
+    def test_header_without_its_own_crc_is_refused(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            self.flip_in_header(self.entry_path(store), b'"hcrc":', b'"hxrc":')
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            self.assertFalse(self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes).has(ids))
 
     def test_missing_file_counts_one_failed_restore(self):
         with tempfile.TemporaryDirectory() as root:
