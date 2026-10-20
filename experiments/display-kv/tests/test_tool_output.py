@@ -17,6 +17,7 @@ def load():
     return module
 
 
+@unittest.skipUnless(os.path.isdir(SOURCE), "needs TF_DISPLAY_SOURCE: a checkout of the pinned TensorFold revision (docs/DISPLAY-KV.md, Offline tests)")
 class ToolOutputTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -144,6 +145,56 @@ class ToolOutputTests(unittest.TestCase):
         self.assertIn(literal, content)
         self.assertEqual(len(calls), 1)
         self.assertIn('false', calls[0]["function"]["arguments"])
+
+    def call(self, **arguments):
+        return '<tool_call>' + json.dumps({"name": "task", "arguments": arguments}) + '</tool_call>'
+
+    def test_open_fence_or_stray_backtick_in_a_real_call_does_not_hide_the_next_call(self):
+        fence = "```js" + chr(10) + "const a = 1;" + chr(10)          # a file with an unclosed fence
+        for note in (fence, "a stray ` backtick", "```", "~~~" + chr(10), "``double"):
+            with self.subTest(note=note):
+                text = self.call(text=note) + chr(10) + self.call(value=2)
+                content, calls = self.guard().parse(text)
+                self.assertEqual(len(calls), 2)
+                self.assertNotIn("tool_call", content)
+
+    def test_open_fence_in_a_real_call_does_not_hide_an_unoffered_call(self):
+        text = self.call(text="```js" + chr(10)) + '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
+        self.assert_unavailable(text)
+
+    def test_quoted_example_before_and_after_a_real_call_stays_literal(self):
+        example = '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
+        text = ("`" + example + "` " + self.call(text="```") + " and `" + example + "`")
+        content, calls = self.guard().parse(text)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(content.count(example), 2)
+
+    def test_safe_prefix_stops_at_the_first_possible_call_opening(self):
+        prefix = self.module.ToolOutputGuard.safe_prefix
+        dsml = "<" + chr(0xFF5C) + "DSML" + chr(0xFF5C) + " calls>"
+        self.assertEqual(prefix("Hello there. " + self.call(value=1) + " after"), "Hello there. ")
+        self.assertEqual(prefix("Hello " + dsml + "x", finished=True), "Hello ")
+        self.assertEqual(prefix("Hello <TOOL_CALL>x"), "Hello ")
+        self.assertEqual(prefix("no call here at all"), "no call here at all")
+        self.assertEqual(prefix(""), "")
+
+    def test_safe_prefix_holds_back_a_partial_opening_only_while_streaming(self):
+        prefix = self.module.ToolOutputGuard.safe_prefix
+        for partial in ("<", "<t", "<tool", "<tool_ca", "<" + chr(0xFF5C), "<" + chr(0xFF5C) + "DSM"):
+            with self.subTest(partial=partial):
+                self.assertEqual(prefix("Text " + partial), "Text ")
+                self.assertEqual(prefix("Text " + partial, finished=True), "Text " + partial)
+        self.assertEqual(prefix("a < b and <table"), "a < b and <table")
+
+    def test_stream_prefix_never_shows_text_that_parse_treats_as_a_call(self):
+        text = "First. " + self.call(value=1) + " Between. " + self.call(value=2) + " Last."
+        for end in range(len(text) + 1):
+            shown = self.module.ToolOutputGuard.safe_prefix(text[:end])
+            self.assertTrue(text.startswith(shown))
+            self.assertNotIn("<tool_call", shown.lower())
+        content, calls = self.guard().parse(text)
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(content.startswith("First."))
 
     def test_malformed_and_truncated_wrappers_are_not_misclassified(self):
         for text in (

@@ -143,7 +143,6 @@ def transform(relative: str | Path, text: str) -> str:
             "                spill_cfg = SpillConfig(\n"
             "                    root=os.path.expanduser(os.environ.get(\"TF_DS_SPILL_DIR\") or \"~/.cache/tensorfold\"),\n"
             "                    gib=gib,\n"
-            "                    highwater=float(os.environ.get(\"TF_DS_SPILL_HIGHWATER\") or 0.70),\n"
             "                    min_tokens=int(os.environ.get(\"TF_DS_SPILL_MIN\") or 4096),\n"
             "                    min_free_gib=float(os.environ.get(\"TF_DS_SPILL_MIN_FREE_GIB\") or 50.0),\n"
             "                    keep_builds=int(os.environ.get(\"TF_DS_SPILL_KEEP_BUILDS\") or 1),\n"
@@ -301,7 +300,7 @@ def transform(relative: str | Path, text: str) -> str:
             "            ids = k.keys if k.keys is not None else k.host.view()\n"
             "            job = self.spill.save(ids, self._spill_obj(k), self._spill_rows(k),\n"
             "                                  skip=(\"disk\", \"hits\"),\n"
-            "                                  tokens=list(k.host.view()) if k.keys is not None else None)\n"
+            "                                  tokens=k.host.view() if k.keys is not None else None)\n"
             "            if job is not None:\n"
             "                k.disk = job\n"
             "                self.spill_jobs.append((job, k.base, k.top))\n", name)
@@ -402,11 +401,46 @@ def transform(relative: str | Path, text: str) -> str:
         text = _replace_once(text, "                if self.spill is not None:               # its spilled rows to the boundary are this prompt's too\n"
             "                    s.lineage = self.spill.lineage(src.disk, cut)\n",
             "                s.lineage = None                         # the GLM tier stores full rows: no lineage to inherit\n", name)
+        # Rank 1 never serves HTTP: its loop gets no SIGTERM handler from the server, so a plain SIGTERM (docker stop)
+        # would end it without a drain. Rank 0 gets its handler from cuda/http.py serve().
+        text = _replace_once(text,
+            "    def follow(self, link: Link) -> None:\n"
+            "        \"\"\"A follower rank: rank 0's steps, in order, forever (or until the link or the lane breaks).\"\"\"\n"
+            "\n"
+            "        while True:\n",
+            "    def follow(self, link: Link) -> None:\n"
+            "        \"\"\"A follower rank: rank 0's steps until SIGTERM (docker stop), then its queued spill writes are drained.\"\"\"\n"
+            "\n"
+            "        import signal\n"
+            "\n"
+            "        def _stop(signum, frame):\n"
+            "            raise KeyboardInterrupt                  # (a plain SIGTERM would skip the drain below)\n"
+            "\n"
+            "        try:\n"
+            "            signal.signal(signal.SIGTERM, _stop)\n"
+            "        except ValueError:                           # not the main thread: no handler\n"
+            "            pass\n"
+            "        try:\n"
+            "            self._follow_steps(link)\n"
+            "        except KeyboardInterrupt:\n"
+            "            if self.spill is not None:\n"
+            "                self.spill.shutdown_drain()\n"
+            "\n"
+            "    def _follow_steps(self, link: Link) -> None:\n"
+            "        \"\"\"Rank 0's steps, in order, forever (or until the link or the lane breaks).\"\"\"\n"
+            "\n"
+            "        while True:\n", name)
         return text
     if name == "app.py":
+        text = _replace_once(text, 'import dataclasses\n', 'import dataclasses\nimport os\n', name)
+        # The tool-output guard has its own switch, apart from the display-KV install. The display start script sets it to 1 (STRICT_TOOL_OUTPUT=0
+        # in .env turns it off); the image alone has it off unless the rank
+        # containers get TF_DS_STRICT_TOOL_OUTPUT=1 (docs/TOOL-OUTPUT.md). server.py reads this property per request.
         text = _replace_once(text, 'class DsApp(App):\n    reads_ignore_eos = True\n',
-            'class DsApp(App):\n    reads_ignore_eos = True\n    strict_tool_output = True\n', name)
-        text = _replace_once(text, 'import dataclasses\n', 'import dataclasses\nimport time\n', name)
+            'class DsApp(App):\n    reads_ignore_eos = True\n\n'
+            '    @property\n'
+            '    def strict_tool_output(self) -> bool:\n'
+            '        return os.environ.get("TF_DS_STRICT_TOOL_OUTPUT", "0") == "1"\n', name)
         text = _replace_once(text, '        template.render = render_effort\n',
             '        template.render = render_effort\n'
             '        self.on_exit = self._flush_spill\n', name)
@@ -418,10 +452,7 @@ def transform(relative: str | Path, text: str) -> str:
             '        spill = getattr(multi, "spill", None)\n'
             '        if spill is None:\n'
             '            return\n'
-            '        t = time.perf_counter()\n'
-            '        ok = spill.drain(55.0)\n'
-            '        print(f"[tensorfold] spill: shutdown drain {\'done\' if ok else \'not finished\'} "\n'
-            '              f"in {time.perf_counter() - t:.1f}s", flush=True)\n'
+            '        spill.shutdown_drain()      # waits at most the smaller of TF_SPILL_FLUSH_S and 55 s\n'
             '\n'
             '    @staticmethod\n    def _response_format(', name)
         return text
@@ -434,7 +465,7 @@ def transform(relative: str | Path, text: str) -> str:
             '        calls_stream = ToolCallStreamer(tools) if tools and not policy.single else None\n',
             '        calls_stream = (ToolCallStreamer(tools) if tools and not policy.single\n                        and tool_output_guard is None else None)\n', name)
         text = _replace_once(text, '            answer_raw[0] = answer\n',
-            '            answer_raw[0] = answer\n            if tool_output_guard is not None:\n                # Validate the whole answer before releasing content or executable call deltas.\n                return reasoning, ""\n', name)
+            '            answer_raw[0] = answer\n            if tool_output_guard is not None:\n                # Stream the text before the first possible call opening tag. Hold back the rest: the guard\n                # validates every complete call before later content or any call delta is released.\n                return reasoning, tool_output_guard.safe_prefix(answer, finished=finished)\n', name)
         text = _replace_once(text,
             '        content, calls = parse_tool_calls(raw_answer, tools, max_calls=policy.max_calls) if tools else (answer, None)\n        content = policy.content(content) if tools else content\n',
             '        if tool_output_guard is not None:\n            content, calls = tool_output_guard.parse(raw_answer, max_calls=policy.max_calls)\n        else:\n            content, calls = parse_tool_calls(raw_answer, tools, max_calls=policy.max_calls) if tools else (answer, None)\n            content = policy.content(content) if tools else content\n', name)
@@ -447,7 +478,7 @@ def transform(relative: str | Path, text: str) -> str:
             '                except RequestError as exc:\n                    return self._stream_error(error_body(exc, field))\n                except ModelOutputError as exc:\n                    print(exc.log_line(), flush=True)\n                    return self._stream_error(exc.error)\n', name)
         text = _replace_once(text,
             '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except RequestCancelled:\n',
-            '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except ModelOutputError as exc:\n                print(exc.log_line(), flush=True)\n                return self._json(500, {"error": exc.error})\n            except RequestCancelled:\n', name)
+            '                result = app.run(body, chat, lambda delta: True, prepared=prepared, cancelled=cancelled)\n            except ModelOutputError as exc:\n                print(exc.log_line(), flush=True)\n                return self._json(422, {"error": exc.error})  # (clients retry a 5xx, and a retry gives the same output)\n            except RequestCancelled:\n', name)
         text = _replace_once(text,
             '    except KeyboardInterrupt:\n        pass\n    finally:\n        server.server_close()\n',
             '    except KeyboardInterrupt:\n'
@@ -547,7 +578,8 @@ def install(checkout: Path) -> None:
     for path, text in source.items():
         actual = hashlib.sha256(text.encode()).hexdigest()
         if actual != FILES[path]:
-            raise ValueError(f"{path}: source fingerprint differs from pinned revision")
+            raise ValueError(f"{path}: source fingerprint differs from pinned revision "
+                             f"(expected sha256 {FILES[path]}, found sha256 {actual})")
     edits = {path: transform(path, text) for path, text in source.items()}
     for path, text in edits.items():
         ast.parse(text, filename=str(path))

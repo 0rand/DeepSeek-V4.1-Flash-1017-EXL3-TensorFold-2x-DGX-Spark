@@ -5,7 +5,9 @@ A family hands over the snapshot object it keeps (``encode``: tensors into the f
 by import path, as ``engine.prefix_snapshots`` does on MLX) and, for a shared pool, named row tensors read back into
 caller-placed views. Nothing here knows a model.
 
-Writes: at eviction, or earlier in the background past ``--spill-highwater``; a clean shutdown writes what is kept.
+Writes: the DeepSeek hooks queue every kept prompt of ``min_tokens`` or more at once (write-through); ``highwater`` is
+kept for the GLM tier's callers and the /health field, and this tier does not use it. A clean shutdown drains the queue
+(``shutdown_drain``).
 Copies off the device run on a writer's stream; the engine waits only before the rows move or go (``release``). Reads
 run on a reader thread into pinned memory (``load_async``), so other streams keep decoding.
 
@@ -28,6 +30,7 @@ conventions and flag names are those of TensorFold's MLX spill (pull request #68
 
 from __future__ import annotations
 
+import base64
 import contextlib
 import dataclasses
 import errno
@@ -49,7 +52,8 @@ from typing import Any
 import numpy as np
 import torch
 
-FORMAT = "tensorfold-cuda-spill-2"
+FORMAT = "tensorfold-cuda-spill-3"          # 3: token ids as base64 int64 (2 wrote JSON lists, slow for 1M tokens)
+SHUTDOWN_CAP_S = 55.0                  # most a shutdown drain waits: docker stop -t 60 (stop.sh) kills the process at 60 s
 CHUNK = 64 << 20                       # bytes a staging buffer
 ALIGN = 4096                           # O_DIRECT offsets, lengths and buffers
 BLOCK = 8 << 20                        # bytes one CRC-32 covers (CHUNK is a multiple of it)
@@ -77,7 +81,7 @@ class SpillConfig:
 
     root: str
     gib: float
-    highwater: float = 0.70            # memory occupancy past which states eviction would take next are written early
+    highwater: float = 0.70            # NOT USED by the DeepSeek hooks (write-through); kept for the GLM callers and /health
     min_tokens: int = 8192             # shorter prompts are not written
     min_free_gib: float = 50.0         # no write leaves less disk free (on any rank)
     keep_builds: int = 1
@@ -196,6 +200,17 @@ def weights_id(*dirs) -> str:
 def ids_key(ids: Sequence[int]) -> tuple[int, int]:
     h = hashlib.sha1(np.asarray(ids, dtype=np.int64).tobytes()).digest()
     return int.from_bytes(h[0:4], "big", signed=True), int.from_bytes(h[4:8], "big", signed=True)
+
+
+def _encode_ids(ids: Sequence[int]) -> str:
+    """Token ids for the file header: int64 bytes in base64. A JSON list of 1M ids cost hundreds of ms on the thread
+    that queues the write (it stops every decode stream on the rank)."""
+
+    return base64.b64encode(np.ascontiguousarray(ids, dtype=np.int64).tobytes()).decode("ascii")
+
+
+def _decode_ids(text: str) -> np.ndarray:
+    return np.frombuffer(base64.b64decode(text), dtype=np.int64).copy()
 
 
 def key_name(key: tuple[int, int], n: int) -> str:
@@ -398,6 +413,7 @@ class LoadJob:
         self.error: BaseException | None = None
         self.event = None
         self.writing: Job | None = None           # the entry's write, still running when the read was asked for
+        self.failed_counted = False               # this job is already in ``Stats.load_failed``
         self.t0 = time.perf_counter()
         self.meta = header.get("__metadata__", {}) or {}
 
@@ -502,8 +518,8 @@ class SpillStore:
         found = len(self.index)
         dropped = self._reconcile() if self.world > 1 else 0
         if self.rank == 0 and not quiet:
-            print(f"[tensorfold] spill: {self.top} ({cfg.gib:g} GiB a rank, early writes past "
-                  f"{cfg.highwater:.0%} of memory, from {cfg.min_tokens} tokens, {cfg.writers} writers"
+            print(f"[tensorfold] spill: {self.top} ({cfg.gib:g} GiB a rank, write-through "
+                  f"from {cfg.min_tokens} tokens, {cfg.writers} writers"
                   f"{', O_DIRECT' if self.direct else ''}, floor {cfg.min_free_gib:g} GiB free): "
                   f"{found - dropped} stored prompts from before this start, {self._total() / (1 << 30):.1f} GiB"
                   f"{f'; pruned {pruned_builds} older builds' if pruned_builds else ''}", flush=True)
@@ -577,7 +593,7 @@ class SpillStore:
                                          or [0])
                     if os.fstat(f.fileno()).st_size != want:
                         raise ValueError("size does not match the header")
-                ids = np.asarray(json.loads(meta.get("keyed") or meta["tokens"]), dtype=np.int64)
+                ids = _decode_ids(meta.get("keyed") or meta["tokens"])
                 n = int(meta["n"])
                 key = ids_key(ids)
                 if len(ids) != n or key_name(key, n) + ".safetensors" != name:
@@ -750,6 +766,21 @@ class SpillStore:
                 return False
         self._sync_dirs(force=True)
         return True
+
+    def shutdown_budget(self) -> float:
+        """Seconds a shutdown may wait for queued writes: ``flush_s`` (TF_SPILL_FLUSH_S), at most ``SHUTDOWN_CAP_S``."""
+
+        return max(0.0, min(float(self.cfg.flush_s), SHUTDOWN_CAP_S))
+
+    def shutdown_drain(self) -> bool:
+        """``drain`` for a clean stop (SIGTERM), within ``shutdown_budget``; logs the result. True when it finished."""
+
+        t0 = time.perf_counter()
+        budget = self.shutdown_budget()
+        ok = self.drain(budget)
+        print(f"[tensorfold] spill rank {self.rank}: shutdown drain {'done' if ok else 'not finished'} in "
+              f"{time.perf_counter() - t0:.1f}s (budget {budget:g}s)", flush=True)
+        return ok
 
     def _sync_dirs(self, force: bool = False) -> None:
         with self._dir_lock:
@@ -948,8 +979,8 @@ class SpillStore:
                 raise ValueError(f"rows {name}: not contiguous")
             items.append((f"rows.{name}", t))
         info = {"format": FORMAT, "compat": self.compat, "model": self.model_id, "n": n,
-                "tokens": json.dumps([int(t) for t in (ids if tokens is None else tokens)]),
-                **({} if tokens is None else {"keyed": json.dumps([int(t) for t in ids])}),
+                "tokens": _encode_ids(ids if tokens is None else tokens),
+                **({} if tokens is None else {"keyed": _encode_ids(ids)}),
                 "layers": json.dumps([layer] if layer else []),
                 "rows": json.dumps([nm for nm, _ in rows]), "head": "1" if head else "0",
                 "saved": f"{time.time():.3f}",
@@ -1022,6 +1053,17 @@ class SpillStore:
 
     # -- reading -------------------------------------------------------------------------------------------------------
     def load_async(self, key: tuple, dst_for: Callable[[str, list[int], torch.dtype], torch.Tensor | None]) -> LoadJob:
+        """A failed start counts once in ``load_failed`` (see ``_load_async``)."""
+
+        try:
+            return self._load_async(key, dst_for)
+        except Exception:
+            with self.lock:
+                self.stats.load_failed += 1
+            raise
+
+    def _load_async(self, key: tuple,
+                    dst_for: Callable[[str, list[int], torch.dtype], torch.Tensor | None]) -> LoadJob:
         """Start reading entry ``key`` on the reader thread. ``dst_for(name, shape, dtype)`` places a tensor (a view the
         caller owns) or returns None for a new one, allocated here on the calling thread's stream. Raises at once when
         this rank has no readable entry; read errors land in the job. An entry still being written is read once its
@@ -1187,10 +1229,21 @@ class SpillStore:
 
     def finish_load(self, lj: LoadJob, *, wait: bool = True) -> tuple[Any, dict, dict]:
         """After ``lj`` is done on this rank: (the decoded object or None, its row tensors by name, metadata). The
-        caller's stream waits for the copies. Raises the read's error. Counts the restore."""
+        caller's stream waits for the copies. Raises the read's error. Counts the restore, or one ``load_failed`` when
+        the read or the decode failed (a CRC mismatch also counts in ``crc_failed``)."""
 
         if wait:
             lj.done.wait()
+        try:
+            return self._finish_load(lj)
+        except Exception:
+            if not lj.failed_counted:
+                lj.failed_counted = True
+                with self.lock:
+                    self.stats.load_failed += 1
+            raise
+
+    def _finish_load(self, lj: LoadJob) -> tuple[Any, dict, dict]:
         if lj.error is not None:
             raise lj.error
         if lj.event is not None and torch.cuda.is_available():

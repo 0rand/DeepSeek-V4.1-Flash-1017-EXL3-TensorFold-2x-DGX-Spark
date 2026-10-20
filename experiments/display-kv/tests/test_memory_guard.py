@@ -32,8 +32,13 @@ class MemoryGuardTests(unittest.TestCase):
             f"MemAvailable: {int(value * GIB) // 1024} kB\n" for value in available]):
             guard.refresh()
 
-    def make(self, floor=2):
-        return guard_module.MemoryGuard(SimpleNamespace(cuda=self.cuda), rank=0, floor_gib=floor)
+    def make(self, floor=2, cap="1"):
+        """A guard; ``cap`` is the TF_DS_MEM_CAP value (None: the variable is unset, so the default holds)."""
+        environ = {} if cap is None else {"TF_DS_MEM_CAP": cap}
+        with mock.patch.dict(guard_module.os.environ, environ):
+            if cap is None:
+                guard_module.os.environ.pop("TF_DS_MEM_CAP", None)
+            return guard_module.MemoryGuard(SimpleNamespace(cuda=self.cuda), rank=0, floor_gib=floor)
 
     def test_budget_recovers_after_startup_and_shrinks_with_external_pressure(self):
         guard = self.make()
@@ -87,9 +92,21 @@ class MemoryGuardTests(unittest.TestCase):
         self.refresh(guard, 100)
         self.assertEqual(self.fractions, [1.0])
 
+    def test_hard_cap_is_off_by_default(self):
+        guard = self.make(cap=None)
+        self.assertFalse(guard.cap_enabled)
+        self.refresh(guard, 0.5, 0.5)
+        self.assertEqual(self.fractions, [])
+        self.assertFalse(guard.last["cap_enabled"])
+
+    def test_hard_cap_must_be_asked_for(self):
+        guard = self.make(cap="1")
+        self.assertTrue(guard.cap_enabled)
+        self.refresh(guard, 0.5, 0.5)
+        self.assertEqual(len(self.fractions), 1)
+
     def test_cap_can_be_disabled_without_disabling_cache_cleanup_or_telemetry(self):
-        with mock.patch.dict(guard_module.os.environ, {"TF_DS_MEM_CAP": "0"}):
-            guard = self.make()
+        guard = self.make(cap="0")
         self.refresh(guard, 1.75, 2.75)
         self.assertEqual(self.fractions, [])
         self.cuda.empty_cache.assert_called_once()
@@ -98,9 +115,8 @@ class MemoryGuardTests(unittest.TestCase):
         self.assertEqual(guard.last["host_available_bytes"], int(2.75 * GIB))
 
     def test_invalid_cap_setting_is_rejected(self):
-        with mock.patch.dict(guard_module.os.environ, {"TF_DS_MEM_CAP": "false"}):
-            with self.assertRaisesRegex(ValueError, "TF_DS_MEM_CAP"):
-                self.make()
+        with self.assertRaisesRegex(ValueError, "TF_DS_MEM_CAP"):
+            self.make(cap="false")
 
     def test_installer_refreshes_both_rank_prefill_and_decode_paths(self):
         apply_spec = importlib.util.spec_from_file_location("memory_guard_apply", ROOT / "apply.py")
@@ -109,6 +125,8 @@ class MemoryGuardTests(unittest.TestCase):
         import ast
         import os
         source = Path(os.environ.get("TF_DISPLAY_SOURCE", "/tmp/opencode/tfv41-display-source"))
+        if not source.is_dir():
+            self.skipTest("needs TF_DISPLAY_SOURCE: a checkout of the pinned TensorFold revision")
         trees = {}
         for name in ("engine.py", "multi.py", "kernels.py"):
             relative = apply.FAMILY / name

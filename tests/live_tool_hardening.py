@@ -63,7 +63,7 @@ def main():
             detail = errors or {"unexpected_frames": frames}
         else:
             payload = json.loads(text)
-            good = status == 500 and payload.get("error", {}).get("code") == "unavailable_tool_call"
+            good = status == 422 and payload.get("error", {}).get("code") == "unavailable_tool_call"
             detail = payload
         record(name, good, status, time.monotonic() - start, detail)
 

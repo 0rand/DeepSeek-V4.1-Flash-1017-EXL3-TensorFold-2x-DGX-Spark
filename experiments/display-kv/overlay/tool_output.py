@@ -61,7 +61,6 @@ class ToolOutputGuard:
         from tensorfold.server.tools import tool_spec_name
 
         known = {tool_spec_name(tool).lower() for tool in self.tools if tool_spec_name(tool)}
-        literal = self._literal_spans(text)
         candidates: list[tuple[int, int, list[str], str]] = []
         for block in reply_text._DSML_BLOCK_RE.finditer(text):
             names = [match.group(1).strip() for match in reply_text._DSML_INVOKE_RE.finditer(block.group(1))]
@@ -85,14 +84,21 @@ class ToolOutputGuard:
 
         end = -1
         envelopes = []
+        # Quoted text (fences, backticks) is found in the text outside the real calls only: a call's own arguments, such
+        # as a file with an unclosed fence or one stray backtick, must not turn the next real call into quoted text.
+        outside, spans = text, None
         for start, stop, names, kind in sorted(candidates, key=lambda item: (item[0], -item[1])):
             if start < end:
                 continue
             end = stop
-            is_literal = self._literal(start, stop, text, literal)
+            if spans is None:
+                spans = self._literal_spans(outside)
+            is_literal = self._literal(start, stop, outside, spans)
             envelopes.append((start, stop, is_literal))
             if is_literal:
                 continue
+            outside = outside[:start] + re.sub(r"[^\n]", " ", outside[start:stop]) + outside[stop:]   # (offsets stay)
+            spans = None
             for name in names:
                 if name.lower() not in known:
                     effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})
@@ -125,6 +131,27 @@ class ToolOutputGuard:
         content.append(text[cursor:])
         result = "".join(content)
         return (result if any(item[2] for item in envelopes) else result.strip()), calls or None
+
+    # Text that can open a tool call, in any letter case. The stream holds back from the first of them.
+    _openers = ("<tool_call", "<" + chr(0xFF5C) + "dsml" + chr(0xFF5C))   # (full-width bars of DeepSeek's DSML)
+
+    @classmethod
+    def safe_prefix(cls, text: str, *, finished: bool = False) -> str:
+        """The text before the first possible tool-call opening tag. While the reply is still streaming, a partial tag
+        at the end is held back too. Everything after the cut waits for ``parse``, which checks each complete call."""
+
+        cut = len(text)
+        for opener in cls._openers:
+            found = re.search(re.escape(opener), text, re.IGNORECASE)
+            if found:
+                cut = min(cut, found.start())
+        if not finished:
+            for opener in cls._openers:
+                for size in range(min(len(opener) - 1, len(text)), 0, -1):
+                    if text[-size:].lower() == opener[:size]:
+                        cut = min(cut, len(text) - size)
+                        break
+        return text[:cut]
 
     def _call_name(self, block: str) -> str | None:
         try:

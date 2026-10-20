@@ -1,46 +1,36 @@
 # Display-Only KV Staging
 
-Experimental. Two-node integrity, inference, prefix reuse and basic concurrency
-have been validated; full-window and sustained-load validation remain open.
-Nothing in this directory is activated by the normal `start.sh`.
+Experimental. The normal `start.sh` does not activate anything in this directory.
+Tester runs showed two-node integrity, inference, prefix reuse and a lower
+prefill tok/s than the stock lane (see
+[Display KV](../../docs/DISPLAY-KV.md#cost-and-capacity)). Full-window and
+sustained-load tests are open. The SSD spill never evicted in a saved run.
 
-The staged installer now also adds [DeepSeek tool-output hardening](../../docs/TOOL-OUTPUT.md).
-It rejects complete unoffered calls without retries, and buffers tool-enabled
-answers until validation. Core rejection and recovery paths are live-tested;
-see the linked notes for remaining validation gaps.
+The installer also adds [DeepSeek tool-output hardening](../../docs/TOOL-OUTPUT.md).
+It rejects a complete unoffered call without a retry. It sends the text before the
+first possible tool-call tag at once and checks the rest before it sends it. The
+display launcher turns it on. `STRICT_TOOL_OUTPUT=0` in `.env` turns it off.
 
-The supported entry point is the self-contained root `./start-display-kv.sh`.
-With explicit `--build` it prepares a source-tagged image on both nodes; normal
-launches reuse the saved image without rebuilding or transferring. It prepares
-both DRM modules with this
-repo's `scripts/display_drm.sh`, probes the mapping, and creates a fresh launch
-bundle. See [Display KV](../../docs/DISPLAY-KV.md) for usage and rollback.
+The supported entry point is the root `./start-display-kv.sh`. It is
+self-contained. With `--build` it prepares an image tagged with the source hash
+on both nodes. A normal launch reuses the saved image and does not build or
+transfer. It prepares both DRM modules with `scripts/display_drm.sh` of this repo,
+probes the mapping and makes a fresh launch bundle. See
+[Display KV](../../docs/DISPLAY-KV.md) for use and rollback.
 
-## Active Deployment
+## Reports of the author
 
-The 2026-10-19 deployment uses `tensorfold-dsv41:display-kv-fe26bd75d49e` with
-strict tool-output rejection, `--thinking --reasoning-effort high`, and the
-saved-image launcher. Below are the original display-allocation validation
-results from the earlier cutover.
+The author (0rand) reports an earlier cutover on image
+`tensorfold-dsv41:07aa02585f64-display-kv-stage1`: a full 1792 MiB mapping and
+two complete SM-side write/read sweeps on both nodes, a 2,109,440-position pool,
+a 1,048,576-token request context, zero ordinary KV/indexer backing bytes, five
+of five `verify.sh` checks, 24K prefix reuse (24,064 cached tokens) and four
+simultaneous uncached 32K+ requests. The repo has no saved record of these runs,
+so the docs do not use their numbers. The saved records are the tester files in
+`runs/2026-10-19/` and `runs/2026-10-20/`.
 
-The 2026-10-18 cutover uses image
-`tensorfold-dsv41:07aa02585f64-display-kv-stage1`, ID
-`b3ffd2d45d5d189e622d49c71e5867ca744ee72667c129789a30bda384623a58`,
-on both nodes. Both mapped the full 1792 MiB and passed two complete SM-side
-write/read sweeps before the engine started. `/health` confirms a 2,109,440
-position display-backed pool, a 1,048,576-token request context and zero ordinary
-KV/indexer backing bytes. The real EngineMetrics adapter successfully sampled it.
-
-Passed after startup: all five `verify.sh` checks, the user's
-`tool-eval-bench --perf-only --benchy-runs 1 --base-url http://localhost:8100 --concurrency 1 --depth 65536 --model DeepSeek-V4.1-Flash-1017`,
-24K-prefix reuse (24,064 cached tokens), and four simultaneous uncached 32K+
-requests. The single benchmark run reported estimated prefill 1183 tok/s and
-generation 44.6 tok/s; this is not a controlled performance comparison.
-
-Use `./stop.sh` and then `./start-display-kv.sh` for future display-mode restarts;
-the legacy bundle remains available for this saved deployment. Root `start.sh`
-still selects the ordinary image. DRM preparation is runtime-only: after a
-reboot it must be repeated with ranks stopped, followed by integrity probes.
+DRM preparation lasts until the next reboot. After a reboot, repeat it with the
+ranks stopped, then run the integrity probes. `./start-display-kv.sh` does both.
 
 ## Design
 
@@ -115,7 +105,7 @@ will not install these new fields.
 From the recipe root, with a pristine pinned TensorFold checkout available:
 
 ```bash
-TF_DISPLAY_SOURCE=/tmp/opencode/tfv41-display-source PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/display-kv/tests -v
+TF_DISPLAY_SOURCE=/path/to/TensorFold PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/display-kv/tests -v
 ```
 
 These tests do not import the real Torch runtime, access the GPU, load a CUDA
@@ -145,7 +135,7 @@ Only after the user confirms the current test has finished:
 
 ```bash
 docker build -t tensorfold-dsv41:07aa02585f64-display-kv-stage1 experiments/display-kv
-docker save tensorfold-dsv41:07aa02585f64-display-kv-stage1 | ssh 192.168.0.88 docker load
+docker save tensorfold-dsv41:07aa02585f64-display-kv-stage1 | ssh <worker> docker load
 ```
 
 3. Use this repo's `scripts/display_drm.sh` for runtime DRM preparation on both
@@ -173,14 +163,14 @@ bash experiments/display-kv/bundle/start.sh
    extent bases. Confirm a request cannot exceed 1M even though the shared pool
    is larger. Measure headroom on both hosts, not only CUDA's free-memory count.
    SSD spill write, eviction, restore, CRC-failure handling and two-rank
-   agreement have passed with 32 GiB per rank, four concurrent streams and
-   170K-197K-token prompts; a restart restored a 237568-token prompt from disk
-   in 0.05 s. Re-run them after any spill or display change.
+   agreement are not shown by a saved run: the saved tester runs never filled the
+   pool, so the spill stayed at 0 entries. Test them after any spill or display
+   change.
 6. Compare equivalent workloads with the ordinary baseline. Full-window,
    near-full-pool, image input and long mixed-concurrency tests are required
    before calling this production-ready. Disk spill is enabled through the
-   reused GLM tier; validate it on both ranks rather than assuming the ordinary
-   recipe's behavior carries over.
+   patched spill tier of the derived image; validate it on both ranks. The ordinary
+   recipe uses a different spill folder and does not carry this code.
 
 No build, transfer, DRM preparation, probe, or experimental startup is performed
 by `prepare.py` or the CPU tests.

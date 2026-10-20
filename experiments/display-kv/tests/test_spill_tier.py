@@ -8,8 +8,11 @@ import unittest
 import zlib
 from dataclasses import dataclass
 
-import numpy as np
-import torch
+try:
+    import numpy as np
+    import torch
+except ImportError as exc:      # CI has no torch: the CPU tests of the spill tier skip themselves
+    raise unittest.SkipTest(f"needs numpy and torch: {exc}")
 
 MODULE = os.path.join(os.path.dirname(__file__), "..", "overlay", "spill_tier.py")
 
@@ -54,7 +57,7 @@ class SpillTierTests(unittest.TestCase):
                 imports.update(alias.name.split(".")[0] for alias in node.names)
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imports.add(node.module.split(".")[0])
-        allowed = {"__future__", "contextlib", "dataclasses", "errno", "hashlib", "importlib", "json",
+        allowed = {"__future__", "base64", "contextlib", "dataclasses", "errno", "hashlib", "importlib", "json",
                    "os", "queue", "shutil", "struct", "threading", "time", "zlib", "collections",
                    "concurrent", "typing", "pathlib", "numpy", "torch", "tensorfold"}
         self.assertEqual(imports - allowed, set())
@@ -180,6 +183,129 @@ class SpillTierTests(unittest.TestCase):
             self.assertTrue(torch.equal(obj.ring, ring))
             self.assertEqual(store.info()["loaded"], 1)
             self.assertEqual(store.info()["loaded_tokens"], 100)
+
+    def stored(self, root, ids=None, **config):
+        """A store with one written entry; returns (store, ids, classes)."""
+        cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, **config)
+        classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+        store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+        ids = list(range(100)) if ids is None else ids
+        snap = Snap(ids=ids, ring=torch.arange(len(ids) * 4, dtype=torch.uint8).reshape(len(ids), 4))
+        self.assertIsNotNone(store.save(ids, snap, skip=("ids",)))
+        self.assertTrue(store.drain(10))
+        return store, ids, classes
+
+    def entry_path(self, store):
+        return os.path.join(store.dir, [n for n in os.listdir(store.dir) if n.endswith(".safetensors")][0])
+
+    def test_missing_file_counts_one_failed_restore(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, _ = self.stored(root)
+            os.remove(self.entry_path(store))
+            with self.assertRaises(OSError):
+                store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            self.assertEqual(store.info()["load_failed"], 1)
+            self.assertEqual(store.info()["crc_failed"], 0)
+            self.assertEqual(store.info()["loaded"], 0)
+
+    def test_unknown_key_counts_one_failed_restore(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, _, _ = self.stored(root)
+            with self.assertRaises(FileNotFoundError):
+                store.load_async((1, 2), lambda name, shape, dt: None)
+            self.assertEqual(store.info()["load_failed"], 1)
+
+    def test_truncated_file_counts_one_failed_restore_not_a_crc_failure(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, _ = self.stored(root)
+            path = self.entry_path(store)
+            with open(path, "r+b") as f:
+                f.truncate(os.path.getsize(path) - 100)
+            lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            with self.assertRaises(Exception):
+                store.finish_load(lj)
+            with self.assertRaises(Exception):          # the same job again: still one count
+                store.finish_load(lj)
+            info = store.info()
+            self.assertEqual(info["load_failed"], 1)
+            self.assertEqual(info["crc_failed"], 0)
+            self.assertEqual(info["loaded"], 0)
+
+    def test_crc_mismatch_counts_in_both_counters(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, _ = self.stored(root)
+            with open(self.entry_path(store), "r+b") as f:
+                f.seek(-1, os.SEEK_END)
+                last = f.read(1)
+                f.seek(-1, os.SEEK_END)
+                f.write(bytes([last[0] ^ 0xFF]))
+            lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            with self.assertRaises(ValueError):
+                store.finish_load(lj)
+            self.assertEqual(store.info()["load_failed"], 1)
+            self.assertEqual(store.info()["crc_failed"], 1)
+
+    def test_good_restore_counts_no_failure(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, _ = self.stored(root)
+            store.finish_load(store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None))
+            self.assertEqual(store.info()["load_failed"], 0)
+            self.assertEqual(store.info()["loaded"], 1)
+
+    def test_shutdown_budget_follows_the_flush_setting_below_the_docker_stop_limit(self):
+        with tempfile.TemporaryDirectory() as root:
+            for flush, budget in ((10.0, 10.0), (60.0, 55.0), (100.0, 55.0), (0.0, 0.0)):
+                with self.subTest(flush=flush):
+                    cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, flush_s=flush)
+                    store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", quiet=True)
+                    self.assertEqual(store.shutdown_budget(), budget)
+            self.assertLess(self.sp.SHUTDOWN_CAP_S, 60.0)
+
+    def test_shutdown_drain_uses_the_budget_and_reports_unfinished_writes(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, flush_s=7.0)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", quiet=True)
+            seen = []
+            store.drain = lambda timeout=None: seen.append(timeout) or True
+            self.assertTrue(store.shutdown_drain())
+            self.assertEqual(seen, [7.0])
+            store.drain = lambda timeout=None: False
+            self.assertFalse(store.shutdown_drain())
+
+    def test_token_ids_are_stored_as_base64_and_survive_a_restart(self):
+        with tempfile.TemporaryDirectory() as root:
+            ids = np.arange(5000, dtype=np.int32) * 7 + 3
+            store, _, classes = self.stored(root, ids=ids)
+            with open(self.entry_path(store), "rb") as f:
+                header, _ = self.sp._read_header_file(f)
+            tokens = header["__metadata__"]["tokens"]
+            self.assertFalse(tokens.startswith("["))
+            self.assertTrue(np.array_equal(self.sp._decode_ids(tokens), ids.astype(np.int64)))
+            again = self.sp.SpillStore(store.cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            self.assertTrue(again.has(ids))
+            self.assertEqual(again.info()["entries"], 1)
+
+    def test_image_keyed_prompt_keeps_both_id_lists(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+            keys = np.array([5, -(1 << 40), 7, 1 << 50], dtype=np.int64)
+            tokens = np.array([1, 2, 3, 4], dtype=np.int32)
+            snap = Snap(ids=[], ring=torch.zeros((4, 4), dtype=torch.uint8))
+            self.assertIsNotNone(store.save(keys, snap, skip=("ids",), tokens=tokens))
+            self.assertTrue(store.drain(10))
+            again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            [entry] = again.index.values()
+            self.assertTrue(np.array_equal(entry.ids, keys))
+
+    def test_one_million_token_ids_are_cheap_to_encode(self):
+        ids = np.arange(1_000_000, dtype=np.int32)
+        start = self.sp.time.perf_counter()
+        text = self.sp._encode_ids(ids)
+        elapsed = self.sp.time.perf_counter() - start
+        self.assertTrue(np.array_equal(self.sp._decode_ids(text), ids.astype(np.int64)))
+        self.assertLess(elapsed, 0.25, "encoding 1M ids must stay far below a JSON list's cost")
 
 
 if __name__ == "__main__":

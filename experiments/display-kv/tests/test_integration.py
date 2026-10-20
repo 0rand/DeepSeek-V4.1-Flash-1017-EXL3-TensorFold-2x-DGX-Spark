@@ -21,6 +21,7 @@ assert spec.loader is not None
 spec.loader.exec_module(apply)
 
 
+@unittest.skipUnless(SOURCE.is_dir(), "needs TF_DISPLAY_SOURCE: a checkout of the pinned TensorFold revision (docs/DISPLAY-KV.md, Offline tests)")
 class DisplayKvIntegrationTest(unittest.TestCase):
     def source(self, name: str) -> tuple[Path, str]:
         path = SOURCE / apply.FAMILY / name
@@ -219,24 +220,31 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         self.assertIn('hook = getattr(app, "on_exit", None)', changed)
         self.assertIn("hook()", changed)
 
+    def method_of(self, tree, class_name, *names):
+        """The named methods of ``class_name``, without decorators and annotations, as a plain namespace."""
+        owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name)
+        methods = [node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name in names]
+        self.assertEqual({method.name for method in methods}, set(names))
+        for method in methods:
+            method.decorator_list, method.returns = [], None
+            for arg in [*method.args.posonlyargs, *method.args.args, *method.args.kwonlyargs]:
+                arg.annotation = None
+        return methods
+
     def test_shutdown_drain_waits_for_queued_writes(self):
         relative, text = self.source("app.py")
         tree = ast.parse(apply.transform(relative, text), filename=str(relative))
-        app = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "DsApp")
-        method = next(node for node in app.body if isinstance(node, ast.FunctionDef) and node.name == "_flush_spill")
-        method.decorator_list, method.returns = [], None
-        for arg in [*method.args.posonlyargs, *method.args.args, *method.args.kwonlyargs]:
-            arg.annotation = None
-        namespace = {"time": types.SimpleNamespace(perf_counter=lambda: 0.0)}
+        [method] = self.method_of(tree, "DsApp", "_flush_spill")
+        namespace = {}
         exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "_flush_spill", "exec"),
              namespace)
 
         class Spill:
             def __init__(self):
-                self.calls = []
+                self.calls = 0
 
-            def drain(self, timeout):
-                self.calls.append(timeout)
+            def shutdown_drain(self):
+                self.calls += 1
                 return True
 
         class Engine:
@@ -248,12 +256,112 @@ class DisplayKvIntegrationTest(unittest.TestCase):
 
         app = App()
         app.engine = Engine()
-        with mock.patch("builtins.print"):
-            app._flush_spill()
-        self.assertEqual(app.engine.multi.spill.calls, [55.0])
+        app._flush_spill()
+        self.assertEqual(app.engine.multi.spill.calls, 1)
         app.engine.multi = None
-        with mock.patch("builtins.print"):
-            app._flush_spill()
+        app._flush_spill()
+
+    def test_rank_zero_gets_its_sigterm_handler_from_the_pinned_server(self):
+        """The drain hook of rank 0 runs in the KeyboardInterrupt branch, so SIGTERM must raise it. The pinned
+        revision does that in serve(); if a new pin drops it, this test fails and the hook needs its own handler."""
+        relative = Path("src/tensorfold/cuda/http.py")
+        pinned = (SOURCE / relative).read_text()
+        self.assertIn("signal.signal(signal.SIGTERM, _terminate)", pinned)
+        self.assertIn("raise KeyboardInterrupt", pinned)
+        changed = apply.transform(relative, pinned)
+        self.assertLess(changed.index("signal.signal(signal.SIGTERM"), changed.index('getattr(app, "on_exit"'))
+
+    def follower(self, spill):
+        relative, text = self.source("multi.py")
+        tree = ast.parse(apply.transform(relative, text), filename=str(relative))
+        methods = self.method_of(tree, "MultiDecoder", "follow", "_follow_steps")
+        namespace = {}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=methods, type_ignores=[])), "follow", "exec"), namespace)
+
+        class Decoder:
+            follow = namespace["follow"]
+            _follow_steps = namespace["_follow_steps"]
+
+        decoder = Decoder()
+        decoder.spill = spill
+        return decoder
+
+    def test_follower_rank_drains_its_spill_writes_on_sigterm(self):
+        import signal
+        import threading
+
+        if os.name == "nt":
+            self.skipTest("needs POSIX signals")
+
+        class Spill:
+            drained = 0
+
+            def shutdown_drain(self):
+                Spill.drained += 1
+
+        decoder = self.follower(Spill())
+
+        class Link:
+            def receive(self):
+                threading.Event().wait(10)       # a follower waits here for rank 0's next step
+
+        previous = signal.getsignal(signal.SIGTERM)
+        timer = threading.Timer(0.3, os.kill, (os.getpid(), signal.SIGTERM))
+        try:
+            timer.start()
+            decoder._follow_steps = lambda link: Link().receive()
+            decoder.follow(Link())
+        finally:
+            timer.cancel()
+            signal.signal(signal.SIGTERM, previous)
+        self.assertEqual(Spill.drained, 1)
+
+    def test_follower_without_a_spill_tier_stops_cleanly_and_other_errors_pass_through(self):
+        import signal
+
+        previous = signal.getsignal(signal.SIGTERM)
+        try:
+            decoder = self.follower(None)
+
+            def steps(link):
+                raise KeyboardInterrupt
+
+            decoder._follow_steps = steps
+            decoder.follow(object())
+            self.assertTrue(callable(signal.getsignal(signal.SIGTERM)))
+
+            def broken(link):
+                raise RuntimeError("rank 0's step link closed")
+
+            decoder._follow_steps = broken
+            with self.assertRaises(RuntimeError):
+                decoder.follow(object())
+        finally:
+            signal.signal(signal.SIGTERM, previous)
+
+    def test_drift_error_names_the_expected_and_the_found_hash(self):
+        install_root = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, install_root, True)
+        for relative in apply.FILES:
+            target = install_root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text((SOURCE / relative).read_text())
+        changed = install_root / apply.FAMILY / "model.py"
+        changed.write_text(changed.read_text() + "# local patch" + chr(10))
+        found = apply.hashlib.sha256(changed.read_text().encode()).hexdigest()
+        with mock.patch.object(apply, "_git_head", return_value=apply.REVISION):
+            with self.assertRaises(ValueError) as raised:
+                apply.install(install_root)
+        message = str(raised.exception)
+        self.assertIn(str(apply.FAMILY / "model.py"), message)
+        self.assertIn(apply.FILES[apply.FAMILY / "model.py"], message)
+        self.assertIn(found, message)
+
+    def test_tool_output_guard_is_a_separate_switch(self):
+        relative, text = self.source("app.py")
+        changed = apply.transform(relative, text)
+        self.assertIn('os.environ.get("TF_DS_STRICT_TOOL_OUTPUT", "0") == "1"', changed)
+        self.assertNotIn("strict_tool_output = True", changed)
 
     def test_spill_signature_ignores_the_driver_version(self):
         relative, text = self.source("multi.py")

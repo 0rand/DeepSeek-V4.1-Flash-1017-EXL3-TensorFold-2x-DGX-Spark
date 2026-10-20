@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Hermetic checks for start.sh's server-default thinking settings."""
+"""Hermetic checks for the thinking settings of start.sh and of the display launch bundle.
+
+The ordinary start.sh passes the settings through and does no check. The checks (and the display-only
+switches) are in the bundle copy that experiments/display-kv/prepare.py makes."""
 import importlib.util
 import json
 import os
@@ -16,7 +19,32 @@ import unittest
 RECIPE = Path(__file__).resolve().parents[1]
 
 
+def load_prepare():
+    spec = importlib.util.spec_from_file_location("fixture_prepare", RECIPE / "experiments" / "display-kv" / "prepare.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def make_bundle(parent: Path) -> Path:
+    """Make a display launch bundle from the real start.sh of this repo, in a temporary recipe root."""
+    root = parent / "recipe-for-bundle"
+    root.mkdir()
+    shutil.copy2(RECIPE / "start.sh", root / "start.sh")
+    shutil.copytree(RECIPE / "scripts", root / "scripts")
+    for name in ("stop.sh", "status.sh", "verify.sh", "AGENTS.md"):
+        shutil.copy2(RECIPE / name, root / name)
+    shutil.copy2(RECIPE / ".env.example", root / ".env")
+    module = load_prepare()
+    module.ROOT = root
+    module.prepare(root / "bundle", "fixture:display-kv")
+    return root / "bundle"
+
+
 class ThinkingSettingsTest(unittest.TestCase):
+    """Runs start.sh of the display launch bundle with a fake docker."""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name) / "recipe"
@@ -25,7 +53,7 @@ class ThinkingSettingsTest(unittest.TestCase):
         self.root.mkdir()
         self.bin.mkdir()
         (self.root / "scripts").mkdir()
-        shutil.copy2(RECIPE / "start.sh", self.root / "start.sh")
+        shutil.copy2(make_bundle(Path(self.tmp.name)) / "start.sh", self.root / "start.sh")
         (self.root / "scripts" / "common.sh").write_text(textwrap.dedent("""\
             ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
             set -a
@@ -117,24 +145,42 @@ class ThinkingSettingsTest(unittest.TestCase):
         result, operations = self.invoke(**thinking, REASONING_EFFORT=effort)
         commands = self.docker_commands()
         self.assertEqual(result.returncode, 37, result.stderr)
-        self.assertEqual([command[0] for command in commands], ["rm", "run"])
+        self.assertEqual([command[0] for command in commands], ["inspect", "rm", "run"])
         args = commands[-1]
         self.assertIn(thinking["THINKING"] == "1" and "--thinking" or "--no-thinking", args)
         self.assertEqual(args[args.index("--reasoning-effort") + 1], effort)
-        self.assertEqual(operations.read_text(), "wssh\nbuild\n")
+        self.assertEqual(operations.read_text(), "wssh\nwssh\nbuild\n")
 
-    def test_missing_settings_default_to_thinking_and_high_effort(self):
+    def test_missing_settings_default_to_no_thinking_and_no_effort_flag(self):
         result, operations = self.invoke()
         commands = self.docker_commands()
         self.assertEqual(result.returncode, 37, result.stderr)
-        self.assertEqual([command[0] for command in commands], ["rm", "run"])
+        self.assertEqual([command[0] for command in commands], ["inspect", "rm", "run"])
         args = commands[-1]
-        self.assertIn("--thinking", args)
-        self.assertEqual(args[args.index("--reasoning-effort") + 1], "high")
-        self.assertEqual(operations.read_text(), "wssh\nbuild\n")
+        self.assertIn("--no-thinking", args)
+        self.assertNotIn("--reasoning-effort", args)
+        self.assertEqual(operations.read_text(), "wssh\nwssh\nbuild\n")
 
     def test_explicit_zero_emits_no_thinking(self):
         self.assert_docker_settings({"THINKING": "0"}, "high")
+
+    def test_allocator_cap_is_off_unless_asked(self):
+        result, _ = self.invoke()
+        self.assertEqual(result.returncode, 37, result.stderr)
+        self.assertIn("TF_DS_MEM_CAP=0", self.docker_commands()[-1])
+
+    def test_tool_output_guard_is_on_unless_switched_off(self):
+        for value, expected in ((None, "1"), ("0", "0"), ("1", "1")):
+            with self.subTest(value=value):
+                result, _ = self.invoke(**({} if value is None else {"STRICT_TOOL_OUTPUT": value}))
+                self.assertEqual(result.returncode, 37, result.stderr)
+                self.assertIn("TF_DS_STRICT_TOOL_OUTPUT=" + expected, self.docker_commands()[-1])
+
+    def test_invalid_tool_output_switch_stops_before_operations(self):
+        result, operations = self.invoke(STRICT_TOOL_OUTPUT="2")
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(self.commands.exists())
+        self.assertFalse(operations.exists())
 
     def test_allocator_cap_switch_reaches_docker(self):
         for value in ("0", "1"):
@@ -204,8 +250,8 @@ class DisplayBundleThinkingSettingsTest(unittest.TestCase):
             start = (bundle / "start.sh").read_text()
             config = dict(line.split("=", 1) for line in (bundle / ".env").read_text().splitlines()
                           if line and not line.startswith("#"))
-            self.assertIn('$( [ "${THINKING:-1}" = 1 ] && echo --thinking || echo --no-thinking )', start)
-            self.assertIn('--reasoning-effort ${REASONING_EFFORT:-high}', start)
+            self.assertIn('$( [ "${THINKING:-0}" = 1 ] && echo --thinking || echo --no-thinking )', start)
+            self.assertIn('echo --reasoning-effort $REASONING_EFFORT', start)
             self.assertNotIn('--no-thinking --reasoning-effort low', start)
             self.assertEqual(config["IMAGE"], "fixture:display-kv")
             self.assertEqual(config["SPILL_GIB"], "64")

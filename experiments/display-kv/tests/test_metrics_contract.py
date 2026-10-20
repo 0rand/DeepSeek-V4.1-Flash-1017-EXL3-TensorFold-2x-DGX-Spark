@@ -14,7 +14,8 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = Path(os.environ.get("TF_DISPLAY_SOURCE", "/tmp/opencode/tfv41-display-source"))
-ENGINE_METRICS = Path("/home/xraan/Development/src/EngineMetrics")
+# A checkout of EngineMetrics (set ENGINE_METRICS_DIR); the adapter test skips itself without it.
+ENGINE_METRICS = Path(os.environ.get("ENGINE_METRICS_DIR") or "/nonexistent/EngineMetrics")
 
 
 def load_file(name: str, path: Path):
@@ -77,6 +78,7 @@ def fake_engine(*, display: bool = True, live: bool = True, spill: bool = False)
     return engine
 
 
+@unittest.skipUnless(SOURCE.is_dir(), "needs TF_DISPLAY_SOURCE: a checkout of the pinned TensorFold revision (docs/DISPLAY-KV.md, Offline tests)")
 class MetricsContractTests(unittest.TestCase):
     def load_transformed_modules(self):
         metrics_source = apply.transform("src/tensorfold/server/metrics.py",

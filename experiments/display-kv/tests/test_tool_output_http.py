@@ -1,4 +1,4 @@
-"""HTTP contracts for the display-KV strict DeepSeek tool-output patch.
+"""HTTP contracts for the opt-in strict DeepSeek tool-output guard (TF_DS_STRICT_TOOL_OUTPUT=1).
 
 These tests execute the transformer output, rather than an installed checkout.
 They intentionally use no model, CUDA, tokenizers, or chat-template construction.
@@ -31,6 +31,10 @@ TOOLS = [{"type": "function", "function": {"name": "task", "parameters": {"type"
 KNOWN = '<tool_call>{"name":"task","arguments":{"value":1}}</tool_call>'
 UNKNOWN = '<tool_call>{"name":"unoffered","arguments":{"secret":1}}</tool_call>'
 MIXED = '<tool_call><function=task></function></tool_call>' + UNKNOWN
+LEAD = "Let me check the task list first. "
+# Two real calls: the first has a file with an unclosed fence and a stray backtick in its argument.
+FENCED = ('<tool_call>{"name":"task","arguments":{"text":"```js\\nconst a = `x\\n"}}</tool_call>'
+          '<tool_call>{"name":"task","arguments":{"value":2}}</tool_call>')
 
 
 def exec_transformed(name, relative):
@@ -82,7 +86,8 @@ class FakeEngine:
         route = chr(prompt[-1])
         text = {"A": KNOWN, "B": UNKNOWN, "C": "ordinary answer", "D": "<think>" + UNKNOWN + "</think>answer",
                 "E": '<｜DSML｜ calls><｜DSML｜ invoke name="task"></｜DSML｜ invoke></｜DSML｜ calls>',
-                "F": MIXED, "G": '```\n' + UNKNOWN + '\n```', "H": '"' + KNOWN + '"'}[route]
+                "F": MIXED, "G": '```\n' + UNKNOWN + '\n```', "H": '"' + KNOWN + '"',
+                "I": LEAD + KNOWN, "J": LEAD + UNKNOWN, "K": FENCED}[route]
         self.calls.append((route, list(prompt), max_tokens, getattr(self.request, "stop_eos", None)))
         for char in text:  # Deliberately split every envelope across callback rounds.
             if on_tokens([ord(char)]):
@@ -142,11 +147,18 @@ def frames(text):
     return [json.loads(line[6:]) for line in text.splitlines() if line.startswith("data: {")]
 
 
+@unittest.skipUnless(os.path.isdir(SOURCE), "needs TF_DISPLAY_SOURCE: a checkout of the pinned TensorFold revision (docs/DISPLAY-KV.md, Offline tests)")
 class ToolOutputHttpTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tool, cls.http, cls.server, family = load_modules()
         cls.ds_app = family.DsApp
+        cls.env = patch.dict(os.environ, {"TF_DS_STRICT_TOOL_OUTPUT": "1"})   # the guard is opt-in
+        cls.env.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.env.stop()
 
     def request(self, route, *, tools=None, stream=False, **extra):
         body = {"messages": [{"role": "user", "content": "x"}], "route": route, "stream": stream, **extra}
@@ -155,7 +167,7 @@ class ToolOutputHttpTests(unittest.TestCase):
         return body
 
     def test_family_capability_and_generic_legacy_behavior(self):
-        self.assertTrue(self.ds_app.strict_tool_output)
+        self.assertTrue(app_for(self.ds_app, self.server).strict_tool_output)
         self.assertFalse(hasattr(self.server.App, "strict_tool_output"))
         generic = app_for(self.server.App, self.server)
         with http_server(self.http, generic) as port:
@@ -163,11 +175,25 @@ class ToolOutputHttpTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("unoffered", json.loads(text)["choices"][0]["message"]["content"])
 
-    def test_nonstream_unknown_is_safe_500_and_recovers(self):
+    def test_guard_is_off_unless_the_switch_is_set(self):
+        for value in (None, "0", "", "true"):
+            with self.subTest(value=value):
+                env = {} if value is None else {"TF_DS_STRICT_TOOL_OUTPUT": value}
+                with patch.dict(os.environ, env):
+                    if value is None:
+                        os.environ.pop("TF_DS_STRICT_TOOL_OUTPUT", None)
+                    app = app_for(self.ds_app, self.server)
+                    self.assertFalse(app.strict_tool_output)
+                    with http_server(self.http, app) as port:
+                        status, _, text = post(port, self.request("B", tools=TOOLS))
+                self.assertEqual(status, 200)
+                self.assertIn("unoffered", json.loads(text)["choices"][0]["message"].get("content") or "")
+
+    def test_nonstream_unknown_is_safe_422_and_recovers(self):
         app = app_for(self.ds_app, self.server)
         with http_server(self.http, app) as port:
             status, _, text = post(port, self.request("B", tools=TOOLS))
-            self.assertEqual(status, 500)
+            self.assertEqual(status, 422)
             error = json.loads(text)["error"]
             self.assertEqual(error["type"], "model_output_error")
             self.assertEqual(error["code"], "unavailable_tool_call")
@@ -265,6 +291,83 @@ class ToolOutputHttpTests(unittest.TestCase):
         self.assertEqual(text.count("data: [DONE]"), 1)
         self.assertEqual(len(app.engine.calls), 1)
 
+    def streamed_content(self, payloads):
+        return "".join(choice.get("delta", {}).get("content") or ""
+                       for item in payloads if "choices" in item for choice in item["choices"])
+
+    def test_stream_sends_text_before_a_call_and_still_sends_the_call(self):
+        app = app_for(self.ds_app, self.server)
+        with http_server(self.http, app) as port:
+            status, _, text = post(port, self.request("I", tools=TOOLS, stream=True))
+        self.assertEqual(status, 200)
+        payloads = frames(text)
+        self.assertEqual(self.streamed_content(payloads).strip(), LEAD.strip())
+        kinds = []
+        for item in payloads:
+            for choice in item.get("choices", []):
+                delta = choice.get("delta", {})
+                if delta.get("content"):
+                    kinds.append("content")
+                if delta.get("tool_calls"):
+                    kinds.append("call")
+        self.assertEqual(kinds[0], "content")
+        self.assertIn("call", kinds)
+        self.assertLess(kinds.index("content"), kinds.index("call"))
+        self.assertNotIn("tool_call", self.streamed_content(payloads))
+
+    def test_stream_text_before_an_unoffered_call_arrives_then_the_error(self):
+        app = app_for(self.ds_app, self.server)
+        with http_server(self.http, app) as port:
+            status, _, text = post(port, self.request("J", tools=TOOLS, stream=True))
+        self.assertEqual(status, 200)
+        payloads = frames(text)
+        self.assertEqual(self.streamed_content(payloads).strip(), LEAD.strip())
+        self.assertEqual(payloads[-1]["error"]["code"], "unavailable_tool_call")
+        self.assertFalse(any("tool_calls" in choice.get("delta", {})
+                             for item in payloads if "choices" in item for choice in item["choices"]))
+
+    def test_first_content_does_not_wait_for_the_whole_answer(self):
+        app = app_for(self.ds_app, self.server)
+        release = threading.Event()
+
+        def generate(prompt, max_tokens, sampling, on_tokens, draft=True):
+            for char in LEAD:
+                on_tokens([ord(char)])
+            if not release.wait(5):
+                raise TimeoutError("client did not receive the text before the call")
+            for char in KNOWN:
+                on_tokens([ord(char)])
+            return {"rounds": 1}
+
+        app.engine.generate = generate
+        with http_server(self.http, app) as port:
+            connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+            try:
+                body = self.request("I", tools=TOOLS, stream=True)
+                connection.request("POST", "/v1/chat/completions", json.dumps(body), {"Content-Type": "application/json"})
+                reply = connection.getresponse()
+                seen = ""
+                while LEAD.strip() not in seen:
+                    line = reply.readline().decode()
+                    self.assertTrue(line, "stream ended before the text arrived")
+                    if line.startswith("data: {"):
+                        seen += self.streamed_content([json.loads(line[6:])])
+                self.assertFalse(release.is_set())
+                release.set()
+                self.assertIn("task", reply.read().decode())
+            finally:
+                release.set()
+                connection.close()
+
+    def test_call_arguments_with_an_open_fence_do_not_turn_the_next_call_into_text(self):
+        app = app_for(self.ds_app, self.server)
+        with http_server(self.http, app) as port:
+            status, _, text = post(port, self.request("K", tools=TOOLS))
+        self.assertEqual(status, 200)
+        message = json.loads(text)["choices"][0]["message"]
+        self.assertEqual([call["function"]["name"] for call in message["tool_calls"]], ["task", "task"])
+        self.assertNotIn("tool_call", message["content"] or "")
+
     def test_atomic_mixed_and_literal_calls(self):
         app = app_for(self.ds_app, self.server)
         with http_server(self.http, app) as port:
@@ -288,7 +391,7 @@ class ToolOutputHttpTests(unittest.TestCase):
             self.assertEqual(message["content"], "answer")
             self.assertIn("unoffered", message["reasoning_content"])
             status, _, text = post(port, self.request("B", tools=TOOLS, tool_choice="none"))
-            self.assertEqual(status, 500)
+            self.assertEqual(status, 422)
             status, _, text = post(port, self.request("B"))
         self.assertEqual(status, 200)
         self.assertIn("unoffered", json.loads(text)["choices"][0]["message"]["content"])
@@ -321,7 +424,7 @@ class ToolOutputHttpTests(unittest.TestCase):
                 thread.start()
             for thread in threads:
                 thread.join()
-        self.assertEqual(sorted(status for status, _, _ in answers), [200, 500])
+        self.assertEqual(sorted(status for status, _, _ in answers), [200, 422])
         self.assertEqual(sorted(call[0] for call in app.engine.calls), ["A", "A"])
 
 

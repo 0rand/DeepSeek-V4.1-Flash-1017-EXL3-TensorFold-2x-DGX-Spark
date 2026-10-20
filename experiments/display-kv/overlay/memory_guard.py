@@ -14,7 +14,7 @@ class MemoryGuard:
         if not math.isfinite(floor_gib) or floor_gib < 0:
             raise ValueError("TF_DS_MEM_FLOOR_GIB must be finite and nonnegative")
         self.cuda, self.rank = torch.cuda, rank
-        cap = os.environ.get("TF_DS_MEM_CAP", "1")
+        cap = os.environ.get("TF_DS_MEM_CAP", "0")   # off by default: a hard cap turns a spike into exit 75
         if cap not in ("0", "1"):
             raise ValueError("TF_DS_MEM_CAP must be 0 or 1")
         self.cap_enabled = cap == "1"
