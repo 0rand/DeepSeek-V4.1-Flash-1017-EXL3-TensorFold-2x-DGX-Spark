@@ -8,7 +8,7 @@ Each item was checked against the files in this repo. The file that supports the
 1. **Image input.**
    - The server starts with `--vision` by default (`VISION=1` in `.env.example`).
    - No test in `tests/`, no check in `verify.sh` and no Hermes case sends an image to the server. The conformance test only renders the image placeholder in a prompt.
-   - Not measured: image decode speed, two requests with images at the same time, many images in one request.
+   - Not measured on the shipped image: image decode speed, two requests with images at the same time, many images in one request. `runs/2026-10-20/` has a memory trace of concurrent image requests on a validation image (fork PRs #13-#15), not a speed measurement.
 2. **vLLM under concurrency.** The vLLM kit ran with `MAX_NUM_SEQS=1` (`runs/2026-10-17/PROVENANCE.md`, section 4). It serves one request at a time. No vLLM result exists for 2 to 4 streams, so the TensorFold concurrency tables have no baseline.
 3. **KV cache bytes per token.** The run files do not hold the KV pool size in tokens, for either engine. See [BENCHMARKS.md](BENCHMARKS.md).
 4. **Context near 1M tokens.**
