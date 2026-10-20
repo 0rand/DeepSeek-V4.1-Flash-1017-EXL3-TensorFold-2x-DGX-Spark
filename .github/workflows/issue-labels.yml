@@ -1,0 +1,55 @@
+# Gives each new issue a type label. The issue forms add the label themselves, but an issue made with the API, the gh
+# CLI or an agent skips the form and gets no label. This workflow reads the title prefix of the forms ([bug],
+# [feature], [perf]) and adds the matching label. An issue with no known prefix gets "needs-triage".
+# It adds labels. The only label it removes is its own "needs-triage", when a later title edit gives the type.
+# It never changes a type label, so the maintainer can always set the type by hand.
+# It reads only the issue title and labels through the API. It never checks out or runs code.
+name: issue-labels
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-labels-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  issue-labels:
+    name: issue-labels
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: github.event.issue.user.type != 'Bot' && github.event.issue.pull_request == null
+    steps:
+      - name: Add the type label from the title prefix
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const have = issue.labels.map((l) => l.name);
+            // The labels that say what kind of issue it is. If one is there, the issue already has a type.
+            const types = ['bug', 'enhancement', 'performance', 'question', 'documentation'];
+            if (have.some((n) => types.includes(n))) {
+              core.info(`has a type label: ${have.join(', ')}`);
+              return;
+            }
+            const prefixes = [
+              [/^\s*\[\s*bug\s*\]/i, 'bug'],
+              [/^\s*\[\s*(feature|feat)\s*\]/i, 'enhancement'],
+              [/^\s*\[\s*(perf|performance)\s*\]/i, 'performance'],
+            ];
+            const hit = prefixes.find(([re]) => re.test(issue.title || ''));
+            const want = hit ? hit[1] : 'needs-triage';
+            if (have.includes(want)) {
+              return;
+            }
+            await github.rest.issues.addLabels({ ...context.repo, issue_number: issue.number, labels: [want] });
+            if (want !== 'needs-triage' && have.includes('needs-triage')) {
+              // The title now has a prefix: the issue no longer waits for a type.
+              await github.rest.issues.removeLabel({ ...context.repo, issue_number: issue.number, name: 'needs-triage' });
+            }
+            core.info(`label: ${want}`);

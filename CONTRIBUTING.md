@@ -52,6 +52,8 @@ Use the issue form that fits. The form adds the label.
 | Feature request | `enhancement` | a new setting, mode or tool |
 | Performance report | `performance` | a speed or memory result, or a regression |
 
+An issue made without a form (with the API, the gh CLI or an agent) gets its label from the `issue-labels` workflow. It reads the title prefix of the forms: `[bug]`, `[feature]` or `[perf]`. An issue with no prefix gets `needs-triage` until the maintainer sets the type.
+
 The maintainer can add more labels, for example `good first issue` or `duplicate`.
 
 ## Default behaviour
