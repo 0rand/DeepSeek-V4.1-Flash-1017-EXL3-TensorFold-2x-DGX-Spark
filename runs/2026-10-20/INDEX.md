@@ -2,7 +2,7 @@
 
 Same pair of DGX Spark as `runs/2026-10-18/`. Engine image `tensorfold-dsv41:val-90c9cf71c74e`: fork branch `deepseek-v41-tp2` at 434301e with fork PRs #13, #14 and #15, built on `tensorfold-dsv41:3c45bdaeab7d`. Settings: `CONTEXT=1048576`, `TF_DS_PREFILL_CHUNK=2048`, `SPILL_GIB=64`, `MEM_FLOOR_GIB=1.5`, `--vision-max-images 32`, host tuning from `scripts/host_tuning.sh` (earlyoom stops a process at about 1 GiB available).
 
-`scripts/oom_trace.py` read `MemAvailable` on both nodes each second while it sent the load. Each image request had PNG images of 1024x768 and about 20K tokens of random-word text (about 34.5K prompt tokens with 8 images). The `started` field in the JSON files is head local time (UTC-7). `oom/earlyoom-head.txt` is in UTC.
+`scripts/oom_trace.py` read `MemAvailable` on both nodes each second while it sent the load. Each image request had PNG images of 1024x768 and random-word text from `long_text(20000)`. The generator gives about 1.5 tokens for each requested token (the long prompts asked for 65K to 200K and got 99,142 to 304,923 prompt tokens), so the text was about 30K tokens. With 8 images a request had about 34.5K prompt tokens in all. The `started` field in the JSON files is head local time (UTC-7). `oom/earlyoom-head.txt` is in UTC.
 
 ## Results
 

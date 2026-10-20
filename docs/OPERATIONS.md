@@ -60,7 +60,7 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   | 4 long prompts (loaded from the spill cache), then 4 requests with 8 images each | 2 | 1,356 MiB | all passed |
   | then 4 requests with 16 images each (needs `--vision-max-images`; the recipe allows 8) | 2 | 901 MiB (earlyoom reading) | earlyoom stopped the engine |
 
-  Each image request had about 20K tokens of text as well. With 8 images in each request (the recipe's limit), `PARALLEL=2` passed the load that failed with `PARALLEL=4`. This is not a clean A/B: in the `PARALLEL=2` run the long prompts came from the spill cache and were not filled again. With 16 images in each request, `PARALLEL=2` also failed.
+  Each image request also had random-word text: about 34.5K prompt tokens in all with 8 images. With 8 images in each request (the recipe's limit), `PARALLEL=2` passed the load that failed with `PARALLEL=4`. This is not a clean A/B: in the `PARALLEL=2` run the long prompts came from the spill cache and were not filled again. With 16 images in each request, `PARALLEL=2` also failed.
 
   If `MemAvailable` on either node goes near 1 GiB (1,048,576 kB):
   1. Set `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. Each request still gets the full context.
