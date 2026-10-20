@@ -10,6 +10,10 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ## [Unreleased]
 
+### Repo
+
+- CI: a defaults guard test, a home-path and public-IP scan, workflow checks (actionlint, zizmor) and a secret scan (gitleaks).
+
 ## [1.0.0] - 2026-10-19
 
 The first release: the setup that the README measured on 17 and 18 October 2026.

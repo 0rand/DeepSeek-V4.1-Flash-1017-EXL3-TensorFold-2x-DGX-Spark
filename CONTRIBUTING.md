@@ -131,6 +131,21 @@ ruff check .
 shellcheck -x -S warning $(git ls-files '*.sh' ':!:runs/**' ':!:scripts/_raw_*')
 ```
 
+If you change a file in `.github/workflows/`, also run:
+
+```bash
+actionlint
+```
+
+```bash
+zizmor .github/workflows/
+```
+
+CI also runs [gitleaks](https://github.com/gitleaks/gitleaks) on all commits, to find keys and tokens. Two offline tests guard the repo rules:
+
+- `tests/test_defaults.py` fails if `start.sh` or `.env.example` changes a protected default ([Default behaviour](#default-behaviour)).
+- `tests/test_machine_values.py` fails if a tracked file has a home path with a user name or a public IP address.
+
 ### Rules for new tests
 
 - **An offline test needs no GPU, no server, no network and no `.env`.** Name it `test_*.py` or `*_test.py`. Use only the Python standard library.
