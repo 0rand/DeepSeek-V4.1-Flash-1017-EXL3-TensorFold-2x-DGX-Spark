@@ -81,7 +81,8 @@ class FakeEngine:
         route = chr(prompt[-1])
         text = {"A": KNOWN, "B": UNKNOWN, "C": "ordinary answer", "D": "<think>" + UNKNOWN + "</think>answer",
                 "E": '<｜DSML｜ calls><｜DSML｜ invoke name="task"></｜DSML｜ invoke></｜DSML｜ calls>',
-                "F": MIXED, "G": '```\n' + UNKNOWN + '\n```', "H": '"' + KNOWN + '"'}[route]
+                "F": MIXED, "G": '```\n' + UNKNOWN + '\n```', "H": '"' + KNOWN + '"',
+                "I": 'ok <tool_call>{"name":"task","arguments":{"a":'}[route]
         self.calls.append((route, list(prompt), max_tokens, getattr(self.request, "stop_eos", None)))
         for char in text:  # Deliberately split every envelope across callback rounds.
             if on_tokens([ord(char)]):
@@ -290,6 +291,17 @@ class ToolOutputHttpTests(unittest.TestCase):
                 self.assertEqual(status, 200)
                 self.assertIsNone(message.get("tool_calls"))
                 self.assertIn("tool_call", message["content"])
+
+    def test_single_call_policy_still_filters_the_content_of_guarded_replies(self):
+        # parallel_tool_calls=false: the original code passes the content through policy.content().
+        # A cut-off envelope must not reach the client as prose, with the guard on or off.
+        for switch in ("1", "0"):
+            app = app_for(self.ds_app, self.server)
+            with patch.dict(os.environ, {"TF_DS_STRICT_TOOL_OUTPUT": switch}), http_server(self.http, app) as port:
+                status, _, text = post(port, self.request("I", tools=TOOLS, parallel_tool_calls=False))
+            with self.subTest(switch=switch):
+                self.assertEqual(status, 200)
+                self.assertNotIn("<tool_call>", json.loads(text)["choices"][0]["message"]["content"])
 
     def test_reasoning_is_not_checked_as_answer_and_choice_none_is_checked(self):
         app = app_for(self.ds_app, self.server)

@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest.mock import patch
 
 
 from support import fixtures, guard_module
@@ -218,6 +219,54 @@ class ToolOutputTests(unittest.TestCase):
         self.assertIn(literal, content)
         self.assertEqual(len(calls), 1)
         self.assertIn('false', calls[0]["function"]["arguments"])
+
+    def test_two_separate_quoted_spans_do_not_make_the_call_literal(self):
+        envelope = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        for text in (f'The user said "go" {envelope} "and left."', f"'a' {envelope} 'b'",
+                     f'He said "go" and "stop" {envelope} "left"'):
+            with self.subTest(text=text):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+        known = '<tool_call>{"name":"task","arguments":{}}</tool_call>'
+        for text in (f'He said "go" and "{known}"', f"It's an example: '{known}'", f'"{known}" and "stop"'):
+            with self.subTest(text=text):
+                self.assertEqual(self.guard().parse(text), (text, None))
+
+    def test_literal_example_body_does_not_change_the_state_for_a_later_call(self):
+        real = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        for mark in ("`", "```", "> "):
+            literal = '<tool_call>{"name":"task","arguments":{"note":"' + mark + '"}}</tool_call>'
+            for text in (f"'{literal}'\n{real}", f'"{literal}" {real}'):
+                with self.subTest(mark=mark, text=text):
+                    with self.assertRaises(self.module.ModelOutputError):
+                        self.guard().parse(text)
+
+    def test_streaming_scans_only_new_text(self):
+        positions = []
+        real = self.module.ToolOutputGuard._opener_re
+
+        class Spy:
+            @staticmethod
+            def finditer(text, position=0):
+                positions.append(position)
+                return real.finditer(text, position)
+
+        guard = self.guard()
+        text = "word " * 400
+        with patch.object(self.module.ToolOutputGuard, "_opener_re", Spy):
+            for size in range(50, len(text) + 1, 50):
+                self.assertEqual(guard.stream(text[:size]), text[:size])
+        self.assertEqual(positions, sorted(positions))
+        self.assertGreater(positions[-1], len(text) - 100)               # the last call skipped the old text
+
+    def test_incremental_streaming_gives_the_same_result_as_a_fresh_scan(self):
+        literal = '<tool_call>{"name":"task","arguments":{"note":"`"}}</tool_call>'
+        real = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        for text in (f"'{literal}' and then {real}", f"```\n{literal}\n```\nmore {real}", f'say "{literal}" now'):
+            with self.subTest(text=text):
+                guard = self.guard()
+                for size in range(1, len(text) + 1):
+                    self.assertEqual(guard.stream(text[:size]), self.guard().stream(text[:size]))
 
     def test_malformed_and_truncated_wrappers_are_not_misclassified(self):
         for text in (

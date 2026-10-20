@@ -40,9 +40,11 @@ class ToolOutputGuard:
     _glm_re = re.compile(r"\s*([\w.:-]+)(.*)", re.DOTALL)
     _glm_args_re = re.compile(r"<arg_key>.*?</arg_key>\s*<arg_value>.*?</arg_value>", re.DOTALL)
     _name_re = re.compile(r"[\w.:-]+\Z")
+    _opener_re = re.compile(r"<tool_call>|<｜DSML｜ calls>", re.IGNORECASE)
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self._stream_cut: int | None = None
+        self._stream_scanned = 0      # no opener starts before this offset of the cumulative answer
         self.tools = tools or []
         self.declared_tools = (request.get("tools") or []) if request is not None else self.tools
         self.tools_field = ("omitted" if request is not None and "tools" not in request else
@@ -66,14 +68,34 @@ class ToolOutputGuard:
         """
         if self._stream_cut is not None:
             return text[:self._stream_cut]
-        for opening in re.finditer(r"<tool_call>|<｜DSML｜ calls>", text, re.IGNORECASE):
+        # The answer only grows, so each call scans the new text plus the longest opener prefix again.
+        longest = max(len(tag) for tag in self._openers)
+        first = min(self._stream_scanned, len(text))
+        for opening in self._opener_re.finditer(text, first):
             if not self._literal_prefix(text[:opening.start()]):
                 self._stream_cut = opening.start()
                 return text[:self._stream_cut]
-        lower = text.lower()
+        tail = text[-(longest - 1):].lower()
         held = max((size for tag in self._openers for size in range(1, len(tag))
-                    if lower.endswith(tag[:size].lower())), default=0)
+                    if tail.endswith(tag[:size].lower())), default=0)
+        self._stream_scanned = max(first, len(text) - (longest - 1))
         return text[:-held] if held else text
+
+    @staticmethod
+    def _opens_quote(line: str, mark: str) -> bool:
+        """True when the quote mark after ``line`` opens a span: an even number of marks come before it.
+
+        A backslash escapes a mark. A single quote between two letters or digits is an apostrophe.
+        """
+        count = 0
+        for index, char in enumerate(line):
+            if char != mark or (index and line[index - 1] == "\\"):
+                continue
+            if (mark == "'" and 0 < index < len(line) - 1
+                    and line[index - 1].isalnum() and line[index + 1].isalnum()):
+                continue
+            count += 1
+        return count % 2 == 0
 
     @staticmethod
     def _literal_prefix(prefix: str, suffix: str | None = None) -> bool:
@@ -106,7 +128,8 @@ class ToolOutputGuard:
         quoted = False
         if suffix is not None:
             before = last_line.rstrip(" \t")
-            quoted = bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
+            quoted = (bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
+                      and ToolOutputGuard._opens_quote(before[:-1], before[-1]))
         return (fence is not None or inline is not None
                 or bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", last_line))
                 or quoted)
@@ -148,10 +171,10 @@ class ToolOutputGuard:
             end = stop
             is_literal = self._literal_prefix(masked[:start], masked[stop:])
             envelopes.append((start, stop, is_literal))
+            # Argument text is data, not Markdown for later calls. Newlines stay, so line starts stay true.
+            masked = masked[:start] + re.sub(r"[^\n]", " ", masked[start:stop]) + masked[stop:]
             if is_literal:
                 continue
-            # Argument fences are data, not Markdown for subsequent calls.
-            masked = masked[:start] + ' ' * (stop - start) + masked[stop:]
             for name in names:
                 if name.lower() not in known:
                     effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})

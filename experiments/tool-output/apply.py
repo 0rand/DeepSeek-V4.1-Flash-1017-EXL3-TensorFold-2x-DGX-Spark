@@ -58,7 +58,7 @@ def transform(relative: str | Path, text: str) -> str:
                        "            content, calls = tool_output_guard.parse(raw_answer, max_calls=policy.max_calls)\n"
                        "        else:\n"
                        "            content, calls = parse_tool_calls(raw_answer, tools, max_calls=policy.max_calls) if tools else (answer, None)\n"
-                       "            content = policy.content(content) if tools else content\n")
+                       "        content = policy.content(content) if tools else content\n")
     if relative == HTTP:
         text = replace(text, "from tensorfold.cuda import health\n",
                        "from tensorfold.cuda import health\nfrom tensorfold.cuda.tool_output import ModelOutputError\n")
