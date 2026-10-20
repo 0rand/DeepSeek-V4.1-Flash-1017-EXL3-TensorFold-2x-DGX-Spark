@@ -25,6 +25,15 @@
 - **First long prompt.** The first long prompt after a start (8K+ tokens) takes ~6 s longer than later ones. The README's 8K row includes this. A longer warm-up list does not remove it; the likely cause is cold Engram reads from NVMe.
 - **Prompts survive a restart.** With `SPILL_GIB` above 0 (default 64), kept prompts also go to `CACHE_DIR/tf-ds-spill` on each node. After a restart, a conversation continues from disk (an 18K-token prompt: 2.7 s instead of 16.8 s). Old entries go after 7 days or past the size limit.
 
+## Prefill configuration
+
+Set `PREFILL_CHUNK` in `.env` to select the tokens per prefill chunk on both ranks.
+Use a positive integer, for example `2048` or `512`. The default stays `2048`.
+An absent or empty value also uses `2048`. Other values stop `start.sh` before
+preflight, extension builds or container commands. Restart the server after a change.
+This setting does not change the other serving defaults. No performance result is
+claimed for a different chunk size.
+
 ## When the lane breaks
 
 The engine keeps serving when one request fails:
