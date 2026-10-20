@@ -18,7 +18,13 @@ The model reads up to **1,048,576 tokens** in one conversation. Tell your app th
 curl http://127.0.0.1:8888/v1/chat/completions -H "Content-Type: application/json" -d '{"model": "DeepSeek-V4.1-Flash-1017", "messages": [{"role": "user", "content": "Say hello in French."}]}'
 ```
 
-The same call in Python, with the official `openai` package:
+If you set `API_KEY_FILE`, the server refuses a request without your key (HTTP 401). Add it to the call:
+
+```bash
+curl http://127.0.0.1:8888/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer $(cat /path/to/your/key-file)" -d '{"model": "DeepSeek-V4.1-Flash-1017", "messages": [{"role": "user", "content": "Say hello in French."}]}'
+```
+
+The same call in Python, with the official `openai` package (put your key in place of `"none"` if you set `API_KEY_FILE`):
 
 ```python
 from openai import OpenAI
