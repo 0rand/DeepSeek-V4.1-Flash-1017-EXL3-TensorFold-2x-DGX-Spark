@@ -89,134 +89,30 @@ class ToolOutputGuard:
         return text[:-held] if held else text
 
     @staticmethod
-    def _escaped(text: str, index: int) -> bool:
-        """True when an odd number of backslashes stand right before ``text[index]``."""
-        run = 0
-        while index - run > 0 and text[index - run - 1] == "\\":
-            run += 1
-        return run % 2 == 1
+    def _fenced_blocks(masked: str) -> list[tuple[int, int | None]]:
+        """The code fences of ``masked`` as (offset where the opener line ends, offset of the closer line or None).
 
-    @staticmethod
-    def _blank_code_spans(line: str) -> str:
-        """``line`` with every inline code span (and its backticks) replaced by spaces; an unclosed span runs to the end."""
-        out = list(line)
-        opened = None
-        for token in re.finditer(r"`+", line):
-            if opened is None:
-                if not ToolOutputGuard._escaped(line, token.start()):
-                    opened = token
-            elif len(token.group()) == len(opened.group()):
-                out[opened.start():token.end()] = " " * (token.end() - opened.start())
-                opened = None
-        if opened is not None:
-            out[opened.start():] = " " * (len(line) - opened.start())
-        return "".join(out)
-
-    @staticmethod
-    def _in_blockquote(prefix: str) -> bool:
-        return bool(re.fullmatch(r"[ \t]*(?:>[ \t]*)+", prefix.rsplit("\n", 1)[-1]))
-
-    @staticmethod
-    def _opens_quote(line: str, mark: str) -> bool:
-        """True when the quote mark after ``line`` opens a span: an even number of marks come before it.
-
-        A backslash escapes a mark. A single quote between two letters or digits is an apostrophe.
+        This is the only Markdown the guard reads. An opener is a line of three or more backticks or tildes with at
+        most three spaces of indent; for backticks the info string must hold no backtick. A closer is a line of at
+        least as many of the same character, with at most three spaces of indent and nothing after it. The text may
+        use CRLF line ends. Anything else (quotes, quote lines, inline code, indented code) is not read.
         """
-        count = 0
-        for index, char in enumerate(line):
-            if char != mark or ToolOutputGuard._escaped(line, index):
-                continue
-            if (mark == "'" and 0 < index < len(line) - 1
-                    and line[index - 1].isalnum() and line[index + 1].isalnum()):
-                continue
-            count += 1
-        return count % 2 == 0
-
-    @staticmethod
-    def _closes_inside(prefix: str, body: str) -> bool:
-        """True when the code fence or the inline code open at the end of ``prefix`` ends inside ``body``.
-
-        Spans are compared by where they began, so a span that ends and another that begins inside ``body``
-        still count as a close.
-        """
-        before = ToolOutputGuard._markdown_state(prefix)
-        if before == (None, None):
-            return False
-        after = ToolOutputGuard._markdown_state(prefix + body)
-        return any(old is not None and new != old for old, new in zip(before, after))
-
-    @staticmethod
-    def _literal_prefix(prefix: str, suffix: str | None = None, body: str | None = None) -> bool:
-        """Read Markdown before a call, never inside a real argument body.
-
-        Unclosed inline backticks are conservative literals. An envelope counts as quoted only when the same
-        quote mark stands right before it (spaces and tabs allowed, no newline) and right after it. That check
-        needs ``suffix``, the text after the envelope. While streaming there is no suffix, so a quote never
-        makes the rest literal there. A code fence or inline code that closes inside ``body`` (the envelope)
-        does not make the envelope literal: a Markdown reader sees the code end there. This is a tool-markup
-        guard, not a Markdown renderer.
-        """
-        code = ToolOutputGuard._markdown_open(prefix)
-        if code and body is not None and ToolOutputGuard._closes_inside(prefix, body):
-            code = False
-        last_line = prefix.rsplit("\n", 1)[-1]
-        quoted = False
-        if suffix is not None:
-            before = ToolOutputGuard._blank_code_spans(last_line).rstrip(" \t")     # marks in code do not pair
-            quoted = (bool(before) and before[-1] in ('"', "'") and suffix.lstrip(" \t").startswith(before[-1])
-                      and not ToolOutputGuard._escaped(before, len(before) - 1)
-                      and ToolOutputGuard._opens_quote(before[:-1], before[-1]))
-        quote_line = (ToolOutputGuard._in_blockquote(prefix)
-                      and (body is None or not re.search(r"\n[ \t]*(?:>[ \t]*)*\n", body)))   # a blank line ends a quote
-        return code or quote_line or quoted
-
-    @staticmethod
-    def _markdown_open(prefix: str) -> bool:
-        """True when ``prefix`` ends inside a code fence or inside inline code."""
-        return ToolOutputGuard._markdown_state(prefix) != (None, None)
-
-    @staticmethod
-    def _closer(prefix: str) -> str:
-        """Text that ends the code fence or the inline code open at the end of ``prefix`` ("" when none is open)."""
-        fence, inline = ToolOutputGuard._scan_markdown(prefix)
-        if fence is not None:
-            return "\n" + fence[0] * fence[1] + "\n"
-        return " " + "`" * inline[0] if inline else ""            # (a space keeps it apart from a backtick before it)
-
-    @staticmethod
-    def _markdown_state(prefix: str) -> tuple[int | None, int | None]:
-        """Where the open code fence began and where the open inline code began in ``prefix`` (None: not open)."""
-        fence, inline = ToolOutputGuard._scan_markdown(prefix)
-        return (fence[2] if fence else None, inline[1] if inline else None)
-
-    @staticmethod
-    def _scan_markdown(prefix: str) -> tuple[tuple | None, tuple | None]:
-        """The open fence (char, width, offset) and the open inline code (width, offset) at the end of ``prefix``."""
-        fence = None
-        inline = None
+        blocks: list[tuple[int, int | None]] = []
+        fence: tuple[str, int, int] | None = None
         offset = 0
-        for line in prefix.splitlines(keepends=True):
-            base, offset = offset, offset + len(line)
-            marker = re.match(r" {0,3}(`{3,}|~{3,})", line)      # four spaces make indented code, not a fence
-            if fence is not None:
-                if (marker and marker.group(1)[0] == fence[0] and len(marker.group(1)) >= fence[1]
-                        and not line[marker.end():].strip()):
-                    fence = None
-                continue
-            if marker and inline is None:
-                fence = (marker.group(1)[0], len(marker.group(1)), base)
-                continue
-            if inline is None and re.match(r" {4}|\t", line):
-                continue                  # an indented code line: its backticks are text (the safe reading)
-            for token in re.finditer(r"`+", line):
-                if inline is None and ToolOutputGuard._escaped(line, token.start()):
-                    continue       # an escaped backtick is text, but a backslash does nothing inside a code span
-                width = len(token.group())
-                if inline is None:
-                    inline = (width, base + token.start())
-                elif inline[0] == width:
-                    inline = None
-        return fence, inline
+        for line in masked.split("\n"):
+            base, offset = offset, offset + len(line) + 1
+            line = line.rstrip("\r")
+            if fence is None:
+                match = re.fullmatch(r" {0,3}(`{3,}|~{3,})([^\n]*)", line)
+                if match and not (match.group(1)[0] == "`" and "`" in match.group(2)):
+                    fence = (match.group(1)[0], len(match.group(1)), offset)
+            elif re.fullmatch(r" {0,3}" + re.escape(fence[0]) + "{" + str(fence[1]) + r",}[ \t]*", line):
+                blocks.append((fence[2], base))
+                fence = None
+        if fence is not None:
+            blocks.append((fence[2], None))
+        return blocks
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
         """Return CUDA's parsed result, or fail atomically on an unavailable complete call."""
@@ -247,24 +143,22 @@ class ToolOutputGuard:
                 candidates.append((opening.start(), size + closing.end(), [name] if name else [], "json"))
 
         end = -1
-        envelopes = []
-        masked = text
+        chosen = []
         for start, stop, names, kind in sorted(candidates, key=lambda item: (item[0], -item[1])):
             if start < end:
                 continue
             end = stop
-            body = text[start:stop]
-            is_literal = self._literal_prefix(masked[:start], masked[stop:], body)
+            chosen.append((start, stop, names, kind))
+        # Text of a call is data, not Markdown: blank it (newlines stay) before the code fences are read.
+        masked = text
+        for start, stop, _, _ in reversed(chosen):
+            masked = masked[:start] + re.sub(r"[^\n]", " ", masked[start:stop]) + masked[stop:]
+        fences = self._fenced_blocks(masked)
+        envelopes = []
+        for start, stop, names, kind in chosen:
+            # A call is literal text only inside a closed code fence that began before it and ends after it.
+            is_literal = any(opened <= start and closed is not None and closed >= stop for opened, closed in fences)
             envelopes.append((start, stop, is_literal))
-            # Argument text is data, not Markdown for later calls. Newlines stay, so line starts stay true.
-            # Exception: code that was open before the call and ends inside it also ends for later calls. That one
-            # close stays; any delimiter after it in the call is data.
-            blank = re.sub(r"[^\n]", " ", body)
-            if self._closes_inside(masked[:start], body):
-                closer = self._closer(masked[:start])
-                if len(closer) <= len(blank):
-                    blank = closer + blank[len(closer):]
-            masked = masked[:start] + blank + masked[stop:]
             if is_literal:
                 continue
             for name in names:

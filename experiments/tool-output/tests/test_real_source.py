@@ -285,12 +285,15 @@ class ToolOutputHttpTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertFalse(any("content" in choice.get("delta", {}) or "tool_calls" in choice.get("delta", {})
                                  for item in frames(stream) if "choices" in item for choice in item["choices"]))
-            for route in ("G", "H"):
-                status, _, text = post(port, self.request(route, tools=TOOLS))
-                message = json.loads(text)["choices"][0]["message"]
-                self.assertEqual(status, 200)
-                self.assertIsNone(message.get("tool_calls"))
-                self.assertIn("tool_call", message["content"])
+            status, _, text = post(port, self.request("G", tools=TOOLS))           # a closed code fence: literal text
+            message = json.loads(text)["choices"][0]["message"]
+            self.assertEqual(status, 200)
+            self.assertIsNone(message.get("tool_calls"))
+            self.assertIn("tool_call", message["content"])
+            status, _, text = post(port, self.request("H", tools=TOOLS))           # quote marks only: a real call
+            message = json.loads(text)["choices"][0]["message"]
+            self.assertEqual(status, 200)
+            self.assertEqual(message["tool_calls"][0]["function"]["name"], "task")
 
     def test_single_call_policy_still_filters_the_content_of_guarded_replies(self):
         # parallel_tool_calls=false: the original code passes the content through policy.content().
