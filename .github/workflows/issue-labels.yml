@@ -14,9 +14,10 @@ permissions:
   contents: read
   issues: write
 
+# One run at a time for each issue, in order. Each run reads the current labels, so the last run decides.
 concurrency:
   group: issue-labels-${{ github.event.issue.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   issue-labels:
@@ -29,12 +30,20 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const issue = context.payload.issue;
-            const have = issue.labels.map((l) => l.name);
-            // The labels that say what kind of issue it is. If one is there, the issue already has a type.
+            // Read the issue now, not the event snapshot: a title edit can come before an earlier run ends.
+            const number = context.payload.issue.number;
+            const { data: issue } = await github.rest.issues.get({ ...context.repo, issue_number: number });
+            const have = issue.labels.map((l) => (typeof l === 'string' ? l : l.name));
+            const dropTriage = async () => {
+              if (have.includes('needs-triage')) {
+                await github.rest.issues.removeLabel({ ...context.repo, issue_number: number, name: 'needs-triage' });
+                core.info('removed needs-triage');
+              }
+            };
+            // The labels that say what kind of issue it is. If one is there, the issue has a type.
             const types = ['bug', 'enhancement', 'performance', 'question', 'documentation'];
             if (have.some((n) => types.includes(n))) {
-              core.info(`has a type label: ${have.join(', ')}`);
+              await dropTriage();
               return;
             }
             const prefixes = [
@@ -43,13 +52,13 @@ jobs:
               [/^\s*\[\s*(perf|performance)\s*\]/i, 'performance'],
             ];
             const hit = prefixes.find(([re]) => re.test(issue.title || ''));
-            const want = hit ? hit[1] : 'needs-triage';
-            if (have.includes(want)) {
+            if (!hit) {
+              if (!have.includes('needs-triage')) {
+                await github.rest.issues.addLabels({ ...context.repo, issue_number: number, labels: ['needs-triage'] });
+              }
+              core.info('label: needs-triage');
               return;
             }
-            await github.rest.issues.addLabels({ ...context.repo, issue_number: issue.number, labels: [want] });
-            if (want !== 'needs-triage' && have.includes('needs-triage')) {
-              // The title now has a prefix: the issue no longer waits for a type.
-              await github.rest.issues.removeLabel({ ...context.repo, issue_number: issue.number, name: 'needs-triage' });
-            }
-            core.info(`label: ${want}`);
+            await github.rest.issues.addLabels({ ...context.repo, issue_number: number, labels: [hit[1]] });
+            await dropTriage();                               // the title now gives the type
+            core.info(`label: ${hit[1]}`);
