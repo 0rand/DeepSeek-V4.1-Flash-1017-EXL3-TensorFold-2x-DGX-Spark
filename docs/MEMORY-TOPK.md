@@ -59,6 +59,8 @@ headroom above the floor. That original path does not refresh each chunk.
 `MEM_CAP=0` does not remove that original ceiling.
 
 To test the new policy, select the feature image and set `MEM_CAP=1` in `.env`.
+`./start.sh` checks the image label `tensorfold.memory-topk` on both nodes and stops before any
+command if it is missing, because an image without the overlay would ignore the setting.
 Only `0` and `1` are valid. The new policy reads host headroom before and after
 each prefill chunk and decode round. It sets the ceiling to the smaller of the
 device total and `reserved + max(0, MemAvailable - floor)`. The floor must be
