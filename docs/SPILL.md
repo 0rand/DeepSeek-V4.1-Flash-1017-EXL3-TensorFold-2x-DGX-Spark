@@ -64,9 +64,12 @@ Put a setting in `.env` to change it. The private bundle passes `TF_DS_SPILL_MIN
 .env sets them. A write starts when a prompt leaves the kept set (write-through); there is no early-write threshold.
 The store writes safetensors files with a CRC-32 per 8 MiB, fsyncs, and renames
 from `.partial`. Token ids are stored as base64 int64. The header holds a CRC-32 of itself (`hcrc`, format 4), so a
-flipped bit in a count, a name or a flag is refused when the file is scanned or read. A corrupt or short file is dropped. The
+flipped bit in a count, a name or a flag is refused when the file is scanned or read. The declared header length is
+checked first (at most 64 MiB, aligned, inside the file), so a flipped bit cannot make a rank read a huge block. A corrupt or short file is dropped. The
 table of tensor descriptors is checked before any memory is allocated: gaps, overlaps, negative numbers and
-unknown dtypes are refused. Every rank agrees on the index and on each read. A read is used only when it
+unknown dtypes are refused. The compatibility key holds the cache planes, the draft rings (so a change of `MTP_DRAFTS` starts a new folder) and the
+settings that change a cached row. At start, every rank first tells the others if it could prepare the tier; if one rank
+failed, the tier is off on every rank, and the same holds if the store fails to start on one rank. Every rank agrees on the index and on each read. A read is used only when it
 worked on every rank. If a write failed on one rank only, `find()` keeps the entry, so the read fails on all
 ranks and all of them forget it. A failed read is counted once as `load_failed`.
 

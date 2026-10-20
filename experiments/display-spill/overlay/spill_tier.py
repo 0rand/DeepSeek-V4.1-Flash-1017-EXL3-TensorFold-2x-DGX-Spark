@@ -57,6 +57,7 @@ FORMAT = "tensorfold-cuda-spill-4"          # 4: a CRC-32 of the whole header (3
 SHUTDOWN_CAP_S = 55.0                  # most a shutdown drain waits: docker stop -t 60 (stop.sh) kills the process at 60 s
 CHUNK = 64 << 20                       # bytes a staging buffer
 ALIGN = 4096                           # O_DIRECT offsets, lengths and buffers
+MAX_HEADER = 64 << 20                  # the most a header may declare (1M token ids twice, as base64, are 22 MiB)
 BLOCK = 8 << 20                        # bytes one CRC-32 covers (CHUNK is a multiple of it)
 STAGE = 8 << 20                        # bytes of the device buffer rows a memcpy may not reach pass through
 WAIT_S = 60.0                          # a read of an entry still being written waits this long for it (reader thread)
@@ -434,8 +435,12 @@ def _check_header_crc(raw: bytes) -> None:
 
 def _read_header_file(f) -> tuple[dict, int]:
     prefix = f.read(8)
+    if len(prefix) != 8:
+        raise ValueError("not a spill file")
     (size,) = struct.unpack("<Q", prefix)
-    if size > 1 << 30:
+    # The length is not trusted before the CRC is checked: a flipped bit must not make this read a huge block.
+    # A real header is padded to ALIGN, holds at most a few tens of MiB (ids as base64), and fits in the file.
+    if size > MAX_HEADER or _up(8 + size) != 8 + size or 8 + size > os.fstat(f.fileno()).st_size:
         raise ValueError("not a spill file")
     body = f.read(size)
     _check_header_crc(prefix + body)

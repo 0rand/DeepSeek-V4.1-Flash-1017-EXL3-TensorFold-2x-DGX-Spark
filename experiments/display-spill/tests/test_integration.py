@@ -67,6 +67,94 @@ class SpillIntegrationTests(unittest.TestCase):
         self.assertIn("display KV requires TF_DS_KV=native packed storage", composed)
         ast.parse(composed)
 
+    def init_block(self):
+        """The spill start-up block of MultiDecoder.__init__ as a function of (self, engine, spill_cfg)."""
+        text = self.changed(spill.MULTI)
+        start = text.index("        if spill_cfg is not None:\n            from tensorfold.cuda.spill import")
+        end_marker = "{st['stored_bytes'] / 2**30:.2f} of {spill_cfg.gib:g} GiB)\", flush=True)\n"
+        block = text[start:text.index(end_marker, start) + len(end_marker)]
+        namespace = {"os": os}
+        exec(compile("def init(self, engine, spill_cfg):\n" + block, "init", "exec"), namespace)
+        return block, namespace["init"]
+
+    def fake_decoder(self, gather, draft=True):
+        class Tensor:
+            def __init__(self, shape, dtype="bf16"):
+                self.shape, self.dtype = shape, dtype
+
+        pool = types.SimpleNamespace(comp={0: Tensor((4, 8))}, index_k={0: (Tensor((4, 2)),)}, tokens=Tensor((4,), "i32"),
+                                     ring=[Tensor((4, 16))], ring_size=128, comp_raw={0: (Tensor((4, 3)),)})
+        dpool = types.SimpleNamespace(views=[types.SimpleNamespace(rings=[Tensor((128, 64))])]) if draft else None
+        return types.SimpleNamespace(pool=pool, dpool=dpool, _replay=lambda: True, _share=None, _gather_ints=gather,
+                                     spill=None)
+
+    def run_init(self, rows, *, store_error=None, build_error=None, draft=True):
+        """Run the block on a fake decoder; ``rows`` is what the other ranks answer in each agreement."""
+        _, init = self.init_block()
+        calls, created = [], []
+
+        def gather(values):
+            calls.append(list(values))
+            return [list(values)] + [list(row) for row in rows.pop(0)] if rows else [list(values)]
+
+        class Store:
+            def __init__(self, *args, **kwargs):
+                if store_error:
+                    raise store_error
+                created.append(kwargs)
+                self.dir = "/x"
+
+            def info(self):
+                return {"entries": 0, "stored_bytes": 0}
+
+        def build_id(model_dir):
+            if build_error:
+                raise build_error
+            return "build|driver=1"
+
+        module = types.ModuleType("tensorfold.cuda.spill")
+        module.SpillStore, module.build_id, module.weights_id = Store, build_id, lambda *dirs: "w"
+        engine = types.SimpleNamespace(world=2, rank=0, display_bytes=1 << 20, model_dir="/m")
+        decoder = self.fake_decoder(gather, draft)
+        with mock.patch.dict("sys.modules", {"tensorfold": types.ModuleType("tensorfold"),
+                                             "tensorfold.cuda": types.ModuleType("tensorfold.cuda"),
+                                             "tensorfold.cuda.spill": module}):
+            init(decoder, engine, types.SimpleNamespace(gib=1))
+        return decoder, calls, created
+
+    def test_the_spill_signature_covers_the_draft_pool_and_the_identity_settings(self):
+        with mock.patch.dict(os.environ, {"TF_DS_PREFILL_CHUNK": "512"}):
+            decoder, calls, created = self.run_init([[[1]], [[1]]])
+        signature = created[0]["signature"]
+        self.assertIn("(128, 64)", signature)                       # the draft rings
+        self.assertIn("('TF_DS_PREFILL_CHUNK', '512')", signature)
+        self.assertIn("ring128x1", signature)
+        self.assertIsNotNone(decoder.spill)
+        self.assertEqual(calls, [[1], [1]])
+        with mock.patch.dict(os.environ, {"TF_DS_PREFILL_CHUNK": "512"}):
+            _, _, again = self.run_init([[[1]], [[1]]], draft=False)
+        self.assertNotEqual(again[0]["signature"], signature)
+
+    def test_a_failure_on_one_rank_turns_the_tier_off_on_every_rank_before_any_spill_collective(self):
+        # This rank fails while it prepares: it still joins the agreement and never builds the store.
+        decoder, calls, created = self.run_init([[[1]]], build_error=OSError("no source"))
+        self.assertEqual(calls, [[0]])
+        self.assertEqual(created, [])
+        self.assertIsNone(decoder.spill)
+        # Another rank fails: this rank sees a 0 in the agreement and does not build the store either.
+        decoder, calls, created = self.run_init([[[0]]])
+        self.assertEqual(calls, [[1]])
+        self.assertEqual(created, [])
+        self.assertIsNone(decoder.spill)
+
+    def test_a_store_that_fails_to_start_on_one_rank_is_dropped_on_every_rank(self):
+        decoder, calls, created = self.run_init([[[1]], [[1]]], store_error=OSError("disk"))
+        self.assertEqual(calls, [[1], [0]])
+        self.assertIsNone(decoder.spill)
+        decoder, calls, created = self.run_init([[[1]], [[0]]])          # this rank is fine, another is not
+        self.assertEqual(calls, [[1], [1]])
+        self.assertIsNone(decoder.spill)
+
     def test_the_spill_config_has_no_highwater_and_ids_are_not_copied_to_a_list(self):
         changed = self.changed(spill.MULTI)
         self.assertNotIn("highwater", changed)

@@ -224,6 +224,34 @@ class SpillTierTests(unittest.TestCase):
                 self.assertFalse(third.has(ids))
                 self.assertFalse(os.path.exists(path))
 
+    def test_a_corrupt_header_length_is_refused_before_the_header_is_read(self):
+        import struct
+
+        for declared in (512 << 20, (1 << 62), 5, None):
+            with self.subTest(declared=declared), tempfile.TemporaryDirectory() as root:
+                store, ids, classes = self.stored(root)
+                path = self.entry_path(store)
+                with open(path, "r+b") as f:
+                    real = struct.unpack("<Q", f.read(8))[0]
+                    f.seek(0)
+                    f.write(struct.pack("<Q", real + 4096 if declared is None else declared))
+                with open(path, "rb") as f:
+                    calls = []
+                    original = f.read
+                    with self.assertRaises(ValueError):
+                        class Spy:
+                            def __getattr__(self, name):
+                                return getattr(f, name)
+
+                            def read(self, n=-1):
+                                calls.append(n)
+                                return original(n)
+
+                        self.sp._read_header_file(Spy())
+                    self.assertTrue(all(n <= 8 for n in calls), calls)       # only the 8-byte length was read
+                cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+                self.assertFalse(self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes).has(ids))
+
     def test_header_without_its_own_crc_is_refused(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
