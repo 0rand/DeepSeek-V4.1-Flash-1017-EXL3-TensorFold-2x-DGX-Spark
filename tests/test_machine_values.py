@@ -7,9 +7,11 @@ gitleaks (CI job "secrets") checks for keys and tokens; this test checks the val
 Run: python3 -m unittest discover -s tests -p 'test_*.py'   (or tests/run_offline.sh)
 """
 import ipaddress
+import os
 import re
 import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -42,11 +44,19 @@ def tracked_text_files():
     for name in out.decode().split("\0"):
         if not name or name == "tests/test_machine_values.py":   # this file holds sample values on purpose
             continue
-        path = ROOT / name
-        try:
-            yield name, path.read_text(encoding="utf-8")
-        except (UnicodeDecodeError, OSError):
-            continue                                          # binary or unreadable: not text
+        text = tracked_text(ROOT / name)
+        if text is not None:
+            yield name, text
+
+
+def tracked_text(path: Path):
+    """Return the text that Git stores for path, or None for a binary or unreadable file."""
+    if path.is_symlink():
+        return os.readlink(path)                              # Git stores the link target, not the file it points to
+    try:
+        return path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
+        return None
 
 
 def public_ip(text: str) -> bool:
@@ -119,6 +129,15 @@ class Detection(unittest.TestCase):
         for text in ("GET https://api.example.com/users/123", "~/deploy/x", "about ~15 min", "a~b/c", "~~x/y", "cd ~ && ls"):
             with self.subTest(text=text):
                 self.assertEqual(list(HOME_PATH.finditer(text)), [])
+
+    def test_symlink_target_is_read(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            link = Path(tmp) / "model"
+            try:
+                os.symlink("/home/alice/model", link)         # the target does not exist, as on a clean runner
+            except (OSError, NotImplementedError):
+                self.skipTest("cannot make a symlink here")
+            self.assertEqual(tracked_text(link), "/home/alice/model")
 
 
 if __name__ == "__main__":
