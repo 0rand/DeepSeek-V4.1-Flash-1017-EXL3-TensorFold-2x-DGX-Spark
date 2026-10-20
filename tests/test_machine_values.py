@@ -15,19 +15,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Home folders that are placeholders or service accounts, not a person's name. "elevatormusic" is the maintainer's
-# public GitHub name: two saved runs of 18 October show it, and old runs are records that stay unchanged.
-ALLOWED_HOMES = {"user", "ubuntu", "ci", "runner", "username", "you", "your-user", "me", "nvidia", "elevatormusic"}
+# Home folders that are placeholders or service accounts, not a person's name.
+ALLOWED_HOMES = {"user", "ubuntu", "ci", "runner", "username", "you", "your-user", "me", "nvidia"}
+# Old runs are records that stay unchanged. Only these files may keep the home path that they show.
+ALLOWED_HOME_IN_FILE = {
+    ("runs/2026-10-18/gate/suite-ht.log", "elevatormusic"),
+    ("runs/2026-10-18/gate/suite-odirect2.log", "elevatormusic"),
+}
 HOME_PATH = re.compile(r"(?:/home/|/Users/|[A-Za-z]:\\Users\\)([A-Za-z0-9._-]+)")
 IPV4 = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3}){3})(?![\w.])")
+# An IPv6 candidate: hex groups with 2 to 7 colons. ipaddress decides if it is a valid address.
+IPV6 = re.compile(r"(?<![\w:.])([0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7})(?![\w:])")
 # Public addresses that may appear: well-known resolvers in network docs.
-ALLOWED_IPS = {"1.1.1.1", "8.8.8.8", "8.8.4.4"}
+ALLOWED_IPS = {"1.1.1.1", "8.8.8.8", "8.8.4.4", "2606:4700:4700::1111", "2001:4860:4860::8888"}
 
 
 def tracked_text_files():
     out = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z"], capture_output=True, check=True).stdout
     for name in out.decode().split("\0"):
-        if not name:
+        if not name or name == "tests/test_machine_values.py":   # this file holds sample values on purpose
             continue
         path = ROOT / name
         try:
@@ -38,10 +44,18 @@ def tracked_text_files():
 
 def public_ip(text: str) -> bool:
     try:
-        ip = ipaddress.IPv4Address(text)
+        ip = ipaddress.ip_address(text)
     except ValueError:
-        return False                                          # for example a version such as 1.2.300.4
-    return ip.is_global and text not in ALLOWED_IPS
+        return False                                          # a version such as 1.2.300.4, or a time such as 12:30:00
+    return ip.is_global and str(ip) not in ALLOWED_IPS
+
+
+def ip_candidates(text: str):
+    for m in IPV4.finditer(text):
+        if text[max(0, m.start() - 2):m.start()] in ("==", "~=", ">=", "<="):
+            continue                                          # a pinned version such as pkg==1.7.12.25
+        yield m
+    yield from IPV6.finditer(text)
 
 
 @unittest.skipUnless(shutil.which("git") and (ROOT / ".git").exists(), "needs a git checkout")
@@ -50,22 +64,40 @@ class MachineValues(unittest.TestCase):
         hits = []
         for name, text in tracked_text_files():
             for m in HOME_PATH.finditer(text):
-                if m.group(1).lower() not in ALLOWED_HOMES and not m.group(1).startswith("<"):
-                    line = text.count("\n", 0, m.start()) + 1
-                    hits.append(f"{name}:{line}: {m.group(0)}")
+                user = m.group(1)
+                if user.lower() in ALLOWED_HOMES or user.startswith("<") or (name, user.lower()) in ALLOWED_HOME_IN_FILE:
+                    continue
+                line = text.count("\n", 0, m.start()) + 1
+                hits.append(f"{name}:{line}: {m.group(0)}")
         self.assertEqual(hits, [], "home paths with a user name; use $HOME, ~ or <user>:\n" + "\n".join(hits[:40]))
 
     def test_no_public_ip_addresses(self):
         hits = []
         for name, text in tracked_text_files():
-            for m in IPV4.finditer(text):
-                if text[max(0, m.start() - 2):m.start()] in ("==", "~=", ">=", "<="):
-                    continue                                  # a pinned version such as pkg==1.7.12.25
+            for m in ip_candidates(text):
                 if public_ip(m.group(1)):
                     line = text.count("\n", 0, m.start()) + 1
                     hits.append(f"{name}:{line}: {m.group(1)}")
         self.assertEqual(hits, [], "public IP addresses; use the 10.100.80.x examples or <head>:\n"
                          + "\n".join(hits[:40]))
+
+
+class Detection(unittest.TestCase):
+    """The scan finds what it must find, and only that."""
+
+    def found(self, text):
+        return [m.group(1) for m in ip_candidates(text) if public_ip(m.group(1))]
+
+    def test_public_addresses_found(self):
+        self.assertEqual(self.found("head 203.0.113.7 ok"), [])          # documentation range: not global
+        self.assertEqual(self.found("peer 34.117.59.81 up"), ["34.117.59.81"])
+        self.assertEqual(self.found("addr 2a01:4f8:c17:1234::1 up"), ["2a01:4f8:c17:1234::1"])
+
+    def test_not_addresses(self):
+        for text in ("10.100.80.1", "fe80::1", "::1", "12:30:45", "2026-10-18T21:01:32Z", "aa:bb:cc:dd:ee:ff",
+                     "std::vector", "ruff==0.17.1", "pkg==1.7.12.25", "driver 580.178.04", "fd00::5"):
+            with self.subTest(text=text):
+                self.assertEqual(self.found(text), [])
 
 
 if __name__ == "__main__":
