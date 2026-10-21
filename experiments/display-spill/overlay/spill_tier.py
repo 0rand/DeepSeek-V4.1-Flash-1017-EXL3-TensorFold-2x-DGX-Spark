@@ -126,6 +126,24 @@ def _pinned(n: int) -> list[torch.Tensor]:
     return [torch.empty(CHUNK, dtype=torch.uint8, pin_memory=pin) for _ in range(n)]
 
 
+BUILDS_SHARED = 16                     # the newest builds a rank offers to the joint choice of the builds to keep
+
+
+def _encode_builds(names: Sequence[str]) -> list[int]:
+    """Build folder names (``spill-`` and 16 hex digits) as integers for a gather: a count, then 4 numbers a name."""
+
+    coded = [n[len("spill-"):] for n in names if len(n) == len("spill-") + 16
+             and all(c in "0123456789abcdef" for c in n[len("spill-"):])][:BUILDS_SHARED]
+    row = [len(coded)]
+    for hexes in coded:
+        row += [int(hexes[i:i + 4], 16) for i in range(0, 16, 4)]
+    return row + [0] * (1 + 4 * BUILDS_SHARED - len(row))
+
+
+def _decode_builds(row: Sequence[int]) -> list[str]:
+    return ["spill-" + "".join(f"{int(v):04x}" for v in row[1 + 4 * i:5 + 4 * i]) for i in range(int(row[0]))]
+
+
 def _stage(device, stream) -> torch.Tensor:
     """A device buffer for ``_by_kernel``, allocated on ``stream`` (the one it is used on)."""
 
@@ -604,7 +622,7 @@ class SpillStore:
         self._dirty = False
         self._last_dir_sync = 0.0
         self._dir_lock = threading.Lock()
-        problem, pruned_builds = "", 0
+        problem = ""
         try:
             missing, probe = [], os.path.abspath(cfg.root)
             while not os.path.isdir(probe) and os.path.dirname(probe) != probe:
@@ -619,7 +637,6 @@ class SpillStore:
                 os.makedirs(d, mode=0o700, exist_ok=True)
                 os.chmod(d, 0o700)
                 self._own(d)
-            pruned_builds = self._prune_builds()
             self._scan()
         except Exception as exc:                              # noqa: BLE001  (any failure is shared before the ranks go on)
             problem = repr(exc)
@@ -628,6 +645,7 @@ class SpillStore:
         if bad:                                               # every rank stops alike: none waits on another
             raise RuntimeError(f"--snapshot-dir {cfg.root}: rank(s) {bad} cannot use it"
                                + (f": {problem}" if problem else ""))
+        pruned_builds = self._prune_builds()                  # (the ranks choose the builds to keep together)
         found = len(self.index)
         dropped = self._reconcile() if self.world > 1 else 0
         before = len(self.index)
@@ -753,19 +771,21 @@ class SpillStore:
             self.stats.unlink_failed += 1
         print(f"[tensorfold] spill rank {self.rank}: could not {what} {path}: {exc!r}", flush=True)
 
-    def _prune_builds(self) -> int:
-        """Folders of other compatibility hashes (other builds, models, layouts): the newest ``keep_builds`` stay."""
+    def _survey_builds(self) -> list[tuple[str, str]]:
+        """The other builds that have a finished file on this rank, newest first, as (name, path). A build without
+        one (for example from a start that failed here) takes no retention slot: it is removed."""
 
         try:
-            others = [os.path.join(self.cfg.root, d) for d in os.listdir(self.cfg.root)
-                      if d.startswith("spill-") and os.path.join(self.cfg.root, d) != self.top]
+            names = [d for d in os.listdir(self.cfg.root)
+                     if d.startswith("spill-") and os.path.join(self.cfg.root, d) != self.top]
         except FileNotFoundError:
-            return 0
+            return []
         except OSError as exc:                                # (older builds may stay: counted and logged)
             self._unlink_failed(self.cfg.root, exc, "list")
-            return 0
+            return []
         dated = []
-        for d in others:
+        for name in names:
+            d = os.path.join(self.cfg.root, name)
             try:
                 status = os.lstat(d)
             except FileNotFoundError:
@@ -774,26 +794,44 @@ class SpillStore:
                 self._unlink_failed(d, exc, "read")
                 continue
             if stat.S_ISDIR(status.st_mode):
-                dated.append((status.st_mtime, d))
-        others = []
-        for _, d in sorted(dated, reverse=True):
+                dated.append((status.st_mtime, name, d))
+        builds = []
+        for _, name, d in sorted(dated, reverse=True):
             mine = os.path.join(d, f"rank{self.rank}")
-            if not self._holds_entries(mine):                 # an orphan (a start that failed here): no retention slot
-                if os.path.islink(mine):
-                    continue
-                if not self._is_dir(mine) or self._remove_tree(mine):
-                    try:
-                        os.rmdir(d)
-                    except OSError:
-                        pass
-                continue
-            others.append(d)
+            if self._holds_entries(mine):
+                builds.append((name, d))
+            elif not os.path.islink(mine) and (not self._is_dir(mine) or self._remove_tree(mine)):
+                try:
+                    os.rmdir(d)
+                except OSError:
+                    pass
+        return builds
+
+    def _retained_builds(self, names: list[str]) -> set[str]:
+        """The builds that stay: the newest ``keep_builds`` that every rank has, in rank 0's order. One rank must not
+        keep a build that its peer removes (a rollback then finds no entry that all ranks hold)."""
+
+        keep = max(0, self.cfg.keep_builds)
+        if self.world < 2 or self.gather is None:
+            return set(names[:keep])
+        rows = self.gather(_encode_builds(names))
+        lists = [_decode_builds(row) for row in rows]
+        common = [n for n in lists[0] if all(n in other for other in lists)]
+        return set(common[:keep])
+
+    def _prune_builds(self) -> int:
+        """Folders of other compatibility hashes (other builds, models, layouts): the newest ``keep_builds`` that all
+        ranks have stay (trimmed to the cap), the others go."""
+
+        shared = self.world > 1 and self.gather is not None
+        builds = self._agreed(self._survey_builds) if shared else self._survey_builds()
+        retain = self._retained_builds([name for name, _ in builds])
         gone = 0
-        for d in others[:max(0, self.cfg.keep_builds)]:       # a kept build: its unfinished writes go, and its oldest
-            mine = os.path.join(d, f"rank{self.rank}")        # files until it fits the current cap
-            self._trim_kept_build(mine)
-        for d in others[max(0, self.cfg.keep_builds):]:
+        for name, d in builds:
             mine = os.path.join(d, f"rank{self.rank}")
+            if name in retain:                                # a kept build: its unfinished writes go, and its oldest
+                self._trim_kept_build(mine)                   # files until it fits the current cap
+                continue
             if os.path.islink(mine):                          # the link goes, never what it points to
                 try:
                     os.remove(mine)
@@ -849,11 +887,21 @@ class SpillStore:
                 continue
             if name.endswith(".safetensors"):
                 try:
-                    found.append((os.stat(path).st_mtime, name))
+                    status = os.lstat(path)
                 except FileNotFoundError:
-                    pass
+                    continue
                 except OSError as exc:                         # (its bytes stay on disk, out of the index)
                     self._unlink_failed(path, exc, "read")
+                    continue
+                if stat.S_ISREG(status.st_mode):
+                    found.append((status.st_mtime, name))
+                else:                                          # a link, a FIFO...: never opened (a FIFO would block)
+                    try:
+                        os.remove(path)
+                    except FileNotFoundError:
+                        pass
+                    except OSError as exc:
+                        self._unlink_failed(path, exc)
         for _, name in sorted(found):                          # oldest first: recency follows the files' age
             path = os.path.join(self.dir, name)
             try:
@@ -913,7 +961,7 @@ class SpillStore:
             return [v for e in mine for v in (e.key[0], e.key[1], e.n)] if self.rank == 0 else None
 
         theirs = self.share(self._agreed(prepare))
-        keys = [(theirs[i], theirs[i + 1], theirs[i + 2]) for i in range(0, len(theirs), 3)]
+        keys = self._agreed(lambda: [(theirs[i], theirs[i + 1], theirs[i + 2]) for i in range(0, len(theirs), 3)])
         keep = []
         if keys:
             every = self.gather(self._agreed(lambda: [int((hi, lo) in self.index and self.index[(hi, lo)].n == n)

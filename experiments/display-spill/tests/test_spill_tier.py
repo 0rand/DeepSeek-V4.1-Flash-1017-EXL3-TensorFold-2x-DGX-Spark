@@ -924,7 +924,7 @@ class SpillTierTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
             path = self.entry_path(store)
-            real_stat = os.stat
+            real_stat = os.lstat
 
             def stat(target, *args, **kwargs):
                 if target == path:
@@ -932,7 +932,7 @@ class SpillTierTests(unittest.TestCase):
                 return real_stat(target, *args, **kwargs)
 
             cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
-            with mock.patch.object(self.sp.os, "stat", stat), contextlib.redirect_stdout(io.StringIO()):
+            with mock.patch.object(self.sp.os, "lstat", stat), contextlib.redirect_stdout(io.StringIO()):
                 again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
             self.assertEqual(again.stats.unlink_failed, 1)
 
@@ -1130,6 +1130,74 @@ class SpillTierTests(unittest.TestCase):
             with self.assertRaises(MemoryError):
                 store._reconcile()
             self.assertEqual(rounds, [[1]])                                # the failure is in the agreement
+
+    def test_a_fifo_in_the_rank_folder_is_removed_and_never_opened(self):
+        import threading
+
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("no FIFOs here")
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            first = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            fifo = os.path.join(first.dir, "pipe.safetensors")
+            os.mkfifo(fifo)
+            outcome = []
+            worker = threading.Thread(
+                target=lambda: outcome.append(self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)),
+                daemon=True)
+            worker.start()
+            worker.join(15)
+            self.assertFalse(worker.is_alive())                           # a blocking open would wait for ever
+            self.assertFalse(os.path.exists(fifo))
+
+    def test_a_failure_while_one_rank_expands_the_shared_keys_is_shared(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            class Boom(list):
+                def __getitem__(self, index):
+                    raise MemoryError("keys")
+
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            store.gather, store.share, store.world = gather, lambda values: Boom([1, 2, 3]), 2
+            with self.assertRaises(MemoryError):
+                store._reconcile()
+            self.assertEqual(rounds, [[0], [1]])                           # the failure is in the second agreement
+
+    def test_the_ranks_keep_the_same_builds(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root:
+            for name, when in (("spill-00000000000000aa", 1000), ("spill-00000000000000bb", 2000)):
+                folder = os.path.join(root, name, "rank0")
+                os.makedirs(folder)
+                with open(os.path.join(folder, "0.safetensors"), "wb") as f:
+                    f.write(b"x")
+                os.utime(os.path.join(root, name), (when, when))
+            peer = self.sp._encode_builds(["spill-00000000000000aa"])      # the peer lacks the newer build
+
+            def gather(values):
+                if len(values) == 8:                                      # the compatibility words
+                    return [list(values), list(values)]
+                if len(values) == 1:                                      # a failure flag
+                    return [list(values), [0]]
+                return [list(values), peer]                               # the builds each rank offers
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                try:
+                    self.sp.SpillStore(cfg, rank=0, world=2, device="cpu", classes=[], quiet=True, gather=gather,
+                                       share=lambda values: values or [])
+                except Exception:                                         # noqa: BLE001  (the fake peer ends the start)
+                    pass
+            self.assertTrue(os.path.exists(os.path.join(root, "spill-00000000000000aa", "rank0")))   # common: kept
+            self.assertFalse(os.path.exists(os.path.join(root, "spill-00000000000000bb", "rank0")))  # only here: removed
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
