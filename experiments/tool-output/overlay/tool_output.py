@@ -34,7 +34,7 @@ class ModelOutputError(Exception):
 class ToolOutputGuard:
     """Validate complete call envelopes before the CUDA parser can execute any call."""
 
-    _opener_re = re.compile(r"<tool_call>|<｜DSML｜ calls>", re.IGNORECASE)
+    _opener_re = re.compile(r"(?i:<tool_call>)|<｜DSML｜ calls>")
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self._stream_cut: int | None = None
@@ -74,9 +74,13 @@ class ToolOutputGuard:
         for opening in self._opener_re.finditer(text, first):
             self._stream_cut = opening.start()
             return text[:self._stream_cut]
-        tail = text[-(longest - 1):].lower()
-        held = max((size for tag in self._openers for size in range(1, len(tag))
-                    if tail.endswith(tag[:size].lower())), default=0)
+        tail = text[-(longest - 1):]
+        held = 0
+        for tag in self._openers:                      # (the call tag in any case, the DSML tag as the parser reads it)
+            exact = "DSML" in tag
+            for size in range(1, len(tag)):
+                if (tail if exact else tail.lower()).endswith(tag[:size] if exact else tag[:size].lower()):
+                    held = max(held, size)
         self._stream_scanned = max(first, len(text) - (longest - 1))
         return text[:-held] if held else text
 
@@ -85,23 +89,14 @@ class ToolOutputGuard:
 
         The guard reads calls with the engine's own parser rules (``tensorfold.cuda.reply_text``): it rewrites DSML
         blocks and finds call blocks with the engine's own expressions, reads the name of each block as the engine
-        does, and rejects the answer when a name is not offered. The result is the engine's own ``parse_tool_calls``
-        on the same text, so the guard and the parser cannot disagree about what is a call.
+        does (also its single-call checks when ``max_calls`` is set), and rejects the answer when a name is not
+        offered. The result is the engine's own ``parse_tool_calls`` on the same text, so the guard and the parser
+        cannot disagree about what is a call.
         """
 
         from tensorfold.cuda import reply_text
         from tensorfold.server.tools import tool_spec_name
 
-        known = {reply_text._tool_name(tool).lower() for tool in self.tools if reply_text._tool_name(tool)}
-        converted = reply_text.dsml_to_tool_calls(text)
-        if reply_text._CALL_CLOSE not in converted.lower():
-            # No call block can exist. (The parser would try every opener against the rest of the answer.)
-            return (converted.strip(), None) if self.tools else (text, None)
-        # The blocks that the DSML rewrite makes, with the span of their DSML block in the answer.
-        rewritten: dict[str, tuple[int, int]] = {}
-        for dsml in reply_text._DSML_BLOCK_RE.finditer(text):
-            for made in reply_text._TOOL_CALL_BLOCK_RE.finditer(reply_text.dsml_to_tool_calls(dsml.group(0))):
-                rewritten.setdefault(made.group(0), (dsml.start(), dsml.end()))
         def reject(name: str, reason: str, start: int, stop: int, kind: str) -> ModelOutputError:
             effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})
             declared = sorted({tool_spec_name(tool) for tool in self.declared_tools if tool_spec_name(tool)})
@@ -115,22 +110,36 @@ class ToolOutputGuard:
                 "tools_field": self.tools_field, "tool_choice": self.tool_choice,
             })
 
+        known = {reply_text._tool_name(tool).lower() for tool in self.tools if reply_text._tool_name(tool)}
+        try:
+            converted = reply_text.dsml_to_tool_calls(text)
+        except ValueError:                             # a value that the JSON decoder refuses (for example 5000 digits)
+            raise reject("", "undecodable_call", 0, len(text), "dsml") from None
+        if reply_text._CALL_CLOSE not in converted.lower():
+            # No call block can exist. (The parser would try every opener against the rest of the answer.)
+            return (converted.strip(), None) if self.tools else (text, None)
+        # The blocks that the DSML rewrite makes, with the span of their DSML block in the answer.
+        rewritten: dict[str, tuple[int, int]] = {}
+        for dsml in reply_text._DSML_BLOCK_RE.finditer(text):
+            for made in reply_text._TOOL_CALL_BLOCK_RE.finditer(reply_text.dsml_to_tool_calls(dsml.group(0))):
+                rewritten.setdefault(made.group(0), (dsml.start(), dsml.end()))
         for block in reply_text._TOOL_CALL_BLOCK_RE.finditer(converted):
             start, stop = rewritten.get(block.group(0), (block.start(), block.end()))
+            wrapper = "dsml" if block.group(0) in rewritten else "json"
             try:
-                names = self._call_names(reply_text, block.group(1).strip())
-            except ValueError:                         # a value that the JSON decoder refuses (for example 5000 digits)
-                raise reject("", "undecodable_call", start, stop,
-                             "dsml" if block.group(0) in rewritten else "json") from None
+                names = self._call_names(reply_text, block.group(1).strip(), complete=max_calls is not None)
+            except ValueError:                         # a value that the JSON decoder refuses
+                raise reject("", "undecodable_call", start, stop, wrapper) from None
             for name, kind in names:
                 if name.lower() not in known:
                     declared = {tool_spec_name(tool).lower() for tool in self.declared_tools if tool_spec_name(tool)}
                     raise reject(name, "disallowed_by_tool_choice" if name.lower() in declared else "unavailable_tool",
-                                 start, stop, "dsml" if block.group(0) in rewritten else kind)
+                                 start, stop, "dsml" if wrapper == "dsml" else kind)
         return reply_text.parse_tool_calls(text, self.tools, max_calls=max_calls)
 
-    def _call_names(self, reply_text: Any, block: str) -> list[tuple[str, str]]:
-        """The (tool name, wrapper) that the engine's parser may read from one call block (JSON, Qwen XML or GLM)."""
+    def _call_names(self, reply_text: Any, block: str, complete: bool = False) -> list[tuple[str, str]]:
+        """The (tool name, wrapper) that the engine's parser may read from one call block (JSON, Qwen XML or GLM).
+        ``complete`` is the parser's single-call mode (``max_calls`` set): it refuses Qwen and GLM bodies with extra text."""
 
         try:
             payload = json.loads(block)
@@ -149,6 +158,8 @@ class ToolOutputGuard:
             return []
         xml = reply_text._TOOL_FUNCTION_BLOCK_RE.match(block)
         if xml:
+            if complete and reply_text._TOOL_PARAMETER_BLOCK_RE.sub("", xml.group(2)).strip():
+                return []
             return [(xml.group(1).strip(), "qwen_xml")]
-        glm = reply_text.parse_glm_tool_call_block(block, self.tools)
+        glm = reply_text.parse_glm_tool_call_block(block, self.tools, complete=complete)
         return [(str(glm[0]).strip(), "glm")] if glm is not None and str(glm[0]).strip() else []

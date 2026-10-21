@@ -362,6 +362,35 @@ class ToolOutputTests(unittest.TestCase):
             self.assertEqual(caught.exception.diagnostic["reason"], "undecodable_call")
             self.assertNotIn("9999", caught.exception.log_line())
 
+    def test_a_dsml_value_the_json_decoder_refuses_is_a_safe_rejection(self):
+        text = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"><｜DSML｜ parameter name="n" string="false">'
+                + "9" * 6000 + "</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>")
+        for guard in (self.guard(), self.module.ToolOutputGuard(None)):
+            with self.assertRaises(self.module.ModelOutputError) as caught:
+                guard.parse(text)
+            self.assertEqual(caught.exception.diagnostic["reason"], "undecodable_call")
+
+    def test_single_call_mode_reads_names_as_the_parser_does(self):
+        from tensorfold.cuda import reply_text
+
+        for text in ("<tool_call>unoffered<arg_key>k</arg_key><arg_value>v</arg_value>xvjunk</tool_call>",
+                     "<tool_call>unoffered<arg_key>k</arg_key><arg_value>v</arg_value> junk</tool_call>",
+                     "<tool_call><function=unoffered><parameter=k>v</parameter> junk</function></tool_call>"):
+            with self.subTest(text=text):
+                self.assertEqual(self.guard().parse(text, max_calls=1),
+                                 reply_text.parse_tool_calls(text, self.tools, max_calls=1))
+                self.assertIsNone(self.guard().parse(text, max_calls=1)[1])       # malformed in this mode: no call
+                with self.assertRaises(self.module.ModelOutputError):             # the default mode rejects the name
+                    self.guard().parse(text)
+
+    def test_streaming_holds_the_dsml_opener_only_as_written(self):
+        guard = self.guard()
+        lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"
+        self.assertEqual(guard.stream(lower), lower)                              # not the parser's tag: plain text
+        guard = self.guard()
+        upper = "long answer <｜DSML｜ calls> and more"
+        self.assertEqual(guard.stream(upper), "long answer ")
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 
