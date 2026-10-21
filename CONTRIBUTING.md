@@ -65,6 +65,7 @@ These defaults are important. Do not change them silently:
 | Setting | Where | Default |
 |---|---|---|
 | Thinking off for requests that do not ask for it (`THINKING`, `--no-thinking`) | `.env.example`, `start.sh` | `0` (off) |
+| Drop a tool call to a tool that the request did not offer (`DROP_UNOFFERED_TOOL_CALLS`) | `.env.example`, `start.sh` | `1` (on) |
 | Bind address (`BIND_HOST`) | `.env.example` | `127.0.0.1` (this node only) |
 | Prefill chunk (`TF_DS_PREFILL_CHUNK`) | `start.sh` | `2048` |
 | Prompt spill to disk (`SPILL_GIB`) | `.env.example` | `64` |

@@ -14,6 +14,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Added
 
+- `docs/OPERATIONS.md`: the engine switches of release 1.1.0 (decode graph sizes, capture mode, host-memory settings, draft ranking), with their defaults.
 - Add an opt-in display-backed KV launcher with a private bundle, spill disabled and offline safety tests. Full hardware validation is pending. Ordinary launch defaults do not change.
 - Add a separate memory/top-k image with bounded key scratch and an opt-in live allocator policy. Ordinary startup keeps its original ceiling. See [Memory and top-k](docs/MEMORY-TOPK.md).
 - `PREFILL_CHUNK` in `.env`: set a positive integer for both ranks. The default stays `2048`.
@@ -22,6 +23,9 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Changed
 
+- New engine image: the recipe now builds TensorFold [release dsv41-1.1.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.1.0) (`730d41abd8f4`; before: `07aa02585f64`). Git does not track `.env`, so `git pull` does not change your pin. In your `.env`, set `TF_COMMIT=730d41abd8f4` and `IMAGE=tensorfold-dsv41:730d41abd8f4`. Then run `docker/build.sh` and `./stop.sh && ./start.sh`. Without the new `.env` values, `docker/build.sh` builds the old engine again. It fixes graph capture while serving (#19) and lowers the host-memory peak of the head (#21, #24). In the gate run, 4-stream decode is 3.0 to 7.0% faster ([runs/2026-10-21](runs/2026-10-21/INDEX.md)). The head memory margin under 4 long streams stays small: set `PREFILL_CHUNK=1024` or `PARALLEL=2` when the head has little free memory ([docs/OPERATIONS.md](docs/OPERATIONS.md#engine-switches-of-release-110)).
+- New default: `DROP_UNOFFERED_TOOL_CALLS=1` in `.env.example` and `start.sh`. The engine drops a call to a tool that the request did not offer, also while the reply streams. Set `DROP_UNOFFERED_TOOL_CALLS=0` in `.env` to turn it off.
+- The three experiments (cache metrics, display-backed KV, memory and top-k) still need the 1.0.0 engine `07aa02585f64` as their base. Their docs now show how to build it.
 - `scripts/preflight.sh` shows a `[warn]` line when a node has an NVIDIA driver older than the tested 580.178.04 (#24). `docs/OPERATIONS.md` gives the node-hang log signature from #24 and the recovery steps.
 - `docs/OPERATIONS.md`: what to do when earlyoom stops the engine under concurrent load (#21): `PARALLEL=2`, and do not raise `MEM_FLOOR_GIB`.
 - `docs/OPERATIONS.md`: the out-of-memory steps now use the measured traces from #21 (`runs/2026-10-20/`). With 8 images in each request, `PARALLEL=2` passed the load that failed with `PARALLEL=4` (not a clean A/B); with 16 it also failed. The steps now also say to send fewer images at the same time, or to set `VISION=0` when you do not need images.

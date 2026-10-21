@@ -26,6 +26,11 @@ if ! [[ "${PREFILL_CHUNK:-2048}" =~ ^[0-9]+$ && "${PREFILL_CHUNK:-2048}" =~ [1-9
   exit 1
 fi
 
+case "${DROP_UNOFFERED_TOOL_CALLS:-1}" in
+  0|1) ;;
+  *) echo "DROP_UNOFFERED_TOOL_CALLS must be 0 or 1" >&2; exit 1 ;;
+esac
+
 if [ "${PREFLIGHT:-1}" = 1 ]; then
   "$ROOT/scripts/preflight.sh" || exit 1
 fi
@@ -45,6 +50,7 @@ run_args() {  # $1 = rank. Every TF_DS_* setting below is explained in docs/WHAT
 -e TF_DS_WARM_LENGTHS=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,33,131,514,1024,2113 -e TF_DS_ENGRAM=/engram
 -e TF_DS_SPILL_GIB=${SPILL_GIB:-64} -e TF_DS_SPILL_DIR=/cache/tf-ds-spill
 -e TF_DS_ENGRAM_DONTNEED=1 -e TF_DS_MEM_FLOOR_GIB=${MEM_FLOOR_GIB:-1.5}
+-e TF_DROP_UNOFFERED_TOOL_CALLS=${DROP_UNOFFERED_TOOL_CALLS:-1}
 $( [ "${MEM_CAP:-0}" = 1 ] && echo '-e TF_DS_MEM_CAP=1' )
 -e TRITON_CACHE_DIR=/cache/triton -e CUDA_CACHE_PATH=/cache/nv
 -e TF_RDMA_DEVICES=$RDMA_DEVICES -e TF_RDMA_GID_INDEX=$GID_INDEX
