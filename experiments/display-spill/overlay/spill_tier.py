@@ -976,6 +976,7 @@ class SpillStore:
             return True
         except Exception as exc:                         # noqa: BLE001  (only this prompt is not written)
             self._log(exc)
+            self._settle(stream)                         # copies already queued still read the rows: wait for them
             job.copied.set()
             try:
                 if fd >= 0:
@@ -988,6 +989,17 @@ class SpillStore:
                 pass
             return False
 
+    @staticmethod
+    def _settle(stream) -> None:
+        """Wait until the copies queued on the writer stream are done (before the rows they read may be released)."""
+
+        if stream is None:
+            return
+        try:
+            stream.synchronize()
+        except Exception:                                # noqa: BLE001  (a failed stream: nothing more can be done)
+            pass
+
     def _writer(self, bufs: list[torch.Tensor]) -> None:
         stream = torch.cuda.Stream(device=self.device) if torch.cuda.is_available() else None
         hasher = ThreadPoolExecutor(1, thread_name_prefix=f"spill-crc-w{self.rank}")
@@ -998,6 +1010,7 @@ class SpillStore:
                 ok = self._write(job, bufs, stream, hasher)
             except Exception as exc:                   # noqa: BLE001  (the writer never dies)
                 self._log(exc)
+                self._settle(stream)
                 ok = False
             job.ok = ok
             self._entry_done(job, ok)
@@ -1065,6 +1078,9 @@ class SpillStore:
                 return None
             short = max(r[0] for r in got) << 20
             size = max(r[1] for r in got) << 20
+        if size > self.cap:                        # (larger than the cap: it can never fit, so nothing is evicted)
+            self.stats.full += 1
+            return None
         if short:
             # A queued write still holds its whole file: removing its entry frees no bytes until the writer ends. Wait
             # for the queue first, so the entries that go are files on disk. (The index decides who goes, not this wait.)
@@ -1072,7 +1088,7 @@ class SpillStore:
         if short and not self._make_room(size, keep, cap=self._total() + size - short):
             self.stats.no_space += 1               # below the floor even with every entry outside ``keep`` gone
             return None
-        if size > self.cap or not self._make_room(size, keep):   # (larger than the cap: nothing is evicted)
+        if not self._make_room(size, keep):
             self.stats.full += 1
             return None
         self._start()

@@ -409,6 +409,43 @@ class SpillTierTests(unittest.TestCase):
             self.assertIsNotNone(store.save(third, snap, skip=("ids",)))
             self.assertNotIn("drain", order)
 
+    def test_a_failed_write_waits_for_the_writer_stream_before_the_rows_are_released(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            order = []
+
+            class Stream:
+                def synchronize(self):
+                    order.append(("sync", job.copied.is_set()))
+
+            entry = next(iter(store.index.values()))
+            # A header without the CRC slots: the write fails after it has started.
+            job = self.sp.Job(entry, os.path.join(store.dir, "failed.safetensors"), b"{}", [], None, 99)
+            bufs = [torch.zeros(1 << 20, dtype=torch.uint8), torch.zeros(1 << 20, dtype=torch.uint8)]
+            hasher = self.sp.ThreadPoolExecutor(1)
+            try:
+                self.assertFalse(store._write(job, bufs, Stream(), hasher))
+            finally:
+                hasher.shutdown()
+            self.assertEqual(order, [("sync", False)])                    # the stream was settled before "copied"
+            self.assertTrue(job.copied.is_set())
+
+    def test_a_state_larger_than_the_cap_evicts_nothing_under_disk_pressure(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            before = set(store.index)
+            rooms = []
+            real = store._make_room
+            store._make_room = lambda *a, **k: rooms.append(a) or real(*a, **k)
+            store.cap = 10                                                # smaller than any state
+            store.disk_free = lambda: 0                                   # and the disk is below the floor
+            new = list(range(500, 600))
+            snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
+            self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(set(store.index), before)                    # nothing was evicted
+            self.assertEqual(rooms, [])
+            self.assertEqual(store.stats.full, 1)
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)

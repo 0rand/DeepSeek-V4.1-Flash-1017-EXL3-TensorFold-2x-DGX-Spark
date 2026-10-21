@@ -52,7 +52,8 @@ are explicitly configured.
 
 | Setting | Default | Effect |
 |---|---|---|
-| `SPILL_GIB` | `64` | Maximum stored prompt bytes per rank. `0` disables writes. |
+| `SPILL_GIB` | `64` | Maximum stored prompt bytes per rank for the current build. `0` disables writes. |
+| `TF_DS_SPILL_KEEP_BUILDS` | `1` | Old build folders that stay on disk after a change of image, weights or settings (for a rollback). Each can hold up to `SPILL_GIB`, so the disk use per rank can reach `(1 + this value) x SPILL_GIB`. Set `0` to remove old folders at start. |
 | `TF_DS_SPILL_MIN` | `4096` | Shortest prompt written to disk. |
 | `TF_DS_SPILL_MIN_FREE_GIB` | `50` | No write leaves less disk free on any rank. |
 | `TF_SPILL_WRITERS` | `2` | Writer threads per rank. |
