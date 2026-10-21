@@ -103,7 +103,12 @@ def app_for(cls, server):
     def prepare(body, chat):
         from tensorfold.server.tools import active_tool_specs
         tools = active_tool_specs(body.get("tools"), body.get("tool_choice"))
-        route = body.get("route", "C")
+        route = body.get("route")
+        if route is None:                                  # a request through /v1/messages or /v1/responses
+            content = (body.get("messages") or [{}])[-1].get("content", "C")
+            if isinstance(content, list):
+                content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+            route = str(content)[-1:] or "C"
         return server.PreparedRequest([ord(char) for char in "route:" + route], 1024, tools,
                                       bool(body.get("thinking")), None)
 
@@ -128,10 +133,10 @@ def http_server(handler, app):
         worker.join()
 
 
-def post(port, body):
+def post(port, body, path="/v1/chat/completions"):
     connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
     try:
-        connection.request("POST", "/v1/chat/completions", json.dumps(body), {"Content-Type": "application/json"})
+        connection.request("POST", path, json.dumps(body), {"Content-Type": "application/json"})
         reply = connection.getresponse()
         return reply.status, dict(reply.getheaders()), reply.read().decode()
     finally:
@@ -247,6 +252,32 @@ class ToolOutputHttpTests(unittest.TestCase):
             finally:
                 release.set()
                 connection.close()
+
+    def test_the_message_and_response_routes_reject_an_unoffered_call_too(self):
+        # /v1/messages and /v1/responses run the chat handler of this server on a wire, so its rejection reaches them.
+        app = app_for(self.ds_app, self.server)
+        messages = {"model": "fake-deepseek", "max_tokens": 100, "messages": [{"role": "user", "content": "B"}],
+                    "tools": [{"name": "task", "description": "d", "input_schema": {"type": "object"}}]}
+        responses = {"model": "fake-deepseek", "input": "B", "store": False,
+                     "tools": [{"type": "function", "name": "task", "parameters": {"type": "object"}}]}
+        with http_server(self.http, app) as port:
+            for path, body in (("/v1/messages", messages), ("/v1/responses", responses)):
+                for stream in (False, True):
+                    with self.subTest(path=path, stream=stream):
+                        status, _, text = post(port, {**body, "stream": stream}, path)
+                        self.assertNotIn("secret", text)
+                        self.assertNotIn("unoffered", text)
+                        self.assertNotIn("tool_use", text)
+                        self.assertNotIn("function_call", text)
+                        if stream:
+                            self.assertIn("error", text)
+                        else:
+                            self.assertEqual(status, 422)
+                            self.assertIn("tool_output_guard", text)
+            valid = {**messages, "messages": [{"role": "user", "content": "A"}]}
+            status, _, text = post(port, valid, "/v1/messages")
+            self.assertEqual(status, 200)
+            self.assertIn("tool_use", text)                         # an offered call still works through the route
 
     def test_valid_calls_dsml_and_plain_content_are_structured_or_plain(self):
         app = app_for(self.ds_app, self.server)
