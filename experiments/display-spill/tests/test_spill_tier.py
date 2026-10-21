@@ -1016,6 +1016,19 @@ class SpillTierTests(unittest.TestCase):
                 store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
             self.assertEqual(store.stats.unlink_failed, 1)
 
+    def test_a_memory_failure_while_scanning_keeps_the_file_and_fails_the_start(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            path = self.entry_path(store)
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp, "_decode_ids", side_effect=MemoryError("header")):
+                with self.assertRaises(RuntimeError) as caught:
+                    self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            self.assertIn("MemoryError", str(caught.exception))
+            self.assertTrue(os.path.exists(path))                         # a healthy file is not deleted
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io

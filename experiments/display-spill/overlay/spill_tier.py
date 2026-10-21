@@ -840,6 +840,8 @@ class SpillStore:
                 self.clock += 1
                 e.last = self.clock
                 self.index[key] = e
+            except MemoryError:
+                raise                                          # (not the file's fault: the start agreement shares it)
             except Exception:                                  # noqa: BLE001  (unreadable, cut or another format: gone)
                 try:
                     os.remove(path)
