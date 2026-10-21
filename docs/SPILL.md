@@ -72,6 +72,7 @@ settings that change a cached row. At start, every rank first tells the others i
 failed, the tier is off on every rank, and the same holds if the store fails to start on one rank. Every rank agrees on the index and on each read. A read is used only when it
 worked on every rank. If a write failed on one rank only, `find()` keeps the entry, so the read fails on all
 ranks and all of them forget it. A failed read is counted once as `load_failed`.
+If a rank cannot prepare a save (for example, an encode error), it tells the other ranks in the size exchange, and every rank skips that save together. At start, a smaller `SPILL_GIB` than the last run removes the oldest stored prompts until the rest fit. The image build copies only the named files of the two folders, so a private `bundle-launch-*` folder in the repository root never enters the image.
 
 On SIGTERM (docker stop), rank 0 and rank 1 each wait for their queued writes (the shutdown drain). A second SIGTERM
 during the drain is ignored, so it does not cut the writes. Rank 1

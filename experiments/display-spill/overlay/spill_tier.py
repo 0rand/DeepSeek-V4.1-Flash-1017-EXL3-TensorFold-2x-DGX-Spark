@@ -569,6 +569,9 @@ class SpillStore:
                                + (f": {problem}" if problem else ""))
         found = len(self.index)
         dropped = self._reconcile() if self.world > 1 else 0
+        before = len(self.index)
+        self._make_room(0)                                    # a lower cap than the last run's: the oldest entries go
+        dropped += before - len(self.index)
         if self.rank == 0 and not quiet:
             print(f"[tensorfold] spill: {self.top} ({cfg.gib:g} GiB a rank, write-through "
                   f"from {cfg.min_tokens} tokens, {cfg.writers} writers"
@@ -1028,28 +1031,37 @@ class SpillStore:
                 self.touch(e)
                 self.stats.skipped += 1
                 return None
-        items, layer = encode(obj, skip=skip, materialize=materialize) if obj is not None else ([], None)
-        items = [(k, t if t.is_contiguous() else t.contiguous()) for k, t in items]
-        for name, t in rows:
-            if not t.is_contiguous():
-                raise ValueError(f"rows {name}: not contiguous")
-            items.append((f"rows.{name}", t))
-        info = {"format": FORMAT, "compat": self.compat, "model": self.model_id, "n": n,
-                "tokens": _encode_ids(ids if tokens is None else tokens),
-                **({} if tokens is None else {"keyed": _encode_ids(ids)}),
-                "layers": json.dumps([layer] if layer else []),
-                "rows": json.dumps([nm for nm, _ in rows]), "head": "1" if head else "0",
-                "saved": f"{time.time():.3f}",
-                "crc32": _crc_placeholder(sum(t.numel() * t.element_size() for _, t in items)), "hcrc": "00000000",
-                **(meta or {})}
-        header, data = _header(items, info)
-        size = len(header) + data
-        floor = int(self.cfg.min_free_gib * (1 << 30))
-        with self.lock:                            # (writes still queued here count as written)
-            queued = sum(j.nbytes for j in self.pending.values() if not j.done.is_set())
-        short = max(0, floor + size + queued - self.disk_free())   # bytes this rank's disk would be below the floor
+        failure = None
+        try:
+            items, layer = encode(obj, skip=skip, materialize=materialize) if obj is not None else ([], None)
+            items = [(k, t if t.is_contiguous() else t.contiguous()) for k, t in items]
+            for name, t in rows:
+                if not t.is_contiguous():
+                    raise ValueError(f"rows {name}: not contiguous")
+                items.append((f"rows.{name}", t))
+            info = {"format": FORMAT, "compat": self.compat, "model": self.model_id, "n": n,
+                    "tokens": _encode_ids(ids if tokens is None else tokens),
+                    **({} if tokens is None else {"keyed": _encode_ids(ids)}),
+                    "layers": json.dumps([layer] if layer else []),
+                    "rows": json.dumps([nm for nm, _ in rows]), "head": "1" if head else "0",
+                    "saved": f"{time.time():.3f}",
+                    "crc32": _crc_placeholder(sum(t.numel() * t.element_size() for _, t in items)), "hcrc": "00000000",
+                    **(meta or {})}
+            header, data = _header(items, info)
+            size = len(header) + data
+            floor = int(self.cfg.min_free_gib * (1 << 30))
+            with self.lock:                            # (writes still queued here count as written)
+                queued = sum(j.nbytes for j in self.pending.values() if not j.done.is_set())
+            short = max(0, floor + size + queued - self.disk_free())   # bytes this rank's disk would be below the floor
+        except Exception as exc:                     # noqa: BLE001  (a rank-local failure: share it, never skip the gather)
+            if self.world < 2 or self.gather is None:
+                raise
+            failure, items, layer, header, size, short = exc, [], None, b"", 0, 0
         if self.world > 1 and self.gather is not None:
-            got = self.gather([-(-short >> 20), (size >> 20) + 1])
+            got = self.gather([-(-short >> 20), (size >> 20) + 1, int(failure is not None)])
+            if any(r[2] for r in got):             # one rank could not prepare it: every rank skips this save
+                self._log(failure if failure is not None else RuntimeError("another rank could not prepare the save"))
+                return None
             short = max(r[0] for r in got) << 20
             size = max(r[1] for r in got) << 20
         if short and not self._make_room(size, keep, cap=self._total() + size - short):

@@ -71,6 +71,19 @@ class SpillBundleTests(unittest.TestCase):
         prepare.prepare(destination, image="fixture:display-kv")
         self.assertIn("SPILL_GIB=0\n", (destination / ".env").read_text())
 
+    def test_the_image_build_copies_named_files_never_a_whole_folder(self):
+        # The build context is the repository root, where a private bundle-launch-* folder (with a .env file) may be.
+        repo = ROOT.parent.parent
+        lines = [line.split() for line in (ROOT / "Dockerfile").read_text().splitlines() if line.startswith("COPY ")]
+        self.assertTrue(lines)
+        copied = 0
+        for _, *sources, target in lines:
+            for source in sources:
+                path = repo / source
+                self.assertTrue(path.is_file(), f"{source} is not one file of the repository")
+                copied += 1
+        self.assertGreaterEqual(copied, 4)
+
 
 if __name__ == "__main__":
     unittest.main()

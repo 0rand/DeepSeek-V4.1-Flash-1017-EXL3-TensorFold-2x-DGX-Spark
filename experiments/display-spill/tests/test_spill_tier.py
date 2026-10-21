@@ -320,6 +320,80 @@ class SpillTierTests(unittest.TestCase):
             store.forget(before.key)
             self.assertIsNone(store.find(ids, whole_needs_head=False))
 
+    def test_a_lower_cap_than_the_last_run_trims_the_stored_prompts_at_start(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            second = list(range(1000, 1100))
+            snap = Snap(ids=second, ring=torch.arange(len(second) * 4, dtype=torch.uint8).reshape(len(second), 4))
+            self.assertIsNotNone(store.save(second, snap, skip=("ids",)))
+            self.assertTrue(store.drain(10))
+            one = max(e.size for e in store.index.values())
+            self.assertEqual(len(store.index), 2)
+
+            def reopen(gib):
+                cfg = self.sp.SpillConfig(root=root, gib=gib, min_free_gib=0, min_tokens=1)
+                return self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+
+            same = reopen(1)
+            self.assertEqual(len(same.index), 2)                          # the same cap keeps both
+            tight = reopen(1.5 * one / (1 << 30))                         # room for one: the older entry goes
+            self.assertEqual(len(tight.index), 1)
+            self.assertTrue(tight.has(second))
+            self.assertFalse(tight.has(ids))
+            self.assertLessEqual(tight._total(), tight.cap)
+            self.assertEqual(len([n for n in os.listdir(tight.dir) if n.endswith(".safetensors")]), 1)
+            none = reopen(1e-6)                                           # room for none
+            self.assertEqual(len(none.index), 0)
+            self.assertEqual([n for n in os.listdir(none.dir) if n.endswith(".safetensors")], [])
+
+    def gathered(self, store, other):
+        """Make the store believe it is rank 0 of two; ``other`` is the peer's row. Returns the list of rows it sent."""
+        sent = []
+
+        def gather(row):
+            sent.append(list(row))
+            return [list(row), list(other)]
+
+        store.world, store.gather = 2, gather
+        return sent
+
+    def test_a_failure_while_one_rank_prepares_a_save_is_shared_before_the_gather(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            sent = self.gathered(store, [0, 1, 0])
+            new = list(range(500, 600))
+            snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
+            bad = torch.zeros(4, 4, dtype=torch.uint8).t()                # not contiguous
+            self.assertIsNone(store.save(new, snap, skip=("ids",), rows=[("r", bad)]))
+            self.assertEqual(len(sent), 1)                                # it still joined the gather
+            self.assertEqual(sent[0][2], 1)                               # and said that it failed
+            self.assertFalse(store.has(new))
+            self.assertEqual(len(store.index), 1)
+
+    def test_a_peer_that_failed_to_prepare_a_save_makes_every_rank_skip_it(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            sent = self.gathered(store, [0, 1, 1])
+            new = list(range(500, 600))
+            snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
+            self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(sent[0][2], 0)
+            self.assertFalse(store.has(new))
+            # With the peer well, the same save goes through.
+            self.gathered(store, [0, 1, 0])
+            self.assertIsNotNone(store.save(new, snap, skip=("ids",)))
+            self.assertTrue(store.drain(10))
+            self.assertTrue(store.has(new))
+
+    def test_a_single_rank_still_raises_a_preparation_error(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            new = list(range(500, 600))
+            snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
+            bad = torch.zeros(4, 4, dtype=torch.uint8).t()
+            with self.assertRaises(ValueError):
+                store.save(new, snap, skip=("ids",), rows=[("r", bad)])
+
     def test_header_with_a_shape_larger_than_its_span_is_refused(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
