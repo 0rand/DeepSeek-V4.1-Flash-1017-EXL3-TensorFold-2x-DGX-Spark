@@ -439,6 +439,26 @@ class ToolOutputTests(unittest.TestCase):
                 self.assertEqual(text[diagnostic["span_start"]:diagnostic["span_end"]], wanted)
                 self.assertEqual(diagnostic["wrapper"], wrapper)
 
+    def test_a_looping_model_with_open_markup_is_rejected_before_the_parser_scans_it(self):
+        import time
+
+        call = '<tool_call>{"name":"task","arguments":{}}</tool_call>'
+        invoke = '<｜DSML｜ invoke name="a">'
+        cases = (call + "<tool_call>{" * 30000,                                   # openers after the last closer
+                 "<｜DSML｜ calls>" + invoke * 30000 + "</｜DSML｜ calls>" + call,    # open invokes in a DSML block
+                 "<tool_call><function=task>" + "<parameter=x>" * 30000 + "</function></tool_call>",
+                 "<tool_call>task" + "<arg_key>k" * 30000 + "</tool_call>")
+        for text in cases:
+            for guard in (self.guard(), self.module.ToolOutputGuard(None)):
+                with self.subTest(text=text[:40], tools=bool(guard.tools)):
+                    start = time.perf_counter()
+                    with self.assertRaises(self.module.ModelOutputError) as caught:
+                        guard.parse(text)
+                    self.assertEqual(caught.exception.diagnostic["reason"], "runaway_markup")
+                    self.assertLess(time.perf_counter() - start, 5.0)
+        content, calls = self.guard().parse(call + "<tool_call>{" * 60)           # a few open tags are no runaway
+        self.assertEqual(len(calls), 1)
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"

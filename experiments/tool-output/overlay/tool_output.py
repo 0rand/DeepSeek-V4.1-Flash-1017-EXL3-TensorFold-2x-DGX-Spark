@@ -36,6 +36,22 @@ class ToolOutputGuard:
     """Validate complete call envelopes before the CUDA parser can execute any call."""
 
     _opener_re = re.compile(r"(?i:<tool_call>)|<｜DSML｜ calls>")
+    # The parser's expressions try each opener against the rest of the text. Markup that stays open this often is
+    # looping output, not a call: the guard rejects it before the parser has to scan it (and so does not stall).
+    _RUNAWAY = 64
+
+    @staticmethod
+    def _open_tail(text: str, opener: str, closer: str) -> int:
+        """How many ``opener`` follow the last ``closer`` (none when the text has no ``closer``)."""
+
+        last = text.rfind(closer)
+        return text.count(opener, last + 1) if last >= 0 else 0
+
+    @staticmethod
+    def _open_excess(text: str, opener: str, closer: str) -> int:
+        """How many more ``opener`` than ``closer`` the text has."""
+
+        return text.count(opener) - text.count(closer)
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self._stream_cut: int | None = None
@@ -117,13 +133,23 @@ class ToolOutputGuard:
         close = text.rfind(reply_text._DSML_CLOSE)
         end = close + len(reply_text._DSML_CLOSE)
         head, tail = (text[:end], text[end:]) if close >= 0 else ("", text)
+        dsml_tag = reply_text._DSML
+        if (self._open_excess(head, f'<{dsml_tag} invoke name="', f"</{dsml_tag} invoke>") > self._RUNAWAY
+                or self._open_excess(head, f'<{dsml_tag} parameter name="', f"</{dsml_tag} parameter>") > self._RUNAWAY):
+            raise reject("", "runaway_markup", 0, len(text), "dsml")
         try:
             converted = reply_text.dsml_to_tool_calls(head) + tail
         except (ValueError, RecursionError):           # a value that the JSON decoder refuses (for example 5000 digits)
             raise reject("", "undecodable_call", 0, len(text), "dsml") from None
-        if reply_text._CALL_CLOSE not in converted.lower():
+        lowered = converted.lower()
+        if reply_text._CALL_CLOSE not in lowered:
             # No call block can exist. (The parser would try every opener against the rest of the answer.)
             return (converted.strip(), None) if self.tools else (text, None)
+        if (self._open_tail(lowered, reply_text._CALL_OPEN, reply_text._CALL_CLOSE) > self._RUNAWAY
+                or self._open_excess(lowered, "<parameter=", "</parameter>") > self._RUNAWAY
+                or self._open_excess(lowered, "<arg_key>", "</arg_key>") > self._RUNAWAY
+                or self._open_excess(lowered, "<arg_value>", "</arg_value>") > self._RUNAWAY):
+            raise reject("", "runaway_markup", 0, len(text), "json")
         # Each rewritten block: its span in the converted text and its DSML span in the answer (for the diagnostic).
         segments: list[tuple[int, int, int, int]] = []
         shift = 0
