@@ -39,7 +39,6 @@ class ToolOutputGuard:
     _parameters_re = re.compile(r"<parameter=[^>\s]+>.*?</parameter>", re.IGNORECASE | re.DOTALL)
     _glm_re = re.compile(r"\s*([\w.:-]+)(.*)", re.DOTALL)
     _glm_args_re = re.compile(r"<arg_key>.*?</arg_key>\s*<arg_value>.*?</arg_value>", re.DOTALL)
-    _name_re = re.compile(r"[\w.:-]+\Z")
     _close_re = re.compile(r"\s*</tool_call>", re.IGNORECASE)
     _MAX_OPEN = 256               # unclosed openers a closing tag may pair with
     _start_re = re.compile(r"\s*(?:\{|<function=|[\w.:-])", re.IGNORECASE)
@@ -100,7 +99,7 @@ class ToolOutputGuard:
         candidates: list[tuple[int, int, list[str], str]] = []
         def dsml(start: int, stop: int, body: str) -> None:
             names = [match.group(1).strip() for match in reply_text._DSML_INVOKE_RE.finditer(body)]
-            candidates.append((start, stop, [name for name in names if self._name_re.fullmatch(name)], "dsml"))
+            candidates.append((start, stop, [name for name in names if name], "dsml"))   # every name the parser reads
 
         def tool_call(start: int, stop: int, body: str) -> None:
             name = self._call_name(body)

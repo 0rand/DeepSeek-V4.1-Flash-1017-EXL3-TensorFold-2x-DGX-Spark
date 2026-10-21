@@ -341,6 +341,16 @@ class ToolOutputTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic["reason"], "too_many_open_tags")
         self.assertLess(time.perf_counter() - start, 5.0)
 
+    def test_every_dsml_name_the_parser_reads_is_checked(self):
+        for name in ("$TOOL_NAME", "mcp/tool", "a b", "tool{x}"):
+            dsml = f'<｜DSML｜ calls><｜DSML｜ invoke name="{name}"> </｜DSML｜ invoke></｜DSML｜ calls>'
+            with self.subTest(name=name):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(dsml)
+        offered = [{"type": "function", "function": {"name": "mcp/tool", "parameters": {"type": "object"}}}]
+        dsml = '<｜DSML｜ calls><｜DSML｜ invoke name="mcp/tool"> </｜DSML｜ invoke></｜DSML｜ calls>'
+        self.module.ToolOutputGuard(offered).parse(dsml)             # an offered name is not an error
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 
