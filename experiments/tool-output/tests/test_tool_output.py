@@ -455,7 +455,8 @@ class ToolOutputTests(unittest.TestCase):
                  "<｜DSML｜ calls>" + invoke * 30000 + "</｜DSML｜ calls><｜DSML｜ calls>" + invoke + "</｜DSML｜ invoke></｜DSML｜ calls>",
                  "<tool_call>task" + "<arg_value>k" * 30000 + "</tool_call><tool_call>task<arg_value>k</arg_value></tool_call>",
                  "<tool_call>task" + "<arg_key>k</arg_key>" * 30000 + "</tool_call>",             # keys without values
-                 "<tool_call>task" + "<arg_key>k</arg_key><arg_value>v" * 30000 + "</tool_call>")
+                 "<tool_call>task" + "<arg_key>k</arg_key><arg_value>v" * 30000 + "</tool_call>",
+                 "<tool_call>task" + "<arg_key>k</arg_key>" * 30000 + "<arg_value>v</tool_call>")        # one open value
         for text in cases:
             for guard in (self.guard(), self.module.ToolOutputGuard(None)):
                 with self.subTest(text=text[:40], tools=bool(guard.tools)):

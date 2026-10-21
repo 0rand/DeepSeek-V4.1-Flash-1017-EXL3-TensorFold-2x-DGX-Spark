@@ -178,6 +178,9 @@ class ToolOutputGuard:
                     ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"),
                     ("<arg_key>", "<arg_value>"))):           # (a key needs a value after it to make a pair)
                 raise reject("", "runaway_markup", start, stop, wrapper)
+            # A value without its closer sends the pairing expression back over every key before it.
+            if self._open_tail(inner, "<arg_value>", "</arg_value>") and inner.count("<arg_key>") > self._RUNAWAY:
+                raise reject("", "runaway_markup", start, stop, wrapper)
             try:
                 names = self._call_names(reply_text, block.group(1).strip(), complete=max_calls is not None)
             except (ValueError, RecursionError):       # a value that the JSON decoder refuses
