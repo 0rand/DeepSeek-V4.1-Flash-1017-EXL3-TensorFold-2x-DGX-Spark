@@ -68,13 +68,14 @@ class SpillIntegrationTests(unittest.TestCase):
         ast.parse(composed)
 
     def init_block(self):
-        """The spill start-up block of MultiDecoder.__init__ as a function of (self, engine, spill_cfg)."""
+        """The spill start-up block of MultiDecoder.__init__ as a function of (self, engine, spill_cfg, spill_problem)."""
         text = self.changed(spill.MULTI)
-        start = text.index("        if spill_cfg is not None:\n            from tensorfold.cuda.spill import")
+        start = text.index("        if spill_wanted:\n")
         end_marker = "{st['stored_bytes'] / 2**30:.2f} of {spill_cfg.gib:g} GiB)\", flush=True)\n"
         block = text[start:text.index(end_marker, start) + len(end_marker)]
         namespace = {"os": os}
-        exec(compile("def init(self, engine, spill_cfg):\n" + block, "init", "exec"), namespace)
+        exec(compile("def init(self, engine, spill_cfg, spill_problem, spill_wanted=True):\n" + block, "init", "exec"),
+             namespace)
         return block, namespace["init"]
 
     def fake_decoder(self, gather, draft=True):
@@ -88,7 +89,7 @@ class SpillIntegrationTests(unittest.TestCase):
         return types.SimpleNamespace(pool=pool, dpool=dpool, _replay=lambda: True, _share=None, _gather_ints=gather,
                                      spill=None)
 
-    def run_init(self, rows, *, store_error=None, build_error=None, draft=True):
+    def run_init(self, rows, *, store_error=None, build_error=None, draft=True, cfg_problem=None, weights=None):
         """Run the block on a fake decoder; ``rows`` is what the other ranks answer in each agreement."""
         _, init = self.init_block()
         calls, created = [], []
@@ -113,13 +114,14 @@ class SpillIntegrationTests(unittest.TestCase):
             return "build|driver=1"
 
         module = types.ModuleType("tensorfold.cuda.spill")
-        module.SpillStore, module.build_id, module.weights_id = Store, build_id, lambda *dirs: "w"
+        module.SpillStore, module.build_id = Store, build_id
+        module.weights_id = (lambda *dirs: weights.append(dirs) or "w") if weights is not None else (lambda *dirs: "w")
         engine = types.SimpleNamespace(world=2, rank=0, display_bytes=1 << 20, model_dir="/m")
         decoder = self.fake_decoder(gather, draft)
         with mock.patch.dict("sys.modules", {"tensorfold": types.ModuleType("tensorfold"),
                                              "tensorfold.cuda": types.ModuleType("tensorfold.cuda"),
                                              "tensorfold.cuda.spill": module}):
-            init(decoder, engine, types.SimpleNamespace(gib=1))
+            init(decoder, engine, None if cfg_problem else types.SimpleNamespace(gib=1), cfg_problem)
         return decoder, calls, created
 
     def test_the_spill_signature_covers_the_draft_pool_and_the_identity_settings(self):
@@ -146,6 +148,32 @@ class SpillIntegrationTests(unittest.TestCase):
         self.assertEqual(calls, [[1]])
         self.assertEqual(created, [])
         self.assertIsNone(decoder.spill)
+
+    def test_a_failure_in_the_settings_or_pinned_buffers_joins_the_agreement(self):
+        # SpillConfig or preallocate() failed on this rank before the block: it still shares its 0.
+        decoder, calls, created = self.run_init([[[1]]], cfg_problem=MemoryError("pinned"))
+        self.assertEqual(calls, [[0]])
+        self.assertEqual(created, [])
+        self.assertIsNone(decoder.spill)
+
+    def test_the_engram_tables_are_part_of_the_weights_fingerprint(self):
+        seen = []
+        with mock.patch.dict(os.environ, {"TF_DS_ENGRAM": "/engram"}):
+            self.run_init([[[1]], [[1]]], weights=seen)
+        self.assertEqual(seen, [("/m", "/engram")])
+        seen.clear()
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("TF_DS_ENGRAM", None)
+            self.run_init([[[1]], [[1]]], weights=seen)
+        self.assertEqual(seen, [("/m",)])
+
+    def test_the_tier_construction_reads_the_settings_inside_the_agreement(self):
+        text = self.changed(spill.MULTI)
+        self.assertIn("spill_cfg, spill_problem, spill_wanted = None, None, False", text)
+        self.assertNotIn("\n                preallocate(spill_cfg)\n        self.cap", text)
+        start = text.index("spill_cfg, spill_problem, spill_wanted")
+        self.assertLess(start, text.index("preallocate(spill_cfg)"))
+        self.assertLess(text.index("preallocate(spill_cfg)"), text.index("if spill_wanted:"))
 
     def test_a_store_that_fails_to_start_on_one_rank_is_dropped_on_every_rank(self):
         decoder, calls, created = self.run_init([[[1]], [[1]]], store_error=OSError("disk"))
@@ -260,6 +288,63 @@ class SpillIntegrationTests(unittest.TestCase):
         finally:
             signal.signal(signal.SIGTERM, previous)
         self.assertEqual(Spill.drained, 1)
+
+    def test_a_sigterm_during_the_drain_does_not_cut_it(self):
+        import signal
+        import time
+
+        if os.name == "nt":
+            self.skipTest("needs POSIX signals")
+
+        class Spill:
+            finished = False
+
+            def shutdown_drain(self):
+                os.kill(os.getpid(), signal.SIGTERM)          # docker stop arrives while the writes are queued
+                time.sleep(0.2)
+                Spill.finished = True
+
+        previous = signal.getsignal(signal.SIGTERM)
+        try:
+            decoder = self.follower(Spill())
+
+            def broken(link):
+                raise RuntimeError("rank 0's step link closed")      # stop.sh stops rank 0 first
+
+            decoder._follow_steps = broken
+            with self.assertRaises(RuntimeError):
+                decoder.follow(object())
+        finally:
+            signal.signal(signal.SIGTERM, previous)
+        self.assertTrue(Spill.finished)
+
+    def test_the_exit_hook_of_rank_zero_ignores_a_second_sigterm(self):
+        import signal
+
+        if os.name == "nt":
+            self.skipTest("needs POSIX signals")
+        tree = ast.parse(self.changed(spill.APP))
+        [method] = self.method_of(tree, "DsApp", "_flush_spill")
+        namespace = {}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "_flush_spill", "exec"),
+             namespace)
+        seen = []
+
+        class Spill:
+            def shutdown_drain(self):
+                seen.append(signal.getsignal(signal.SIGTERM))
+
+        class App:
+            _flush_spill = namespace["_flush_spill"]
+
+        app = App()
+        app.engine = types.SimpleNamespace(multi=types.SimpleNamespace(spill=Spill()))
+        previous = signal.getsignal(signal.SIGTERM)
+        try:
+            app._flush_spill()
+        finally:
+            signal.signal(signal.SIGTERM, previous)
+        self.assertEqual(seen, [signal.SIG_IGN])
 
     def test_follower_without_a_spill_tier_stops_cleanly_and_other_errors_pass_through(self):
         import signal

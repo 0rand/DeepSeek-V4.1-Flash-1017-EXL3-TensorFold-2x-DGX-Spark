@@ -67,13 +67,14 @@ from `.partial`. Token ids are stored as base64 int64. The header holds a CRC-32
 flipped bit in a count, a name or a flag is refused when the file is scanned or read. The declared header length is
 checked first (at most 64 MiB, aligned, inside the file), so a flipped bit cannot make a rank read a huge block. A corrupt or short file is dropped. The
 table of tensor descriptors is checked before any memory is allocated: gaps, overlaps, negative numbers and
-unknown dtypes are refused. The compatibility key holds the cache planes, the draft rings (so a change of `MTP_DRAFTS` starts a new folder) and the
-settings that change a cached row. At start, every rank first tells the others if it could prepare the tier; if one rank
+unknown dtypes are refused. The compatibility key holds the cache planes, the fingerprint of the model files and of the Engram files (`TF_DS_ENGRAM`), the draft rings (so a change of `MTP_DRAFTS` starts a new folder) and the
+settings that change a cached row. At start, every rank first tells the others if it could prepare the tier (settings, pinned buffers, key); if one rank
 failed, the tier is off on every rank, and the same holds if the store fails to start on one rank. Every rank agrees on the index and on each read. A read is used only when it
 worked on every rank. If a write failed on one rank only, `find()` keeps the entry, so the read fails on all
 ranks and all of them forget it. A failed read is counted once as `load_failed`.
 
-On SIGTERM (docker stop), rank 0 and rank 1 each wait for their queued writes (the shutdown drain). Rank 1
+On SIGTERM (docker stop), rank 0 and rank 1 each wait for their queued writes (the shutdown drain). A second SIGTERM
+during the drain is ignored, so it does not cut the writes. Rank 1
 also drains when rank 0 closes the link first, because `stop.sh` stops rank 0 first.
 
 ## Validation limits
