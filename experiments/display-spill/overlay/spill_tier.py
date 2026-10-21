@@ -616,6 +616,14 @@ class SpillStore:
         others = [d for d in others if os.path.isdir(d)]
         others.sort(key=lambda d: os.stat(d).st_mtime, reverse=True)
         gone = 0
+        for d in others[:max(0, self.cfg.keep_builds)]:       # a kept build: only its unfinished writes go
+            mine = os.path.join(d, f"rank{self.rank}")
+            try:
+                for name in os.listdir(mine):
+                    if name.endswith(".partial"):
+                        os.remove(os.path.join(mine, name))
+            except OSError:
+                pass
         for d in others[max(0, self.cfg.keep_builds):]:
             mine = os.path.join(d, f"rank{self.rank}")
             if os.path.isdir(mine):

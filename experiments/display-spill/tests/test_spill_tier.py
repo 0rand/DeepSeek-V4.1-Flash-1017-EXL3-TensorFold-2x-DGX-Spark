@@ -703,6 +703,19 @@ class SpillTierTests(unittest.TestCase):
                 self.sp.SpillConfig(root="/tmp", gib=1, min_free_gib=value)
         self.sp.SpillConfig(root="/tmp", gib=1, min_free_gib=0)
 
+    def test_unfinished_writes_of_a_kept_build_are_removed_at_start(self):
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-0000000000000000", "rank0")
+            os.makedirs(old)
+            partial, done = os.path.join(old, "x.1.partial"), os.path.join(old, "y.safetensors")
+            for path in (partial, done):
+                with open(path, "wb") as f:
+                    f.write(b"x")
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertFalse(os.path.exists(partial))                     # the abandoned write is gone
+            self.assertTrue(os.path.exists(done))                         # the kept build keeps its finished files
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)

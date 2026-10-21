@@ -40,8 +40,8 @@ if [ "$action" = --check ]; then
 fi
 
 # Serialize this launcher; never silently stop an existing model or reload under it.
-exec 9>"$ROOT/.display-spill.lock"
-flock -n 9 || { log "another display-spill launcher is active"; exit 1; }
+exec 9>"$ROOT/.display-kv.lock"   # the same lock as start-display-kv.sh: one display cutover at a time
+flock -n 9 || { log "another display launcher (display-KV or display-spill) is active"; exit 1; }
 head_names=$(docker ps --format '{{.Names}}')
 worker_names=$(wssh "docker ps --format '{{.Names}}'")
 for name in $head_names $worker_names; do

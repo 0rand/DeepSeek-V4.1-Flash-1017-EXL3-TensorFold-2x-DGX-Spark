@@ -89,6 +89,13 @@ class SpillBundleTests(unittest.TestCase):
         prepare.prepare(destination, image="fixture:display", spill=True)
         self.assertIn("MEM_CAP=0", (destination / ".env").read_text())
 
+    def test_both_display_launchers_take_the_same_lock(self):
+        # Two launchers with two lock files could both reload the display driver at once.
+        repo = ROOT.parent.parent
+        locks = {re.search(r'exec 9>"\$ROOT/(\S+?)"', (repo / name).read_text()).group(1)
+                 for name in ("start-display-kv.sh", "start-display-spill.sh")}
+        self.assertEqual(locks, {".display-kv.lock"})
+
     def test_the_image_build_copies_named_files_never_a_whole_folder(self):
         # The build context is the repository root, where a private bundle-launch-* folder (with a .env file) may be.
         repo = ROOT.parent.parent
