@@ -198,7 +198,24 @@ indices and only fails reasoning in a frame after the first content frame.
 locks in both the shared-transition pass and the later-frame failure. This was
 a missing probe rule, not a parser or stream-ordering defect.
 
-Not yet validated live: the `TOOL_OUTPUT_STREAMING=0` rollback needs another
-launcher restart. It is covered by the installed-source CPU HTTP tests
-(`test_roll_back_to_whole_answer_buffering`). SDK/proxy retry behavior and the
-original agent scenario also remain open.
+SDK/proxy retry behavior and the original agent scenario remain open.
+
+## Live rollback validation (07:21 UTC)
+
+After `./stop.sh && TOOL_OUTPUT_STREAMING=0 ./start-display-kv.sh`, both ranks
+reported `TF_TOOL_OUTPUT_STREAMING=0` and `TF_DS_DISPLAY_KV_MIB=1792` in
+`docker inspect`. The same image ran; no rebuild was needed.
+
+- [verify-buffered.log](verify-buffered.log): `./verify.sh` 5/5.
+- [buffered.json](buffered.json) / [buffered-probes.log](buffered-probes.log):
+  probe run with the new `--buffered` expectation, **12 PASS, 2 INCONCLUSIVE,
+  0 FAIL** (exit 2). Every prose answer arrived in exactly one pre-terminal
+  content chunk; the thinking case still showed separated reasoning.
+- [buffered-negative-control.json](buffered-negative-control.json): the normal
+  streamed expectation against the same server, **4 FAIL** (exactly the four
+  prose probes), 2 INCONCLUSIVE, 8 PASS, exit 1. The probe therefore
+  distinguishes the two modes instead of passing vacuously.
+
+Strict validation, typed rejections and literal preservation were unchanged in
+buffered mode, as the installed-source tests predicted. Restoring the streaming
+default needs one more launcher restart without the variable.
