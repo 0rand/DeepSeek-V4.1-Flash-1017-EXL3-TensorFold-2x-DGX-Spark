@@ -31,6 +31,10 @@ if [ "$head_running" = true ] || [ "$worker_running" = true ]; then
   log "REFUSING experimental startup: stop both existing ranks after the benchmark finishes"
   exit 1
 fi
+case "${TOOL_OUTPUT_STREAMING:-1}" in
+  0|1) ;;
+  *) log "TOOL_OUTPUT_STREAMING must be 0 or 1"; exit 1 ;;
+esac
 '''
     start = start.replace(anchor, anchor + guard)
     # Non-forced removal cannot kill a rank started concurrently by another launcher.
@@ -42,7 +46,8 @@ fi
     anchor = "-e TF_DS_REPLAY=1"
     if start.count(anchor) != 1:
         raise ValueError("start.sh environment anchor changed; review the experiment")
-    start = start.replace(anchor, "-e TF_DS_DISPLAY_KV_MIB=1792 -e TF_DS_KV=native " + anchor)
+    start = start.replace(anchor, "-e TF_TOOL_OUTPUT_STREAMING=${TOOL_OUTPUT_STREAMING:-1} "
+                          "-e TF_DS_DISPLAY_KV_MIB=1792 -e TF_DS_KV=native " + anchor)
     config = (ROOT / ".env").read_text()
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/:@-]*", image):
         raise ValueError("invalid experimental image reference")

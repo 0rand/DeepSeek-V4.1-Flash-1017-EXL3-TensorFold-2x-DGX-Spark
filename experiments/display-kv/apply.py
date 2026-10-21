@@ -429,15 +429,24 @@ def transform(relative: str | Path, text: str) -> str:
         text = _replace_once(text, 'from tensorfold.cuda.turns import Turns, Yield\n',
             'from tensorfold.cuda.turns import Turns, Yield\nfrom tensorfold.cuda.tool_output import ToolOutputGuard\n', name)
         text = _replace_once(text, '        policy = ToolCallPolicy(body)\n',
-            '        policy = ToolCallPolicy(body)\n        tool_output_guard = (ToolOutputGuard(tools, request=body) if chat and getattr(self, "strict_tool_output", False)\n                             else None)\n', name)
+            '        policy = ToolCallPolicy(body)\n        tool_output_guard = (ToolOutputGuard(tools, request=body) if chat and getattr(self, "strict_tool_output", False)\n                             else None)\n'
+            '        tool_output_streaming = (tool_output_guard is not None and body.get("stream") is True\n'
+            '                                 and os.environ.get("TF_TOOL_OUTPUT_STREAMING", "1") == "1")\n', name)
         text = _replace_once(text,
             '        calls_stream = ToolCallStreamer(tools) if tools and not policy.single else None\n',
             '        calls_stream = (ToolCallStreamer(tools) if tools and not policy.single\n                        and tool_output_guard is None else None)\n', name)
         text = _replace_once(text, '            answer_raw[0] = answer\n',
-            '            answer_raw[0] = answer\n            if tool_output_guard is not None:\n                # Validate the whole answer before releasing content or executable call deltas.\n                return reasoning, ""\n', name)
+            '            answer_raw[0] = answer\n            if tool_output_guard is not None:\n'
+            '                # Only inert prose before the first candidate can leave before final validation.\n'
+            '                return reasoning, tool_output_guard.stream(answer) if tool_output_streaming else ""\n', name)
+        text = _replace_once(text, '                shown = answer.rstrip() if tools else answer\n',
+            '                shown = answer if tool_output_guard is not None else (answer.rstrip() if tools else answer)\n', name)
         text = _replace_once(text,
             '        content, calls = parse_tool_calls(raw_answer, tools, max_calls=policy.max_calls) if tools else (answer, None)\n        content = policy.content(content) if tools else content\n',
-            '        if tool_output_guard is not None:\n            content, calls = tool_output_guard.parse(raw_answer, max_calls=policy.max_calls)\n        else:\n            content, calls = parse_tool_calls(raw_answer, tools, max_calls=policy.max_calls) if tools else (answer, None)\n            content = policy.content(content) if tools else content\n', name)
+            '        if tool_output_guard is not None:\n            content, calls = tool_output_guard.parse(raw_answer, max_calls=policy.max_calls)\n'
+            '            if tool_output_streaming:\n'
+            '                tool_output_guard.check_stream_prefix(raw_answer, content)\n'
+            '        else:\n            content, calls = parse_tool_calls(raw_answer, tools, max_calls=policy.max_calls) if tools else (answer, None)\n            content = policy.content(content) if tools else content\n', name)
         return text
     if name == "http.py":
         text = _replace_once(text, '                self.end_headers()\n                self.wfile.write(data)\n',

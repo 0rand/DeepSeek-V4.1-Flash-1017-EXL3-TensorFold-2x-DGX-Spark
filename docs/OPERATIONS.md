@@ -30,6 +30,23 @@ launcher below does not enable display-backed KV.
 - **First long prompt.** The first long prompt after a start (8K+ tokens) takes ~6 s longer than later ones. The README's 8K row includes this. A longer warm-up list does not remove it; the likely cause is cold Engram reads from NVMe.
 - **Prompts survive a restart.** With `SPILL_GIB` above 0 (default 64), kept prompts also go to `CACHE_DIR/tf-ds-spill` on each node. After a restart, a conversation continues from disk (an 18K-token prompt: 2.7 s instead of 16.8 s). Old entries go after 7 days or past the size limit.
 
+## Native tool-output errors (display-KV variant)
+
+The staged display-KV image uses [strict tool-output validation](TOOL-OUTPUT.md).
+`model_output_error` / `unavailable_tool_call` from
+`source=tensorfold.tool_output_guard` is a terminal model-response rejection,
+not a broken distributed lane. Do not enable an unoffered tool, retry the same
+generation automatically or restart the lane to hide this error.
+
+Prose before the first raw protocol candidate can stream. The remainder and all
+executable calls wait for final validation. For a content-latency rollback, set
+`TOOL_OUTPUT_STREAMING=0` in `.env` and use
+`./stop.sh && ./start-display-kv.sh`. Validation stays enabled. Source changes
+require the explicit `--build` option on the first restart; plain launches reuse
+the saved image. Have head-node sudo authorization available before stopping a
+healthy service, because DRM preparation needs it. Do not change the engine pin
+to a new upstream release without porting the experiment's checked transforms.
+
 ## When the lane breaks
 
 The engine keeps serving when one request fails:

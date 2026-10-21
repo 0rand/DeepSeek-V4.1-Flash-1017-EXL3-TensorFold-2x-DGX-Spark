@@ -27,6 +27,8 @@ class BundleTests(unittest.TestCase):
             self.assertIn("PREFILL_CHUNK=512\n", config)
             self.assertIn("--device /dev/dri", start)
             self.assertIn("-e TF_DS_DISPLAY_KV_MIB=1792", start)
+            self.assertIn("-e TF_TOOL_OUTPUT_STREAMING=${TOOL_OUTPUT_STREAMING:-1}", start)
+            self.assertIn('TOOL_OUTPUT_STREAMING must be 0 or 1', start)
             self.assertNotIn("docker rm -f tfv41-", start)
             self.assertLess(start.index("REFUSING experimental startup"), start.index('if [ "${PREFLIGHT'))
             subprocess.run(["bash", "-n", str(destination / "start.sh")], check=True)

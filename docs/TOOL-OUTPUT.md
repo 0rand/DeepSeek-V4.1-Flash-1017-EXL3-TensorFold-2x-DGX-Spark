@@ -1,7 +1,8 @@
 # Native tool-output validation (draft)
 
-The display-KV recipe's existing source installer now validates the complete
-DeepSeek-V4.1 **answer** before returning content or executable calls. This is a
+The display-KV recipe's existing source installer validates the complete
+DeepSeek-V4.1 **answer** before returning executable calls. Inert prose before
+the first possible protocol marker can stream early. This is a
 CPU-tested protocol/schema hardening change, not evidence of actual-model tool
 reliability or a GPU performance improvement. The previously recorded live
 checks for the narrower unoffered-tool guard do not validate this revision.
@@ -13,13 +14,14 @@ checks for the narrower unoffered-tool guard do not validate this revision.
   (`true`); explicit `false` still disallows multiple calls. No admission limiter
   is added, and independent requests retain existing concurrency semantics.
 - Malformed, truncated, unavailable, schema-invalid and over-limit executable
-  output rejects the **whole** answer, including a valid call preceding the
-  failure. The permissive legacy parser is not used to repair or truncate it.
+  output rejects **all executable calls**, including a valid call preceding the
+  failure. Already-streamed inert prose is not retracted. The permissive legacy
+  parser is not used to repair or truncate output.
 - Strict validation also applies when `tools` is omitted, null or empty: a model
   cannot turn an unoffered executable envelope into ordinary answer text. This
-  means all strict DeepSeek chat answer content is buffered until completion,
-  including no-tool answers. Reasoning remains separately streamed and is not
-  treated as executable answer output. Other families keep their legacy path.
+  does not prevent ordinary no-tool answers from streaming. Reasoning remains
+  separately streamed and is not treated as executable answer output. Other
+  families keep their legacy path.
 - JSON, Qwen function/parameter XML, GLM argument tags and both spaced and
   unspaced DeepSeek DSML wrappers are supported. Duplicate JSON/parameter keys,
   nonfinite numbers, unexpected envelope fields and unparsed residue reject.
@@ -38,6 +40,39 @@ checks for the narrower unoffered-tool guard do not validate this revision.
   not a guaranteed example.
 - Supplied IDs are preserved exactly, not normalized or replaced. Empty,
   non-string or duplicate IDs reject; an absent ID receives a new generated ID.
+
+## Conservative streaming
+
+With `TOOL_OUTPUT_STREAMING=1` (the display-KV default), no-tools and tool-enabled
+prose streams until the first raw protocol candidate. A candidate inside a
+literal quote or code fence also starts buffering. The remainder of the answer,
+including every executable call, waits for the single final strict parse.
+There are no partial argument deltas, early call atoms or post-envelope prose
+resumption in this phase. All request policies retain whole-answer executable
+atomicity. The non-streaming endpoint still returns nothing before validation.
+
+Incomplete marker spellings are held across arbitrarily split deltas. The guard
+also covers namespace-prefixed and unsupported protocol variants recognized by
+its rejection scanner. A possible prefix longer than 256 characters freezes the
+remainder instead of repeatedly rescanning an unbounded namespace. This is only
+a latency fallback: it neither rejects nor truncates a long literal or answer.
+Whitespace is preserved. A decoder rewrite or a final result inconsistent with
+published prose is a terminal `stream_prefix_changed` model-output error.
+
+This conservative design is intentional. A matching quote several lines later,
+or a backtick appended to a provisional closing run, can change whether an
+earlier envelope is literal. A closing tag inside an unfinished JSON string
+can also look like an invalid complete call. Repeatedly parsing prefixes is
+therefore not a safe early-release or early-rejection algorithm. Reproductions
+and future full-hybrid prerequisites are in
+[the work plan, section 12](../streaming-tool-parser-fix-plan.md#12-continuation-on-2026-10-21-conservative-prose-projection).
+
+To restore whole-answer **content buffering**, set `TOOL_OUTPUT_STREAMING=0` in
+`.env`, then run `./stop.sh && ./start-display-kv.sh`. The experimental launcher
+validates the value and forwards `TF_TOOL_OUTPUT_STREAMING` to both ranks.
+Strict parsing, schema validation and terminal errors stay enabled. This switch
+does not change the ordinary image or require another image build. Head-node
+sudo authorization is required for the launcher's DRM preparation.
 
 ## Bounded schema subset
 
@@ -94,9 +129,10 @@ The JSON response adds `x-should-retry: false` only for this native typed error;
 ordinary backend 500s retain their existing retry behavior. This is a client
 retry hint, not a guarantee that all clients honor it. The server itself does
 not retry generation. For an already-open SSE stream, HTTP stays 200 and one
-error frame is followed by `data: [DONE]`, without executable deltas, answer
-content or a successful finish. A subsequent request can recover normally.
-Reasoning already streamed is not retracted.
+error frame is followed by `data: [DONE]`, without executable deltas, buffered
+envelope content or a successful finish. A subsequent request can recover
+normally. Reasoning and inert prose already streamed are not retracted.
+An open SSE stream cannot add an HTTP retry header after its headers were sent.
 
 Diagnostics contain the rejection ID, source, code, generic reason and an answer
 SHA-256 fingerprint, without raw arguments, answer or reasoning. The earlier
@@ -143,3 +179,12 @@ Model probes that do not induce their requested output are inconclusive, not
 passing rejection evidence. Check cancellation and reasoning latency on the
 real serving path. This change makes no memory, RDMA, prebuilt-extension,
 host-tuning, distributed-liveness or measured throughput claims.
+
+For the 2026-10-21 continuation's CPU checks, old-image live baseline and
+deployment status, see [the run record](../runs/2026-10-21/parser-guardrails/README.md).
+The opt-in `tests/live_tool_streaming.py` captures per-frame timings, explicit
+thinking modes, tool-result round trips, rejection/recovery and literal probes.
+It runs only against an HTTP loopback IP, blocks redirects and proxies, never
+executes tools and never retries a probe. Its JSON output contains the raw
+synthetic requests and model replies. Inconclusive cases are not counted as
+proof of parser conformance.

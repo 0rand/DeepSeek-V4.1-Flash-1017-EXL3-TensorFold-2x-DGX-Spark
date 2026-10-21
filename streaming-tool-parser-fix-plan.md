@@ -1,5 +1,11 @@
 # Streaming tool calls under strict DSML validation — findings, proposal, plan
 
+> **2026-10-21 continuation: sections 1-11 are the historical proposal, not the
+> implemented contract.** Replays found counterexamples to its bounded literal
+> holdback and early-rejection assumptions. The current conservative rollout,
+> upstream comparison, blockers and next gates are in **section 12**. No early
+> executable atoms or post-envelope resumption are implemented in this revision.
+
 Date: 2026-10-21
 Branch under review: `fix/streaming-dsml-guard` (incoming PR: DSML parser fixes)
 Live validation stack: `localhost:8100` (DeepSeek-V4.1-Flash-1017, display-KV image)
@@ -503,3 +509,109 @@ Scratch is volatile; this document + the section-6 anchors are the durable recor
    (section 6.2) — those semantics genuinely need answer-wide evidence.
 4. Keep `TF_TOOL_OUTPUT_STREAMING=0` as a one-line operational rollback to the PR's
    buffered behavior.
+
+## 12. Continuation on 2026-10-21: conservative prose projection
+
+### 12.1 Upstream review at 06:40 UTC
+
+- Recipe upstream `main` is `1b3066d`, after PR #35. It now pins TensorFold
+  `730d41abd8f4` (`dsv41-1.1.0`) and defaults `DROP_UNOFFERED_TOOL_CALLS=1`.
+  **Dropping** a call is not this fork's explicit terminal-error contract.
+- Upstream's display-KV, cache-metrics and memory/top-k experiments still require
+  pristine `07aa02585f64`. Changing this fork's engine pin without porting and
+  validating the anchored transforms would be incorrect. No engine upgrade or
+  blanket recipe merge is part of this parser change.
+- Upstream's still-open tool-output PR #32 is at `879b19d`. Its useful ideas are
+  raw-opener prose projection, engine/guard classification parity, safe JSON
+  decoder failure handling and source-span mapping. It still delegates to the
+  permissive engine parser and does not replace the local strict/schema work.
+- The strict foundation described earlier was a **local** branch,
+  `fix/streaming-dsml-guard` at `d719bca`, not the current upstream PR #32.
+  Its two commits (`c65e56f`, `d719bca`) have been merged locally. Existing
+  display/spill/memory behavior and the engine input pin are preserved.
+
+Authoritative comparison sources: recipe PRs
+[#35](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/pull/35)
+and [#32](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/pull/32),
+plus fetched commit trees. No upstream changes have been pushed.
+
+### 12.2 Counterexamples to the original early-atom proposal
+
+Let `CALL` be an offered, schema-valid complete `<tool_call>` block.
+Durable reproductions are in `tests/test_tool_output_stream.py` under the
+display-KV experiment.
+
+1. ``'before `' + CALL`` is executable at EOS, but appending a matching backtick
+   several uninterrupted prose lines later makes it literal. The unresolved
+   interval is **not bounded to one line**.
+2. ``'before `' + CALL + '`'`` is literal at EOS, but appending another backtick
+   lengthens that closing run and makes the earlier call executable. A closing
+   delimiter at the current end is provisional.
+3. `'"' + CALL` is executable at EOS, but appending `\n\n"` makes it literal:
+   `_quoted_end` uses `lstrip()` across lines. Line-only holdback is insufficient.
+4. `<tool_call>{"name":"task","arguments":{"x":"</tool_call>` rejects as a
+   finished answer, but appending ` literal"}}</tool_call>` makes a valid call.
+   A JSON decode failure plus the fallback closer is **not** a monotone rejection
+   proof. The closer can still be string data in an unfinished JSON value.
+5. Generated IDs differ across parser invocations. Exact early/final call equality
+   would require stable request-local identity allocation. A later explicit
+   duplicate ID can also invalidate calls already released.
+6. The strict marker detector includes arbitrary namespace prefixes. A fixed
+   26-40 character opener buffer is not sufficient for every recognized marker.
+
+Reusing private regexes does not itself prove prefix stability. The original
+claim that divergence is structurally impossible is withdrawn. These cases must
+remain regression gates for any later full projector.
+
+### 12.3 Implemented phase 1
+
+- `ToolOutputGuard.stream(cumulative_answer)` returns a monotone, unmodified
+  prose prefix. It never invokes `parse`, decodes an envelope or allocates IDs.
+- Scan **raw** `_marker` candidates, including candidates in quotes and fences.
+  Hold incomplete spellings, including namespace prefixes. At the first candidate
+  freeze the rest of the answer until the one authoritative final parse.
+- A possible prefix longer than 256 characters also freezes at its `<`, to bound
+  repeated scans. This is a conservative latency fallback, not rejection,
+  truncation or an output-size limit. Ordinary HTML and comparisons release when
+  they can no longer grow into a candidate.
+- No-tools prose and tool-enabled prose without candidates stream normally.
+  Reasoning is split first and streams independently, using the existing engine
+  semantics. Guard-path whitespace is preserved without the legacy `rstrip()`.
+- All executable calls remain whole-answer atomic, including forced, named,
+  `parallel_tool_calls:false`, call-count and duplicate-ID policies. No separate
+  forced-mode projector gate is necessary while **all calls** wait until finish.
+- A late failure can leave inert prose already delivered. No call, buffered
+  envelope or successful finish is delivered. The existing single SSE error and
+  `[DONE]` contract remains. Nonstreaming failure still returns only HTTP 500
+  plus the typed error and `x-should-retry:false`.
+- Decoder rewrites or final content inconsistent with the published prefix fail
+  closed as `reason=stream_prefix_changed`, rather than silently dropping a tail.
+- Set `TOOL_OUTPUT_STREAMING=0` in `.env` and restart the display-KV launcher to
+  restore whole-answer content buffering. It forwards `TF_TOOL_OUTPUT_STREAMING`
+  to both ranks. This does **not** disable strict validation. Invalid launcher
+  values refuse before launch. The ordinary image/launcher are unchanged.
+
+### 12.4 Gates and remaining work
+
+- The real staged installer must pass normal and `-O` parser/schema/replay/HTTP
+  regressions, including wrong-pin/drift/reapply refusal without writes.
+- HTTP tests must observe prose while generation is blocked behind a real
+  barrier, both with and without tools. Recovery tests reassemble SSE content,
+  not assume that content appears in one frame.
+- Keep atomic late rejection, literal preservation, partial markers across every
+  character/two-chunk split, fused DSML deltas, Unicode namespaces, bounded
+  pending scans, rollback, decoder rewrites, cancellation and request isolation.
+- Save a model-backed baseline, build only after both ranks stop, then use
+  `./start-display-kv.sh --build`. Run `./verify.sh` and the opt-in
+  `tests/live_tool_streaming.py`. A healthy endpoint alone does not prove TP=2.
+  A model refusal or failure to induce a fixture remains **inconclusive**.
+- Do not stop a healthy stack until the head's sudo authorization needed for
+  DRM preparation is available. The current image identity is saved before any
+  cutover. No `docker exec`, display-manager stop or second model server is used.
+- Future full hybrid: first build a shared prefix-stable literal/envelope scanner
+  with explicit pending states, prove JSON closer ownership, settle ID/global
+  policy semantics, then test same-feed event ordering. Do not release atoms
+  merely because `parse(current_prefix)` succeeds or rejects.
+
+Run records and current deployment status belong under
+`runs/2026-10-21/parser-guardrails/`, not in claims copied from old live runs.

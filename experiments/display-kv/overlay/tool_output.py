@@ -1,8 +1,9 @@
 """Atomic, fail-closed validation for the strict native tool-output lane.
 
 Do not use the permissive legacy parser here: it repairs/truncates invalid calls.
-Literal markdown examples are never executable. All executable envelopes are
-validated before any call or answer content is returned to the transport.
+Literal markdown examples are never executable. Prose may stream before the
+first possible protocol marker. The remainder and every executable call wait
+for whole-answer validation, never a parse of a provisional envelope prefix.
 """
 from __future__ import annotations
 
@@ -406,8 +407,12 @@ def _schema(value, schema, root=None, depth=0, budget=None):
 
 
 class ToolOutputGuard:
-    """Validate the entire answer before releasing any executable delta/content."""
+    """Validate the entire answer before releasing any executable delta."""
     _marker = re.compile(r'<(?:/?(?:[\w.-]+:)?tool_call\b|/?[｜|]DSML[｜|]|\|tool_call\b)', re.I)
+    # A conservative superset of incomplete _marker spellings. Namespaces can
+    # be arbitrarily long, so a fixed longest-opener holdback is NOT sufficient.
+    _pending_marker = re.compile(r'<(?:/?[\w.:-]*|/?[｜|][\w｜|.-]*)\Z', re.I)
+    _pending_scan_limit = 256
     _quote_line = re.compile(r'^[ \t]*>[^\n]*(?:\n|$)', re.M)
     _prose_token = re.compile(_quote_line.pattern + r'|' + _marker.pattern + r'|`+|~{3,}', re.I|re.M)
     _inline_boundary = re.compile(r'^[ \t]*(?:\n|$)|' + _quote_line.pattern + r'|`+|~{3,}', re.M)
@@ -421,6 +426,44 @@ class ToolOutputGuard:
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self.tools = tools if tools is not None else []
         self.request = request if request is not None else {'tools':self.tools}
+        self._stream_seen = ''
+        self._stream_scanned = 0
+        self._stream_cut = None
+        self._stream_published = ''
+
+    def stream(self, text: str) -> str:
+        """Project cumulative inert prose, then freeze until authoritative parse().
+
+        Deliberately scan raw markers, even inside literal examples. Inline and
+        quoted ownership can change with later output, including across lines.
+        No partial call is decoded, validated, assigned an ID or released here.
+        """
+        if not text.startswith(self._stream_seen):
+            self._reject(text, 'stream_prefix_changed')
+        self._stream_seen = text
+        if self._stream_cut is None:
+            marker = self._marker.search(text, self._stream_scanned)
+            if marker is not None:
+                self._stream_cut = marker.start()
+            else:
+                start = text.rfind('<', self._stream_scanned)
+                pending = start >= 0 and self._pending_marker.fullmatch(text, start) is not None
+                self._stream_scanned = start if pending else len(text)
+                if pending and len(text) - start > self._pending_scan_limit:
+                    # Freeze rather than repeatedly rescan an unbounded namespace.
+                    # This is a latency fallback, not a rejection or output limit.
+                    self._stream_cut = start
+        end = self._stream_cut if self._stream_cut is not None else self._stream_scanned
+        shown = text[:end]
+        if not shown.startswith(self._stream_published):
+            self._reject(text, 'stream_prefix_changed')
+        self._stream_published = shown
+        return shown
+
+    def check_stream_prefix(self, text: str, content: str) -> None:
+        """Refuse a decoder rewrite or a final-parser/projection disagreement."""
+        if not text.startswith(self._stream_seen) or not content.startswith(self._stream_published):
+            self._reject(text, 'stream_prefix_changed')
 
     def _reject(self, text, reason):
         raise ModelOutputError(diagnostic={'reason':reason,'answer_sha256':hashlib.sha256(text.encode()).hexdigest()})

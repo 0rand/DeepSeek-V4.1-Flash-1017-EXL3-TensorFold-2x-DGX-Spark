@@ -154,6 +154,12 @@ def frames(text):
     return [json.loads(line[6:]) for line in text.splitlines() if line.startswith("data: {")]
 
 
+def answer_content(wire, stream):
+    if stream:
+        return ''.join(c.get('delta', {}).get('content', '') for p in frames(wire) for c in p.get('choices', []))
+    return json.loads(wire)['choices'][0]['message']['content']
+
+
 class ToolOutputHttpTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -281,6 +287,96 @@ class ToolOutputHttpTests(unittest.TestCase):
         self.assertEqual(text.count("data: [DONE]"), 1)
         self.assertEqual(len(app.engine.calls), 1)
 
+    def test_plain_prose_reaches_client_before_generation_finishes(self):
+        prose = '  visible prose\nwith trailing spaces  '
+        for tools in (None, TOOLS):
+            app = app_for(self.ds_app, self.server)
+            release = threading.Event()
+
+            def generate(prompt, max_tokens, sampling, on_tokens, **kwargs):
+                for char in prose:
+                    on_tokens([ord(char)])
+                if not release.wait(3):
+                    raise RuntimeError('client did not receive prose before generation finished')
+                on_tokens([0])
+                return {'rounds': len(prose)}
+
+            app.engine.generate = generate
+            with http_server(self.http, app) as port:
+                connection = http.client.HTTPConnection('127.0.0.1', port, timeout=5)
+                try:
+                    body = self.request('C', tools=tools, stream=True)
+                    connection.request('POST', '/v1/chat/completions', json.dumps(body), {'Content-Type': 'application/json'})
+                    reply = connection.getresponse()
+                    prefix = ''
+                    while True:
+                        line = reply.readline().decode()
+                        self.assertTrue(line, 'stream ended before prose')
+                        prefix += line
+                        if any(c.get('delta', {}).get('content') for p in frames(prefix) for c in p.get('choices', [])):
+                            break
+                    self.assertFalse(release.is_set())
+                    release.set()
+                    wire = prefix + reply.read().decode()
+                finally:
+                    release.set()
+                    connection.close()
+            self.assertFalse(any('error' in p for p in frames(wire)))
+            content = ''.join(c.get('delta', {}).get('content', '') for p in frames(wire) for c in p.get('choices', []))
+            self.assertEqual(content, prose)
+            self.assertEqual(wire.count('data: [DONE]'), 1)
+
+    def test_roll_back_to_whole_answer_buffering(self):
+        app = app_for(self.ds_app, self.server)
+        for enabled in ('0', 'invalid'):
+            with patch.dict(os.environ, {'TF_TOOL_OUTPUT_STREAMING': enabled}):
+                with http_server(self.http, app) as port:
+                    status, _, wire = post(port, self.request('C', tools=TOOLS, stream=True,
+                        fixture_text='inert prefix ' + KNOWN + UNKNOWN))
+            self.assertEqual(status, 200)
+            self.assertEqual(len([p for p in frames(wire) if 'error' in p]), 1)
+            self.assertFalse(any(c.get('delta', {}).get(key) for p in frames(wire)
+                for c in p.get('choices', []) for key in ('content', 'tool_calls')))
+
+    def test_final_decoder_rewrite_is_terminal_not_silent_success(self):
+        app = app_for(self.ds_app, self.server)
+        original = app.tok.decode
+
+        def rewritten(ids, **kwargs):
+            text = original(ids, **kwargs)
+            return 'rewritten' if text == 'ordinary answer' else text
+
+        app.tok.decode = rewritten
+        with http_server(self.http, app) as port:
+            status, _, wire = post(port, self.request('C', stream=True))
+        self.assertEqual(status, 200)
+        errors = [p['error'] for p in frames(wire) if 'error' in p]
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]['reason'], 'stream_prefix_changed')
+        self.assertFalse(any(c.get('finish_reason') for p in frames(wire) for c in p.get('choices', [])))
+
+    def test_cancellation_during_buffer_never_emits_executable_delta(self):
+        app = app_for(self.ds_app, self.server)
+        generated = []
+        text = 'inert prefix ' + KNOWN + UNKNOWN
+
+        def generate(prompt, max_tokens, sampling, on_tokens, **kwargs):
+            for char in text:
+                generated.append(char)
+                if on_tokens([ord(char)]):
+                    break
+            return {'rounds': len(generated)}
+
+        app.engine.generate = generate
+        deltas = []
+        with self.assertRaises(self.server.RequestCancelled):
+            app.run(self.request('C', tools=TOOLS, stream=True), True,
+                    lambda delta: deltas.append(delta) or True,
+                    cancelled=lambda: len(generated) > len('inert prefix <tool_call>'))
+        self.assertLess(len(generated), len(text))
+        self.assertEqual(''.join(delta.get('content', '') for delta in deltas), 'inert prefix ')
+        self.assertFalse(any(delta.get('tool_calls') for delta in deltas))
+
     def test_fence_info_and_blockquote_literals_never_emit_executable_calls(self):
         xml = '<tool_call><function=task><parameter=value>1</parameter></function></tool_call>'
         dsml = '<｜DSML｜tool_calls><｜DSML｜invoke name="task"><｜DSML｜parameter name="value" string="false">1</｜DSML｜parameter></｜DSML｜invoke></｜DSML｜tool_calls>'
@@ -335,14 +431,16 @@ class ToolOutputHttpTests(unittest.TestCase):
                             if stream:
                                 payloads = frames(wire)
                                 self.assertEqual(len([item for item in payloads if 'error' in item]), 1)
-                                self.assertFalse(any(choice.get('delta', {}).get(key)
-                                    for item in payloads for choice in item.get('choices', []) for key in ('content', 'tool_calls')))
+                                deltas = [choice.get('delta', {}) for item in payloads for choice in item.get('choices', [])]
+                                self.assertFalse(any(delta.get('tool_calls') for delta in deltas))
+                                prefix = (valid_prefix + text)[:self.tool.ToolOutputGuard._marker.search(valid_prefix + text).start()]
+                                self.assertEqual(''.join(delta.get('content', '') for delta in deltas), prefix)
                                 self.assertEqual(wire.count('data: [DONE]'), 1)
                             else:
                                 self.assertEqual(json.loads(wire)['error']['source'], 'tensorfold.tool_output_guard')
                 status, _, wire = post(port, self.request('C', stream=stream))
                 self.assertEqual(status, 200)
-                self.assertIn('ordinary answer', wire)
+                self.assertEqual(answer_content(wire, stream), 'ordinary answer')
             self.assertEqual(len(app.engine.calls), len(cases) * 2 + 1)
 
     def test_atomic_mixed_and_literal_calls(self):
@@ -398,21 +496,22 @@ class ToolOutputHttpTests(unittest.TestCase):
                         fixture_text="PRIVATE_SENTINEL" + text))
                     self.assertEqual(status, 200 if stream else 500)
                     self.assertIn('"model_output_error"', wire)
-                    self.assertNotIn("PRIVATE_SENTINEL", wire)
                     self.assertNotIn("call_exact", wire)
                     if stream:
                         self.assertEqual(wire.count("data: [DONE]"), 1)
-                        self.assertFalse(any(choice.get("delta", {}).get(key)
-                            for frame in frames(wire) for choice in frame.get("choices", [])
-                            for key in ("content", "tool_calls")))
+                        deltas = [choice.get('delta', {}) for frame in frames(wire) for choice in frame.get('choices', [])]
+                        self.assertFalse(any(delta.get('tool_calls') for delta in deltas))
+                        self.assertEqual(''.join(delta.get('content', '') for delta in deltas), 'PRIVATE_SENTINEL')
+                        self.assertNotIn('PRIVATE_SENTINEL', json.dumps([p['error'] for p in frames(wire) if 'error' in p]))
                     else:
+                        self.assertNotIn('PRIVATE_SENTINEL', wire)
                         self.assertEqual(headers.get("x-should-retry"), "false")
                     status, _, wire = post(port, self.request("C", stream=stream))
                     self.assertEqual(status, 200)
-                    self.assertIn("ordinary answer", wire)
+                    self.assertEqual(answer_content(wire, stream), 'ordinary answer')
             self.assertEqual(len(app.engine.calls), 2 * len(cases))
 
-    def test_argument_literal_contamination_rejects_without_release(self):
+    def test_argument_literal_contamination_rejects_without_executable_release(self):
         from test_tool_output import TEXT_TOOLS, contamination_cases
         for stream in (False, True):
             app = app_for(self.ds_app, self.server)
@@ -420,7 +519,7 @@ class ToolOutputHttpTests(unittest.TestCase):
                 for label, text in contamination_cases():
                     with self.subTest(stream=stream,label=label):
                         status, headers, wire = post(port, self.request('C', tools=TEXT_TOOLS,
-                            stream=stream, fixture_text='NO_CONTENT_RELEASE'+text))
+                            stream=stream, fixture_text='INERT_PREFIX'+text))
                         self.assertEqual(status, 200 if stream else 500)
                         payloads = frames(wire) if stream else [json.loads(wire)]
                         errors = [p['error'] for p in payloads if 'error' in p]
@@ -428,13 +527,14 @@ class ToolOutputHttpTests(unittest.TestCase):
                         self.assertEqual(errors[0]['type'],'model_output_error')
                         self.assertEqual(errors[0]['reason'],'invalid_executable_tool_output')
                         self.assertEqual(errors[0]['source'],'tensorfold.tool_output_guard')
-                        self.assertFalse(any(c.get('delta',{}).get(key)
-                            for p in payloads for c in p.get('choices',[])
-                            for key in ('content','tool_calls')))
+                        deltas = [c.get('delta', {}) for p in payloads for c in p.get('choices', [])]
+                        self.assertFalse(any(delta.get('tool_calls') for delta in deltas))
+                        self.assertEqual(''.join(delta.get('content', '') for delta in deltas), 'INERT_PREFIX' if stream else '')
                         self.assertFalse(any(c.get('finish_reason')
                             for p in payloads for c in p.get('choices',[])))
-                        for sentinel in ('NO_CONTENT_RELEASE','r1_exact','unoffered','secret'):
+                        for sentinel in ('r1_exact','unoffered','secret'):
                             self.assertNotIn(sentinel,wire)
+                        self.assertNotIn('INERT_PREFIX', json.dumps(errors))
                         if stream:
                             self.assertEqual(wire.count('data: [DONE]'),1)
                         else:
@@ -487,7 +587,7 @@ class ToolOutputHttpTests(unittest.TestCase):
                 for parallel in (None, True, False):
                     status, _, wire = post(port, self.request("C", stream=stream, parallel_tool_calls=parallel))
                     self.assertEqual(status, 200)
-                    self.assertIn("ordinary answer", wire)
+                    self.assertEqual(answer_content(wire, stream), 'ordinary answer')
                     status, _, wire = post(port, self.request("A", tools=TOOLS, stream=stream,
                         parallel_tool_calls=parallel, fixture_text=twice))
                     self.assertEqual(status, 500 if parallel is False and not stream else 200)

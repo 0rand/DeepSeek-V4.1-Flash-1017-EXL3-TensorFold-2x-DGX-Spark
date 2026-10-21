@@ -6,8 +6,12 @@ Nothing in this directory is activated by the normal `start.sh`.
 
 The staged installer also adds [DeepSeek native tool-output validation](../../docs/TOOL-OUTPUT.md).
 The current draft rejects malformed, unavailable and schema-invalid calls
-atomically, and buffers all strict chat answers until validation. It has CPU
+atomically. Prose streams until the first possible protocol marker, then the
+remainder and all calls wait for final validation. `TOOL_OUTPUT_STREAMING=0`
+restores whole-answer content buffering without disabling validation. It has CPU
 parser/fake-HTTP coverage; earlier live checks do not validate this revision.
+See the [2026-10-21 continuation record](../../runs/2026-10-21/parser-guardrails/README.md)
+for the old-image baseline, CPU gates and pending new-image deployment.
 
 The supported entry point is the self-contained root `./start-display-kv.sh`.
 With explicit `--build` it prepares a source-tagged image on both nodes; normal
@@ -16,7 +20,7 @@ both DRM modules with this
 repo's `scripts/display_drm.sh`, probes the mapping, and creates a fresh launch
 bundle. See [Display KV](../../docs/DISPLAY-KV.md) for usage and rollback.
 
-## Active Deployment
+## Deployment history
 
 The 2026-10-19 deployment uses `tensorfold-dsv41:display-kv-fe26bd75d49e` with
 strict tool-output rejection, `--thinking --reasoning-effort high`, and the

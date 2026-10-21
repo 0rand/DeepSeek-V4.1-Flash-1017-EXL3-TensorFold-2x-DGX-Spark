@@ -28,6 +28,23 @@ model services. The source input remains unchanged. See
 experiment test discovery as a substitute: some other experiment tests can use
 CUDA when available.
 
+The suite includes conservative streaming-prefix replays across character and
+two-chunk splits, literal-ownership counterexamples, namespace prefixes, final
+decoder consistency, cancellation, rollback and barrier-based early-content
+HTTP checks. Executable calls remain buffered through final strict validation.
+
+After an explicit display-KV image build and restart, capture live parser checks:
+
+```bash
+python3 -B tests/live_tool_streaming.py --base-url http://127.0.0.1:8100 --output /path/to/probes.json
+```
+
+The script executes no tools and retries nothing. It restricts traffic to an
+HTTP loopback IP and saves raw synthetic transcripts only when `--output` is
+provided. Exit 1 means at least one failure; exit 2 means no failure but at least
+one inconclusive case. A model refusal or failure to generate the target fixture
+cannot prove that a parser guardrail passed. Run `./verify.sh` as well.
+
 ## Run everything
 
 Run this on the head node, with the server up:
