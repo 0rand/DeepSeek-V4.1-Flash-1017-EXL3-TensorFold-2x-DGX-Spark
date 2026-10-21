@@ -127,8 +127,8 @@ from such relative-path recomputations and are withdrawn.
 |---|---|
 | `experiments/display-kv/apply.py` | `1ba8020b5984d131dcb63fe56494a931edb889f0363d2fa5be00376d01e06785` |
 | `experiments/display-kv/overlay/tool_output.py` | `3ae1213289babe2f64bdc7a8bb8a97af65e4450746d5ee086b3169ec7f13fef2` |
-| `tests/live_tool_streaming.py` | `bad8ba8db32aabd41023f46645ee4d5ca37d8e8aced18144e624b31baace3cab` |
-| `tests/live_tool_streaming_test.py` | `8f151acb80c9d0e5c989579e4e915fa5e96d4e015a923544da91e70f64de81b8` |
+| `tests/live_tool_streaming.py` | `adcb8d33edd2c96cfc3d374ae84e1bc7558616018cfb4586bcdb5606a8da37cc` |
+| `tests/live_tool_streaming_test.py` | `a3d55c5131b58e4166a1d9e3b28c0f75d46eda23507e327212816452676df1ee` |
 
 The previous `.display-kv-image` identity was saved before the cutover. The old
 stack was left running until the user could authorize the head's DRM preparation;
@@ -217,5 +217,13 @@ reported `TF_TOOL_OUTPUT_STREAMING=0` and `TF_DS_DISPLAY_KV_MIB=1792` in
   distinguishes the two modes instead of passing vacuously.
 
 Strict validation, typed rejections and literal preservation were unchanged in
-buffered mode, as the installed-source tests predicted. Restoring the streaming
-default needs one more launcher restart without the variable.
+buffered mode, as the installed-source tests predicted.
+
+Restore was checked at 07:24 UTC. After `./stop.sh && ./start-display-kv.sh`
+both ranks reported `TF_TOOL_OUTPUT_STREAMING=1`.
+[verify-restore.log](verify-restore.log) is 5/5 and
+[restored.json](restored.json) / [restored-probes.log](restored-probes.log) is
+**12 PASS, 2 INCONCLUSIVE, 0 FAIL** (exit 2), with prose back to 19, 32, 17 and
+27 pre-terminal content chunks. The deployed image is the same
+`tensorfold-dsv41:display-kv-58e319cb2866` throughout; only the launch variable
+changed and was reverted.

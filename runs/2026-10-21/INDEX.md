@@ -10,4 +10,4 @@ The code is deployed as `tensorfold-dsv41:display-kv-58e319cb2866` on both nodes
 and live-validated: `./verify.sh` 5/5, parser probe 12 PASS / 2 INCONCLUSIVE /
 0 FAIL. The two inconclusive cases are fixture-induction limits, not parser
 failures. The `TOOL_OUTPUT_STREAMING=0` rollback was also validated live with a
-negative control.
+negative control, and the streaming default was restored and re-validated.
