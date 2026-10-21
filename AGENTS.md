@@ -19,6 +19,7 @@ Then give the user the three client settings from [docs/CONNECT.md](docs/CONNECT
 
 - **Never `docker exec` into `tfv41-r0` or `tfv41-r1` while they serve.** The exec process counts against the rank's memory.
 - **Never stop the display manager** (`systemctl stop gdm`) on a Spark. On the tested pair it powered the node off.
+- **Never update the NVIDIA driver or kernel on this pair.** New drivers brick the Sparks. The preflight `[warn]` about a driver older than 580.178.04 is expected and non-fatal; do not try to fix it with an update.
 - **Run one model server at a time.** Each one needs port 8888 and ~100 GB of memory on each node.
 - **Keep `BIND_HOST=127.0.0.1`** unless the user asks for network access. Then set `API_KEY_FILE` too ([docs/CONNECT.md](docs/CONNECT.md)).
 - **If the server stops with exit code 75**, the lane broke on a device fault. Run `./stop.sh && ./start.sh`.
