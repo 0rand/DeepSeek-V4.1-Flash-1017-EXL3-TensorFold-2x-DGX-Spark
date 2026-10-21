@@ -637,7 +637,7 @@ class SpillStore:
         self.active: set[Job] = set()            # every job not yet done, also one whose entry was evicted
         self.clock = 0
         self.seq = 0
-        self.stuck: set[str] = set()             # evicted files that could not be removed (tried again later)
+        self.stuck: dict[str, int] = {}          # evicted files that could not be removed: path -> size (tried again)
         self._evictions = [0, 0]                 # evicted entries, and those whose file stayed, since a save began
         self.generation = 0                     # bumped whenever the index changes
         self.stats = Stats()
@@ -755,6 +755,8 @@ class SpillStore:
                 return False
             with os.scandir(mine) as found:                   # (a link or a FIFO named like a file is none)
                 return any(e.name.endswith(".safetensors") and e.is_file(follow_symlinks=False) for e in found)
+        except (FileNotFoundError, NotADirectoryError):
+            return False                                      # no rank folder: nothing to keep
         except OSError:
             return True                                       # (unknown: it keeps its slot and is looked at later)
 
@@ -1047,7 +1049,7 @@ class SpillStore:
                     pass
                 except OSError as exc:                         # the bytes stay on disk: save() measures the disk again
                     self.stats.unlink_failed += 1
-                    self.stuck.add(os.path.join(self.dir, e.name + ".safetensors"))
+                    self.stuck[os.path.join(self.dir, e.name + ".safetensors")] = e.size
                     self._evictions[1] += 1
                     print(f"[tensorfold] spill rank {self.rank}: could not remove {e.name}: {exc!r}", flush=True)
             self._evictions[0] += 1
@@ -1108,6 +1110,20 @@ class SpillStore:
                 best = e
         return best
 
+    def _retry_stuck(self) -> int:
+        """Try again to remove the evicted files that stayed. Returns the bytes of those that are still there."""
+
+        with self.lock:
+            for path in list(self.stuck):
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+                except OSError:
+                    continue
+                self.stuck.pop(path, None)
+            return sum(self.stuck.values())
+
     def _make_room(self, extra: int, keep: frozenset = frozenset(), cap: int | None = None) -> bool:
         """Every rank alike: the least recently used entries go until ``extra`` more bytes fit the cap (or ``cap``, when
         the free-disk floor asks for less). The index alone
@@ -1116,14 +1132,6 @@ class SpillStore:
         still in memory, which would otherwise evict each other in turn under a small cap)."""
 
         with self.lock:
-            for path in list(self.stuck):                  # an earlier eviction whose file stayed: once more
-                try:
-                    os.remove(path)
-                except FileNotFoundError:
-                    pass
-                except OSError:
-                    continue
-                self.stuck.discard(path)
             cap = self.cap if cap is None else min(cap, self.cap)
             total = self._total() + extra
             if total > cap and extra + sum(e.size for e in self.index.values() if e.key in keep) > cap:
@@ -1442,6 +1450,7 @@ class SpillStore:
         n = len(ids)
         if n < self.cfg.min_tokens:
             return None
+        stuck = self._retry_stuck()                    # evicted files that stayed still hold capacity
         failure, key, stored = None, None, 0
         try:
             key = ids_key(ids)                         # (this allocates too: it is inside the shared failure path)
@@ -1485,13 +1494,14 @@ class SpillStore:
                 raise
             failure, size, short = exc, 0, 0
         if self.world > 1 and self.gather is not None:
-            got = self.gather([-(-short >> 20), (size >> 20) + 1, int(failure is not None), stored])
+            got = self.gather([-(-short >> 20), (size >> 20) + 1, int(failure is not None), stored, -(-stuck >> 20)])
             if any(r[2] for r in got):             # one rank could not prepare it: every rank skips this save
                 self._log(failure if failure is not None else RuntimeError("another rank could not prepare the save"))
                 return None
             stored = max(r[3] for r in got)
             short = max(r[0] for r in got) << 20
             size = max(r[1] for r in got) << 20
+            stuck = max(r[4] for r in got) << 20
         if stored:
             with self.lock:
                 e = self.index.get(key) if key is not None else None
@@ -1519,20 +1529,33 @@ class SpillStore:
             if not drained:
                 self.stats.no_space += 1
                 return None
+        # Every rank evicts the same entries (the index decides, and the stuck bytes are agreed), so every rank knows
+        # alike whether this phase runs. Its failures are shared in one exchange before any rank goes on.
         self._evictions = [0, 0]
-        if short and not self._make_room(size, keep, cap=self._total() + size - short):
-            self.stats.no_space += 1               # below the floor even with every entry outside ``keep`` gone
-            return None
-        if not self._make_room(size, keep):
-            self.stats.full += 1
-            return None
-        if self._evictions[0]:
-            # Every rank evicted the same entries (the index decides). An eviction whose file stayed on one rank
-            # freed no room there: the save is skipped on every rank.
-            kept = self._evictions[1]
-            if self.world > 1 and self.gather is not None:
-                kept = max(r[0] for r in self.gather([kept]))
-            if kept:
+        if short or self._total() + size + stuck > self.cap:
+            code, failed = 0, None
+            try:
+                if short and not self._make_room(size, keep, cap=self._total() + size - short):
+                    code = 1                           # below the floor even with every entry outside ``keep`` gone
+                elif not self._make_room(size + stuck, keep):
+                    code = 2                           # it does not fit the cap
+            except Exception as exc:                   # noqa: BLE001  (a rank-local failure: shared below)
+                if self.world < 2 or self.gather is None:
+                    raise
+                code, failed = 3, exc
+            report = [code, self._evictions[1]]        # (an eviction whose file stayed freed no room on that rank)
+            reports = self.gather(report) if self.world > 1 and self.gather is not None else [report]
+            if any(r[0] == 3 for r in reports):
+                self._log(failed if failed is not None else RuntimeError("another rank could not make room"))
+                return None
+            code = max(r[0] for r in reports)
+            if code == 1:
+                self.stats.no_space += 1
+                return None
+            if code == 2:
+                self.stats.full += 1
+                return None
+            if any(r[1] for r in reports):
                 self.stats.no_space += 1
                 return None
         if short:

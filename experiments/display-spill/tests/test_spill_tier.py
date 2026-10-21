@@ -360,7 +360,7 @@ class SpillTierTests(unittest.TestCase):
     def test_a_failure_while_one_rank_prepares_a_save_is_shared_before_the_gather(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 0, 0])
+            sent = self.gathered(store, [0, 1, 0, 0, 0])
             new = list(range(500, 600))
             snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
             bad = torch.zeros(4, 4, dtype=torch.uint8).t()                # not contiguous
@@ -373,14 +373,14 @@ class SpillTierTests(unittest.TestCase):
     def test_a_peer_that_failed_to_prepare_a_save_makes_every_rank_skip_it(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 1, 0])
+            sent = self.gathered(store, [0, 1, 1, 0, 0])
             new = list(range(500, 600))
             snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
             self.assertEqual(sent[0][2], 0)
             self.assertFalse(store.has(new))
             # With the peer well, the same save goes through.
-            self.gathered(store, [0, 1, 0, 0])
+            self.gathered(store, [0, 1, 0, 0, 0])
             self.assertIsNotNone(store.save(new, snap, skip=("ids",)))
             self.assertTrue(store.drain(10))
             self.assertTrue(store.has(new))
@@ -458,7 +458,7 @@ class SpillTierTests(unittest.TestCase):
             store._make_room = lambda *a, **k: rooms.append(a) or real(*a, **k)
             store.drain = lambda timeout=None: False                      # a write is still queued after the wait
             store.disk_free = lambda: 0
-            sent = self.gathered(store, [0, 1, 0, 0])
+            sent = self.gathered(store, [0, 1, 0, 0, 0])
             self.assertEqual(sent, [])
             new, snap = self.new_state()
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
@@ -468,7 +468,7 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(sent[-1][1], 0)                              # this rank told the others it did not drain
             # The peer reports a drain that did not finish; this rank's own drain did.
             store.drain = lambda timeout=None: True
-            store.world, store.gather = 2, lambda row: [list(row), [0, 0]] if len(row) == 2 else [list(row), [0, 1, 0, 0]]
+            store.world, store.gather = 2, lambda row: [list(row), [0, 0]] if len(row) == 2 else [list(row), [0, 1, 0, 0, 0]]
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
             self.assertEqual(rooms, [])
 
@@ -563,7 +563,7 @@ class SpillTierTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 0, 0])
+            sent = self.gathered(store, [0, 1, 0, 0, 0])
             new, snap = self.new_state()
             with mock.patch.object(self.sp, "Entry", side_effect=MemoryError("entry")):
                 self.assertIsNone(store.save(new, snap, skip=("ids",)))
@@ -584,7 +584,7 @@ class SpillTierTests(unittest.TestCase):
 
             store.disk_free = broken
             self.assertEqual(store.info()["disk_free_bytes"], 0)          # the metrics still answer
-            sent = self.gathered(store, [0, 1, 0, 0])
+            sent = self.gathered(store, [0, 1, 0, 0, 0])
             new, snap = self.new_state()
             self.assertIsNone(store.save(new, snap, skip=("ids",)))       # skipped on every rank
             self.assertEqual(sent[0][2], 1)
@@ -602,7 +602,7 @@ class SpillTierTests(unittest.TestCase):
                 return 0
 
             store.disk_free = once
-            sent = self.gathered(store, [0, 1, 0, 0])
+            sent = self.gathered(store, [0, 1, 0, 0, 0])
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
             self.assertEqual(rooms, [])
             self.assertEqual(len(store.index), 1)
@@ -673,7 +673,7 @@ class SpillTierTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 0, 0])
+            sent = self.gathered(store, [0, 1, 0, 0, 0])
             new, snap = self.new_state()
             with mock.patch.object(self.sp, "ids_key", side_effect=MemoryError("key")):
                 self.assertIsNone(store.save(new, snap, skip=("ids",)))
@@ -684,7 +684,7 @@ class SpillTierTests(unittest.TestCase):
     def test_a_stored_prompt_is_skipped_by_every_rank_through_the_same_agreement(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 0, 1])
+            sent = self.gathered(store, [0, 1, 0, 1, 0])
             snap = Snap(ids=ids, ring=torch.arange(len(ids) * 4, dtype=torch.uint8).reshape(len(ids), 4))
             skipped = store.stats.skipped
             self.assertIsNone(store.save(ids, snap, skip=("ids",)))
@@ -692,7 +692,7 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(sent[0][3], 1)
             self.assertEqual(store.stats.skipped, skipped + 1)
             # A peer that says "stored" alone also stops this rank, so no rank is left in a later collective.
-            sent = self.gathered(store, [0, 1, 0, 1])
+            sent = self.gathered(store, [0, 1, 0, 1, 0])
             new, snap = self.new_state()
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
             self.assertEqual(len(store.index), 1)
@@ -1375,6 +1375,9 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(store.stats.no_space, 1)
             self.assertTrue(os.path.exists(first_path))
             third_ids, third = self.new_state(1300)
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
+                self.assertIsNone(store.save(third_ids, third, skip=("ids",)))       # the stuck file still holds room
+            self.assertEqual(len(store.index), 0)
             self.assertIsNotNone(store.save(third_ids, third, skip=("ids",)))        # the file goes at the next try
             self.assertFalse(os.path.exists(first_path))
 
@@ -1388,15 +1391,56 @@ class SpillTierTests(unittest.TestCase):
             self.assertTrue(store.drain(10))
 
             def gather(values):
-                if len(values) == 4:                                      # the size exchange: the peer agrees
+                if len(values) == 5:                                      # the size exchange: the peer agrees
                     return [list(values), list(values)]
-                return [list(values), [1]]                                # the peer's eviction left its file
+                return [list(values), [0, 1]]                             # the peer eviction left its file
 
             store.gather, store.world = gather, 2
             second_ids, second = self.new_state(900)
             self.assertIsNone(store.save(second_ids, second, skip=("ids",)))
             self.assertEqual(store.stats.no_space, 1)
             self.assertEqual(len(store.index), 0)                         # the index changed alike on both ranks
+
+    def test_a_failure_while_one_rank_makes_room_is_shared(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=((1 << 20) + 1000) / (1 << 30), min_free_gib=0, min_tokens=1)
+            classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            first_ids, first = self.new_state(500)
+            self.assertIsNotNone(store.save(first_ids, first, skip=("ids",)))
+            self.assertTrue(store.drain(10))
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            store.gather, store.world = gather, 2
+            second_ids, second = self.new_state(900)
+            with mock.patch.object(store, "_make_room", side_effect=MemoryError("victims")):
+                self.assertIsNone(store.save(second_ids, second, skip=("ids",)))
+            self.assertEqual(rounds[-1][0], 3)                            # the failure is in the exchange
+
+    def test_a_build_without_a_rank_folder_here_takes_no_retention_slot(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-00000000000000aa", "rank0")
+            other = os.path.join(root, "spill-00000000000000bb", "rank1")     # the newer build has only another rank
+            for folder in (old, other):
+                os.makedirs(folder)
+            for folder in (old, other):
+                with open(os.path.join(folder, "0.safetensors"), "wb") as f:
+                    f.write(b"x")
+            os.utime(os.path.join(root, "spill-00000000000000aa"), (1000, 1000))
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertTrue(os.path.exists(os.path.join(old, "0.safetensors")))      # the build with entries stays
+            self.assertTrue(os.path.exists(os.path.join(other, "0.safetensors")))    # another rank's folder is not touched
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
