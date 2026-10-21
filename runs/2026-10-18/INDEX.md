@@ -146,3 +146,9 @@ What the measurements showed:
 - **Kernel counters** for one 64K prompt (`scripts/vmd.sh`): with default compaction, 548 direct compaction stalls on the head; after step 4, 7. Without the page drop the worker reclaimed ~2.2M pages a 64K prompt; with it, ~0.5M.
 - **Drive** (`scripts/randread.c` on the worker, idle server): 4 KiB random reads at 514K/s buffered (128 threads) and 0.9-1.6M/s with O_DIRECT. A chunk needs ~49K of them, so the drive is not the limit.
 - **GPU clock and rails**: 2,360-2,500 MHz under load, no throttle reason set; both RoCE rails carry equal traffic.
+
+## Display-KV benchmark records
+
+The ten `display-kv-bench/*.md` files are the original display-KV benchmark
+records from 18 October, moved from the old `runs/2026/10/` layout. They are raw
+run records; the experiment summary is in [Display KV](../../docs/DISPLAY-KV.md).
