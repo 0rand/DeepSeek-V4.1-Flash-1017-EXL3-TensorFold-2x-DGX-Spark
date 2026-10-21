@@ -131,11 +131,14 @@ def _pinned(n: int) -> list[torch.Tensor]:
 BUILDS_SHARED = 64                     # the most builds a rank offers to the joint choice (the top of TF_DS_SPILL_KEEP_BUILDS)
 
 
+def _build_name_ok(name: str) -> bool:
+    return len(name) == len("spill-") + 16 and all(c in "0123456789abcdef" for c in name[len("spill-"):])
+
+
 def _encode_builds(names: Sequence[str]) -> list[int]:
     """Build folder names (``spill-`` and 16 hex digits) as integers for a gather: a count, then 4 numbers a name."""
 
-    coded = [n[len("spill-"):] for n in names if len(n) == len("spill-") + 16
-             and all(c in "0123456789abcdef" for c in n[len("spill-"):])][:BUILDS_SHARED]
+    coded = [n[len("spill-"):] for n in names if _build_name_ok(n)][:BUILDS_SHARED]
     row = [len(coded)]
     for hexes in coded:
         row += [int(hexes[i:i + 4], 16) for i in range(0, 16, 4)]
@@ -300,6 +303,21 @@ def _enc(value: Any, name: str, items: list) -> dict:
     if isinstance(value, dict) and all(isinstance(k, str) for k in value):
         return {"d": {k: _enc(v, f"{name}.{k}", items) for k, v in value.items()}}
     raise TypeError(f"the spill tier cannot store {type(value).__name__} at {name}")
+
+
+def _numpy_fields(node: Any) -> set[str]:
+    """The tensor names of a layer spec that ``_dec`` turns into NumPy arrays (they are read into host memory)."""
+
+    found: set[str] = set()
+    if isinstance(node, dict):
+        if node.get("np") and "t" in node:
+            found.add(node["t"])
+        for value in node.values():
+            found |= _numpy_fields(value)
+    elif isinstance(node, list):
+        for value in node:
+            found |= _numpy_fields(value)
+    return found
 
 
 def _dec(spec: dict, tensors: dict) -> Any:
@@ -824,12 +842,21 @@ class SpillStore:
         keep a build that its peer removes (a rollback then finds no entry that all ranks hold)."""
 
         keep = max(0, self.cfg.keep_builds)
+        names = [n for n in names if _build_name_ok(n)]
         if self.world < 2 or self.gather is None:
             return set(names[:keep])
-        rows = self.gather(_encode_builds(names))
-        lists = [_decode_builds(row) for row in rows]
-        common = [n for n in lists[0] if all(n in other for other in lists)]
-        return set(common[:keep])
+        offered: list[list[str]] = []
+        offset = 0
+        while True:                                            # a window of each rank's newest builds at a time
+            rows = self.gather(_encode_builds(names[offset:offset + BUILDS_SHARED]))
+            if not offered:
+                offered = [[] for _ in rows]
+            for rank, row in enumerate(rows):
+                offered[rank] += _decode_builds(row)
+            common = [n for n in offered[0] if all(n in set(other) for other in offered)]
+            if len(common) >= keep or not any(int(row[0]) == BUILDS_SHARED for row in rows):
+                return set(common[:keep])
+            offset += BUILDS_SHARED
 
     def _prune_builds(self) -> int:
         """Folders of other compatibility hashes (other builds, models, layouts): the newest ``keep_builds`` that all
@@ -1566,13 +1593,14 @@ class SpillStore:
             raise ValueError(f"{path}: another format or build")
         _check_table(header)                                  # before any allocation: the header is not trusted yet
         dests = {}
+        on_host = _numpy_fields(json.loads(meta.get("layers", "[]")))       # NumPy fields never need the device
         for name, d in header.items():
             if name == "__metadata__":
                 continue
             dt, shape = _TD[d["dtype"]], d["shape"]
             dst = dst_for(name, shape, dt)
             if dst is None:
-                dst = torch.empty(shape, dtype=dt, device=self.device)
+                dst = torch.empty(shape, dtype=dt, device="cpu" if name in on_host else self.device)
             elif list(dst.shape) != list(shape) or dst.dtype != dt:
                 raise ValueError(f"{name}: file {shape} {dt}, destination {list(dst.shape)} {dst.dtype}")
             if not dst.is_contiguous():

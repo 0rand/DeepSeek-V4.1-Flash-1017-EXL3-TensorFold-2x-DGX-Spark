@@ -1271,6 +1271,48 @@ class SpillTierTests(unittest.TestCase):
             self.assertFalse(self.sp._PINNED)
             self.assertIsNone(store._read_stage)
 
+    def test_the_joint_choice_of_builds_goes_on_until_enough_common_builds_are_found(self):
+        from unittest import mock
+
+        names = [f"spill-{n:016x}" for n in range(6, 0, -1)]            # newest first: ...06 down to ...01
+        peer = names[3:]                                                # the peer lacks the three newest
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=2)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            offsets = []
+
+            def gather(values):
+                offsets.append(len(offsets) * 3)
+                window = offsets[-1]
+                return [list(values), self.sp._encode_builds(peer[window:window + 3])]
+
+            with mock.patch.object(self.sp, "BUILDS_SHARED", 3):
+                store.gather, store.world = gather, 2
+                kept = store._retained_builds(names)
+            self.assertEqual(kept, {names[3], names[4]})                # the newest two builds that both have
+            self.assertEqual(len(offsets), 2)                           # a second window was needed
+
+    def test_numpy_fields_are_read_into_host_memory(self):
+        self.assertEqual(self.sp._numpy_fields({"d": {"host": {"t": "0.host", "np": 1},
+                                                      "x": {"l": [{"t": "0.x.0"}, {"t": "0.k", "np": 1}]}}}),
+                         {"0.host", "0.k"})
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            classes = [f"{KeptLike.__module__}:{KeptLike.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            ids = list(range(100))
+            obj = KeptLike(1, 0, 100, 100, np.arange(100, dtype=np.int32),
+                           {"32": (torch.arange(8, dtype=torch.uint8), None)}, False, np.arange(100, dtype=np.int64), 1)
+            self.assertIsNotNone(store.save(ids, obj, skip=("disk", "hits")))
+            self.assertTrue(store.drain(10))
+            store.device = "meta"                                         # a device that the NumPy fields must not use
+            lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            lj.done.wait(10)
+            kinds = {name: tensor.device.type for name, tensor in lj.dests.items()}
+            self.assertEqual(kinds["0.host"], "cpu")
+            self.assertEqual(kinds["0.keys"], "cpu")
+            self.assertEqual(kinds["0.snaps.32.0"], "meta")
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io
