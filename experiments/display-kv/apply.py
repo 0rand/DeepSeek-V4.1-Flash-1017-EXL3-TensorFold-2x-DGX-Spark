@@ -429,7 +429,7 @@ def transform(relative: str | Path, text: str) -> str:
         text = _replace_once(text, 'from tensorfold.cuda.turns import Turns, Yield\n',
             'from tensorfold.cuda.turns import Turns, Yield\nfrom tensorfold.cuda.tool_output import ToolOutputGuard\n', name)
         text = _replace_once(text, '        policy = ToolCallPolicy(body)\n',
-            '        policy = ToolCallPolicy(body)\n        tool_output_guard = (ToolOutputGuard(tools, request=body) if chat and getattr(self, "strict_tool_output", False)\n                             and (tools or "tools" in body) else None)\n', name)
+            '        policy = ToolCallPolicy(body)\n        tool_output_guard = (ToolOutputGuard(tools, request=body) if chat and getattr(self, "strict_tool_output", False)\n                             else None)\n', name)
         text = _replace_once(text,
             '        calls_stream = ToolCallStreamer(tools) if tools and not policy.single else None\n',
             '        calls_stream = (ToolCallStreamer(tools) if tools and not policy.single\n                        and tool_output_guard is None else None)\n', name)
@@ -440,6 +440,14 @@ def transform(relative: str | Path, text: str) -> str:
             '        if tool_output_guard is not None:\n            content, calls = tool_output_guard.parse(raw_answer, max_calls=policy.max_calls)\n        else:\n            content, calls = parse_tool_calls(raw_answer, tools, max_calls=policy.max_calls) if tools else (answer, None)\n            content = policy.content(content) if tools else content\n', name)
         return text
     if name == "http.py":
+        text = _replace_once(text, '                self.end_headers()\n                self.wfile.write(data)\n',
+            '                error = payload.get("error")\n'
+            '                if (isinstance(error, dict) and error.get("code") == ModelOutputError.code\n'
+            '                        and error.get("type") == "model_output_error"\n'
+            '                        and error.get("source") == "tensorfold.tool_output_guard"):\n'
+            '                    # Terminal native validation errors must not trigger SDK retries.\n'
+            '                    self.send_header("x-should-retry", "false")\n'
+            '                self.end_headers()\n                self.wfile.write(data)\n', name)
         text = _replace_once(text, 'from tensorfold.cuda import health\n',
             'from tensorfold.cuda import health\nfrom tensorfold.cuda.tool_output import ModelOutputError\n', name)
         text = _replace_once(text,

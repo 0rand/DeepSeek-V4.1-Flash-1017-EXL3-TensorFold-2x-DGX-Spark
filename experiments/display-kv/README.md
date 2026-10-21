@@ -4,10 +4,10 @@ Experimental. Two-node integrity, inference, prefix reuse and basic concurrency
 have been validated; full-window and sustained-load validation remain open.
 Nothing in this directory is activated by the normal `start.sh`.
 
-The staged installer now also adds [DeepSeek tool-output hardening](../../docs/TOOL-OUTPUT.md).
-It rejects complete unoffered calls without retries, and buffers tool-enabled
-answers until validation. Core rejection and recovery paths are live-tested;
-see the linked notes for remaining validation gaps.
+The staged installer also adds [DeepSeek native tool-output validation](../../docs/TOOL-OUTPUT.md).
+The current draft rejects malformed, unavailable and schema-invalid calls
+atomically, and buffers all strict chat answers until validation. It has CPU
+parser/fake-HTTP coverage; earlier live checks do not validate this revision.
 
 The supported entry point is the self-contained root `./start-display-kv.sh`.
 With explicit `--build` it prepares a source-tagged image on both nodes; normal

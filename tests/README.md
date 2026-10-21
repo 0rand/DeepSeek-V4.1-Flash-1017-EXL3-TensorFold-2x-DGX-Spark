@@ -12,6 +12,22 @@ The CPU-only engine-patch tests are described in [Display KV](../docs/DISPLAY-KV
 
 `bash tests/host_tuning_test.sh` runs the node part of `scripts/host_tuning.sh` in a temporary folder, with stub `sysctl` and `systemctl` commands. It changes nothing on the node. It checks that the first run keeps the old sysctl values, that `--undo` puts them back, that a missing or stopped earlyoom stops the setup, that a failed setup puts the node back, and that transparent huge pages go off with a systemd unit and come back on with `--undo`.
 
+## Native tool-output validation (CPU only)
+
+```bash
+python3 -B experiments/display-kv/tests/run_tool_output_cpu.py --source /path/to/TensorFold
+```
+
+`TF_DISPLAY_SOURCE` can replace `--source`. Use a pristine Git checkout at the
+installer pin. The runner stages the public overlay as Docker does, executes the
+real installer into temporary copies, verifies wrong-pin/drift/reapply refusals,
+and runs parser/schema and fake-engine loopback HTTP regressions in normal and
+`-O` Python. It does not download dependencies, load native/GPU code or contact
+model services. The source input remains unchanged. See
+[the contract and actual-model gates](../docs/TOOL-OUTPUT.md). Do not use broad
+experiment test discovery as a substitute: some other experiment tests can use
+CUDA when available.
+
 ## Run everything
 
 Run this on the head node, with the server up:

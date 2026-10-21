@@ -16,3 +16,11 @@ toolkit copied into it. See the repository's `LICENSE` for this recipe.
 
 The TensorFold source installer targets the exact upstream revision
 `07aa02585f64cfb04c60a96de6554c0d4708ed46` and preserves its source headers.
+
+The native tool-output validator extends this recipe's existing strict guard
+and installer hooks, with CPU-reviewed atomic protocol/schema validation and
+bounded evaluation. Its recognized wrapper formats follow TensorFold's pinned
+native tool-call path. It remains readable source in `overlay/tool_output.py`,
+not a replacement engine source archive. The input pin and fingerprints describe
+upstream inputs only; installed engine files are modified derivatives. This
+hardening does not import the separate allocator/toolkit or change its licensing.

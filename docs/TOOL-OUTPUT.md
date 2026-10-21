@@ -1,120 +1,145 @@
-# Tool Output Hardening
+# Native tool-output validation (draft)
 
-This change is included in the display-KV image installer. Live JSON rejection,
-SSE rejection, offered-tool recovery and default-thinking checks passed on
-2026-10-19 with image `tensorfold-dsv41:display-kv-fe26bd75d49e`. The original
-base image is not modified. An actual OpenCode-session retest is still pending.
+The display-KV recipe's existing source installer now validates the complete
+DeepSeek-V4.1 **answer** before returning content or executable calls. This is a
+CPU-tested protocol/schema hardening change, not evidence of actual-model tool
+reliability or a GPU performance improvement. The previously recorded live
+checks for the narrower unoffered-tool guard do not validate this revision.
 
-## Behaviour
+## Contract and compatibility changes
 
-The DeepSeek-V4.1 app rejects a complete tool-call envelope when it names a tool
-not offered by that request. This includes the reported case of `task` being
-generated while only other tools are available in the selected OpenCode agent.
-It never enables a denied tool, repairs arguments, substitutes another name, or
-retries a rejected model response.
+- Exact, case-sensitive offered names, `tool_choice`, parallel policy and call
+  limits are enforced. `parallel_tool_calls: null` means the existing default
+  (`true`); explicit `false` still disallows multiple calls. No admission limiter
+  is added, and independent requests retain existing concurrency semantics.
+- Malformed, truncated, unavailable, schema-invalid and over-limit executable
+  output rejects the **whole** answer, including a valid call preceding the
+  failure. The permissive legacy parser is not used to repair or truncate it.
+- Strict validation also applies when `tools` is omitted, null or empty: a model
+  cannot turn an unoffered executable envelope into ordinary answer text. This
+  means all strict DeepSeek chat answer content is buffered until completion,
+  including no-tool answers. Reasoning remains separately streamed and is not
+  treated as executable answer output. Other families keep their legacy path.
+- JSON, Qwen function/parameter XML, GLM argument tags and both spaced and
+  unspaced DeepSeek DSML wrappers are supported. Duplicate JSON/parameter keys,
+  nonfinite numbers, unexpected envelope fields and unparsed residue reject.
+- Explicit quotes, inline code, fenced code and lines with an explicit leading
+  Markdown blockquote marker remain literal content (including prose before a
+  marker on that quoted line). Delimiters on explicitly quoted lines cannot
+  open or close inline state in unquoted prose. Inline spans cannot cross a
+  quoted-line, blank-paragraph or block-fence boundary; multiline spans within
+  uninterrupted prose remain supported. Lazy quote continuation is not inferred. A
+  malformed literal example cannot hide a later executable
+  attempt outside its literal span. Protocol markers inside an argument string
+  remain data. Markdown scanning resumes only after a whole accepted protocol
+  envelope: backticks, fence runs and quotes in its arguments cannot start
+  literal state around a later call. True prose fences, including unclosed
+  fences, still protect their examples. Unquoted markup is an attempted call,
+  not a guaranteed example.
+- Supplied IDs are preserved exactly, not normalized or replaced. Empty,
+  non-string or duplicate IDs reject; an absent ID receives a new generated ID.
 
-The effective offered set is used after `tool_choice` filtering. If a request
-declares tools but selects `tool_choice: none`, a generated tool call is still
-rejected. Requests without a tools field and other TensorFold families retain
-their existing behaviour.
+## Bounded schema subset
 
-Recognized complete envelopes are JSON, Qwen function/parameter XML and GLM
-argument tags inside `<tool_call>`, plus DeepSeek-V4.1's spaced DSML calls block.
-Explicitly quoted, inline-code, fenced-code and Markdown blockquote examples
-remain content rather than becoming executable calls. The same applies to tool
-syntax appearing inside reasoning, which is separated before answer validation.
-Unquoted protocol markup is considered an attempted call; the server cannot
-reliably infer that an unquoted call was merely an example.
+The dependency-free validator supports boolean schemas, local JSON-pointer
+`$ref`, `type`, `enum`, `const`, `allOf`/`anyOf`/`oneOf`/`not`, `if`/`then`/`else`,
+object properties/requirements/additional and pattern properties/property
+counts/dependent requirements, arrays/items/prefix items/length/uniqueness/
+contains counts, string length/pattern and numeric bounds/`multipleOf`.
+`$defs` and `definitions` are supported. Standard metadata annotations are
+ignored, including `format` (it is **not** asserted). Unsupported assertion
+keywords or invalid assertion shapes fail closed, including in unused branches.
+This is deliberately not a complete JSON Schema implementation.
 
-Malformed and truncated envelopes are outside this first patch's error
-classification. They are not mislabeled as unavailable tools, and can still
-surface through the existing permissive parser. Argument schema validation and
-model-level reliability are not fixed by this change. Existing parser JSON
-normalization remains in place; argument values are not fuzzily repaired or
-rewritten by the new guard.
+Only an ordinary instance mismatch can be inverted by `not` or used to select
+another logical branch. Invalid schemas, recursive-depth failures and exhausted
+work budgets are terminal across every combinator. Each call shares a 10,000
+step budget across structural validation, branches, references and equality
+checks. Schema and argument JSON serializations are each limited to 262,144
+characters. Schema structure and recursive schema-evaluation depth are capped
+at 64; this is **not** a cap on full argument-instance nesting. Unconstrained
+subtrees (for example, additional properties allowed by `true` or the default)
+are not recursively evaluated and may exceed 64 levels, subject to serialized
+size and Python's JSON parser/serializer recursion limits.
 
-## Streaming
+Regexes are a deliberately restricted Python `re` subset: sequences of literal,
+dot, character-class and simple escaped atoms; optional outer `^`/`$`; fixed
+atom repeats up to 128 with a conservative repeat-product bound of 256; at most
+one variable atom repeat, requiring **both** anchors. Patterns are limited to 256 characters,
+input strings/keys to 8,192 characters and aggregate estimated regex work to
+2,000,000 per call. Groups, alternation, lookaround, backreferences, flags,
+lazy/possessive and compound repeats reject **before compilation**. Existing
+clients using broader regex or schema features will need compatible schemas;
+there is no silent permissive fallback.
 
-For strict DeepSeek requests with tools, answer content and all executable tool
-deltas are buffered until the complete answer passes validation. Reasoning can
-still stream separately. This prevents an offered call from being emitted before
-a later unoffered call invalidates the response. It also means plain answer text
-on tool-enabled requests arrives at completion rather than token by token.
+## Terminal wire error
 
-The validation state is local to each request. Rejecting a response happens
-after model generation and does not break the distributed inference lane. A
-subsequent request can run normally.
-
-Non-streaming failures return HTTP 500, not a client-input HTTP 400:
+Non-streaming rejection is HTTP 500 with this typed object (the existing
+`unavailable_tool_call` code is retained for compatibility):
 
 ```json
 {
   "error": {
     "type": "model_output_error",
     "code": "unavailable_tool_call",
-      "message": "The model attempted to call a tool not offered by this request. Reason: unavailable_tool; source: tensorfold.tool_output_guard; diagnostic ID: <id>.",
-      "source": "tensorfold.tool_output_guard",
-      "reason": "unavailable_tool",
-      "rejection_id": "<id>"
+    "source": "tensorfold.tool_output_guard",
+    "reason": "invalid_executable_tool_output",
+    "rejection_id": "<id>",
+    "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: <id>."
   }
 }
 ```
 
-For an established SSE stream the HTTP status remains 200. The server emits
-one error frame with the same error object and then `data: [DONE]`, without a
-normal successful finish or executable tool deltas. The error does not include
-the generated arguments or raw envelope. The diagnostic ID is also included in
-the message so clients displaying only the message can identify the failure.
+The JSON response adds `x-should-retry: false` only for this native typed error;
+ordinary backend 500s retain their existing retry behavior. This is a client
+retry hint, not a guarantee that all clients honor it. The server itself does
+not retry generation. For an already-open SSE stream, HTTP stays 200 and one
+error frame is followed by `data: [DONE]`, without executable deltas, answer
+content or a successful finish. A subsequent request can recover normally.
+Reasoning already streamed is not retracted.
 
-Backend logs contain one bounded JSON diagnostic per rejection, with the same
-`rejection_id`, rejected name (96 characters maximum), wrapper format, declared
-and effective tool names (up to 64 names each), tool-choice mode, matched span
-offsets and an answer SHA-256 fingerprint. No arguments, matched text, reasoning
-or conversation bodies are logged. JSON encoding escapes control characters to
-keep diagnostics on one line. A declared tool excluded by `tool_choice` is
-identified by `reason=disallowed_by_tool_choice`; a name absent from the request
-has `reason=unavailable_tool`. Both retain the `unavailable_tool_call` error code
-and the same fail-closed behavior.
+Diagnostics contain the rejection ID, source, code, generic reason and an answer
+SHA-256 fingerprint, without raw arguments, answer or reasoning. The earlier
+guard's detailed wrapper/name/span diagnostics are no longer emitted. Proxy
+errors are separate; do not confuse this source with proxy-side validation.
 
-Do not confuse backend errors (`source=tensorfold.tool_output_guard`) with the
-MediaLLMProxy raw-call guard's `invalid_raw_tool_call`. Proxy and backend logs
-are separate evidence sources. These diagnostics do not establish that an
-unquoted protocol example was intended as a tool call; classification itself
-is unchanged.
+## Reproduce CPU checks
 
-There is no server-side retry or fallback on this error. A client may have its
-own retry policy, particularly for HTTP 500; clients should treat this explicit
-error code as a failed model response rather than repeatedly submitting it.
-
-## Activation And Tests
-
-An explicit `./start-display-kv.sh --build` includes changes to the guard and
-selects an updated source-tagged image. A plain launch reuses the saved image,
-without rebuilding or copying. The guard applies to this image's DeepSeek app
-whether or not its display allocation is enabled. Existing running containers
-are immutable and are not changed by staging or testing this patch.
-
-With a pristine pinned TensorFold checkout:
+Use an existing pristine TensorFold Git checkout at the installer's exact pin:
+`07aa02585f64cfb04c60a96de6554c0d4708ed46`. Only Python's standard library and
+Git are needed for these checks; no downloads or package installation occur.
 
 ```bash
-TF_DISPLAY_SOURCE=/path/to/TensorFold PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/display-kv/tests -v
+python3 -B experiments/display-kv/tests/run_tool_output_cpu.py --source /path/to/TensorFold
+# Or: TF_DISPLAY_SOURCE=/path/to/TensorFold python3 -B experiments/display-kv/tests/run_tool_output_cpu.py
 ```
 
-Classifier tests cover offered/unoffered JSON, XML, GLM and DSML, literals,
-nested argument text and global call limits. Fake-engine HTTP tests cover
-streaming and non-streaming errors, mixed-call atomicity, concurrent requests,
-recovery and one generation per rejected request. They run an ephemeral local
-HTTP server, not the model service, and do not load CUDA or real model weights.
+The runner clones into temporary directories, stages `apply.py` and `overlay/`
+using the Dockerfile COPY layout, and executes the **real installer CLI** in
+normal and optimized (`-O`) Python. It verifies installed bytes against the
+transforms/overlay; wrong HEAD, changed source fingerprints and reapplication
+must refuse without source writes. Parser/schema and fake-engine loopback HTTP
+regressions then import the actually installed source in both modes. The input
+checkout is read-only and checked unchanged. Targeted transformed-source tests
+can also be run with `TF_DISPLAY_SOURCE` and unittest discovery using
+`-p 'test_tool_output*.py'` against the pristine checkout.
 
-After deployment, test in an OpenCode agent where `task` remains unavailable.
-Do not enable the tool to make the test pass. Also verify normal tool calls,
-tool-result round trips, plain answers and literal syntax examples. Host-memory
-pressure and SSD spill support are separate issues; this guard changes neither.
+The original revision and pristine source fingerprints remain unchanged in
+`apply.py`: they validate **input**, not installed output. Installed source is
+modified and its Git diff and overlay hash must be retained for provenance;
+HEAD alone must never be presented as proof of pristine installed bytes.
+Docker already copies the overlay directory; no opaque patch bundle or private
+source copy is required. No running containers are changed by source testing.
 
-`tests/live_tool_hardening.py` performs model-backed API probes without executing
-or retrying generated calls. Core rejection checks successfully induced an
-unoffered `task` call. Additional mixed-call and literal-copy probes did not
-induce their requested fixtures in the initial live run: the model selected
-only an offered call or refused to reproduce the example. Those cases remain
-inconclusive live, rather than evidence of a parser failure; they pass the
-deterministic fake-engine HTTP tests.
+## Actual-model / GPU gates still required
+
+This draft has not built an image or loaded a model, CUDA extension or GPU.
+Before promotion, explicitly build/deploy a new source-tagged image and test
+real JSON/SSE rejection and recovery, valid calls/IDs and tool-result round
+trips, forced/none/no-tool/nullable-parallel requests, both DSML forms, literal
+examples and concurrent streams. Check client retry handling with the actual
+SDK/proxy and repeat the OpenCode agent case without enabling the denied tool.
+Model probes that do not induce their requested output are inconclusive, not
+passing rejection evidence. Check cancellation and reasoning latency on the
+real serving path. This change makes no memory, RDMA, prebuilt-extension,
+host-tuning, distributed-liveness or measured throughput claims.
