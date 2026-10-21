@@ -1,0 +1,87 @@
+{
+  "synthetic": true,
+  "generated_tools_executed": false,
+  "temporary_listeners_closed": true,
+  "results": [
+    {
+      "contract": "LegacyRaw",
+      "case": "literal",
+      "stream": false,
+      "http_status": 200,
+      "preserves_contract": false,
+      "call_count": 1,
+      "errors": []
+    },
+    {
+      "contract": "LegacyRaw",
+      "case": "literal",
+      "stream": true,
+      "http_status": 200,
+      "preserves_contract": false,
+      "call_count": 1,
+      "errors": []
+    },
+    {
+      "contract": "LegacyRaw",
+      "case": "mixed",
+      "stream": false,
+      "http_status": 200,
+      "preserves_contract": true,
+      "call_count": 1,
+      "errors": []
+    },
+    {
+      "contract": "LegacyRaw",
+      "case": "mixed",
+      "stream": true,
+      "http_status": 200,
+      "preserves_contract": false,
+      "call_count": 1,
+      "errors": [
+        {
+          "type": "model_output_error",
+          "code": "invalid_raw_tool_call",
+          "source": "mediallmproxy.raw_tool_guard",
+          "reason": "mixed_native_raw_calls",
+          "message": "The model response contained an invalid raw tool call (reason: mixed_native_raw_calls)."
+        }
+      ]
+    },
+    {
+      "contract": "StrictNative",
+      "case": "literal",
+      "stream": false,
+      "http_status": 200,
+      "preserves_contract": true,
+      "call_count": 0,
+      "errors": []
+    },
+    {
+      "contract": "StrictNative",
+      "case": "literal",
+      "stream": true,
+      "http_status": 200,
+      "preserves_contract": true,
+      "call_count": 0,
+      "errors": []
+    },
+    {
+      "contract": "StrictNative",
+      "case": "mixed",
+      "stream": false,
+      "http_status": 200,
+      "preserves_contract": true,
+      "call_count": 1,
+      "errors": []
+    },
+    {
+      "contract": "StrictNative",
+      "case": "mixed",
+      "stream": true,
+      "http_status": 200,
+      "preserves_contract": true,
+      "call_count": 1,
+      "errors": []
+    }
+  ]
+}

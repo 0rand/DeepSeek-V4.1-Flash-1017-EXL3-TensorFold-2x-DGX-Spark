@@ -1,0 +1,369 @@
+=== tool availability ===
+python3: Python 3.12.3
+ruff: NOT INSTALLED
+shellcheck: NOT INSTALLED
+=== tests/run_offline.sh ===
+== host_tuning_test.sh
+PASS first apply saves the live values
+PASS first apply sets the tuned values
+PASS first apply writes the earlyoom args without quotes
+PASS first apply turns huge pages off now and at boot
+PASS first apply saves the huge page modes
+PASS second apply keeps the saved values
+PASS undo restores the huge page modes and removes the unit
+PASS undo restores all five values
+PASS undo removes the saved file and the conf
+PASS undo restores the earlyoom file
+PASS undo without a saved file sets kernel defaults
+PASS undo without a saved file reloads the other sysctl files
+PASS apply enables earlyoom
+PASS apply without earlyoom stops with a message
+PASS apply without earlyoom changes nothing
+PASS apply fails when earlyoom does not start
+PASS that failure rolls the node back
+PASS a failed earlyoom restart rolls the node back
+PASS --check passes on a ready node and changes nothing
+PASS --check fails without earlyoom
+PASS apply enables and starts a disabled, stopped earlyoom
+PASS undo disables and stops it again
+all checks passed
+[PASS] host_tuning_test.sh
+== unittest tests/test_*.py
+test_fallbacks (test_defaults.FallbacksMatchEnvExample.test_fallbacks) ... ok
+test_env_example_values (test_defaults.ProtectedDefaults.test_env_example_values) ... ok
+test_image_matches_commit (test_defaults.ProtectedDefaults.test_image_matches_commit) ... ok
+test_prefill_chunk (test_defaults.ProtectedDefaults.test_prefill_chunk) ... ok
+test_start_sh_forwards_values (test_defaults.ProtectedDefaults.test_start_sh_forwards_values) ... ok
+test_thinking_on (test_defaults.ProtectedDefaults.test_thinking_on)
+Thinking is on unless THINKING=0: the only --thinking in start.sh is the THINKING=1 branch. ... ok
+test_bad_byte_does_not_hide_a_log (test_machine_values.Detection.test_bad_byte_does_not_hide_a_log) ... ok
+test_home_paths (test_machine_values.Detection.test_home_paths) ... ok
+test_not_addresses (test_machine_values.Detection.test_not_addresses) ... ok
+test_public_addresses_found (test_machine_values.Detection.test_public_addresses_found) ... ok
+test_symlink_target_is_read (test_machine_values.Detection.test_symlink_target_is_read) ... ok
+test_version_pins (test_machine_values.Detection.test_version_pins) ... ok
+test_no_personal_home_paths (test_machine_values.MachineValues.test_no_personal_home_paths) ... ok
+test_no_public_ip_addresses (test_machine_values.MachineValues.test_no_public_ip_addresses) ... ok
+test_both_nodes_and_existing_checks_remain (test_nccl_bootstrap.NcclBootstrapTests.test_both_nodes_and_existing_checks_remain) ... ok
+test_failure_is_one_diagnostic_line (test_nccl_bootstrap.NcclBootstrapTests.test_failure_is_one_diagnostic_line) ... ok
+test_success_uses_socket_interface_without_gpu_access (test_nccl_bootstrap.NcclBootstrapTests.test_success_uses_socket_interface_without_gpu_access) ... ok
+test_the_check_is_off_unless_the_switch_is_1 (test_nccl_bootstrap.NcclBootstrapTests.test_the_check_is_off_unless_the_switch_is_1) ... ok
+test_the_check_runs_when_the_switch_is_1 (test_nccl_bootstrap.NcclBootstrapTests.test_the_check_runs_when_the_switch_is_1) ... ok
+test_the_switch_is_listed_in_the_example_and_off (test_nccl_bootstrap.NcclBootstrapTests.test_the_switch_is_listed_in_the_example_and_off) ... ok
+test_timeout_is_a_failure (test_nccl_bootstrap.NcclBootstrapTests.test_timeout_is_a_failure) ... ok
+test_default_and_explicit_values_reach_both_ranks (test_prefill_chunk.PrefillChunkTests.test_default_and_explicit_values_reach_both_ranks) ... ok
+test_invalid_values_fail_before_any_commands (test_prefill_chunk.PrefillChunkTests.test_invalid_values_fail_before_any_commands) ... ok
+test_preflight_failure_still_blocks_start (test_prefill_chunk.PrefillChunkTests.test_preflight_failure_still_blocks_start) ... ok
+test_conformance_module_imports (test_repo_rules.Conformance.test_conformance_module_imports) ... skipped 'needs the tensorfold package (engine image)'
+test_env_example_sources (test_repo_rules.EnvExample.test_env_example_sources)
+The scripts source .env with set -a. .env.example must source cleanly. ... ok
+test_no_secrets_in_env_example (test_repo_rules.EnvExample.test_no_secrets_in_env_example) ... ok
+test_scripts_are_executable (test_repo_rules.ExecutableScripts.test_scripts_are_executable) ... ok
+test_day_folders (test_repo_rules.RunsFolder.test_day_folders) ... ok
+test_day_folders_have_index (test_repo_rules.RunsFolder.test_day_folders_have_index) ... ok
+test_runs_not_ignored (test_repo_rules.RunsFolder.test_runs_not_ignored) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 1.872s
+
+OK (skipped=1)
+[PASS] unittest tests/test_*.py
+== unittest tests/*_test.py
+test_active_and_unknown_connector_refuse (display_drm_test.DisplayDrmTest.test_active_and_unknown_connector_refuse) ... ok
+test_card_that_does_not_reappear_unloads_the_failed_module_before_the_defaults (display_drm_test.DisplayDrmTest.test_card_that_does_not_reappear_unloads_the_failed_module_before_the_defaults) ... ok
+test_compute_process_refuses_without_commands (display_drm_test.DisplayDrmTest.test_compute_process_refuses_without_commands) ... ok
+test_connected_disabled_is_allowed_and_uses_expected_arguments (display_drm_test.DisplayDrmTest.test_connected_disabled_is_allowed_and_uses_expected_arguments) ... ok
+test_display_kv_map_refuses_without_commands (display_drm_test.DisplayDrmTest.test_display_kv_map_refuses_without_commands) ... ok
+test_live_drm_map_refuses_without_commands (display_drm_test.DisplayDrmTest.test_live_drm_map_refuses_without_commands) ... ok
+test_modprobe_failure_restores_default (display_drm_test.DisplayDrmTest.test_modprobe_failure_restores_default) ... ok
+test_no_nvidia_card_refuses (display_drm_test.DisplayDrmTest.test_no_nvidia_card_refuses) ... ok
+test_nvidia_driver_on_later_uevent_line_is_discovered (display_drm_test.DisplayDrmTest.test_nvidia_driver_on_later_uevent_line_is_discovered) ... ok
+test_open_card_fd_without_mapping_refuses (display_drm_test.DisplayDrmTest.test_open_card_fd_without_mapping_refuses) ... ok
+test_positive_module_refcount_refuses (display_drm_test.DisplayDrmTest.test_positive_module_refcount_refuses) ... ok
+test_render_node_maps_and_fds_refuse (display_drm_test.DisplayDrmTest.test_render_node_maps_and_fds_refuse) ... ok
+test_root_is_required_for_changes_but_not_check (display_drm_test.DisplayDrmTest.test_root_is_required_for_changes_but_not_check) ... ok
+test_unrelated_framebuffer_fd_is_allowed (display_drm_test.DisplayDrmTest.test_unrelated_framebuffer_fd_is_allowed) ... ok
+test_buffered_mode_inverts_the_chunk_expectation (live_tool_streaming_test.ProbeAssessmentTests.test_buffered_mode_inverts_the_chunk_expectation) ... ok
+test_chunk_count_and_separate_reasoning_are_checked (live_tool_streaming_test.ProbeAssessmentTests.test_chunk_count_and_separate_reasoning_are_checked) ... ok
+test_cli_refuses_external_origins_before_network (live_tool_streaming_test.ProbeAssessmentTests.test_cli_refuses_external_origins_before_network) ... ok
+test_error_wire_and_markup_leaks_fail (live_tool_streaming_test.ProbeAssessmentTests.test_error_wire_and_markup_leaks_fail) ... ok
+test_exact_invalid_raw_fixture_is_failure_and_exact_literal_passes (live_tool_streaming_test.ProbeAssessmentTests.test_exact_invalid_raw_fixture_is_failure_and_exact_literal_passes) ... ok
+test_json_rejection_requires_500_and_retry_hint (live_tool_streaming_test.ProbeAssessmentTests.test_json_rejection_requires_500_and_retry_hint) ... ok
+test_reasoning_interleaving_is_judged_per_frame (live_tool_streaming_test.ProbeAssessmentTests.test_reasoning_interleaving_is_judged_per_frame) ... ok
+test_refusal_transport_and_incomplete_generation_are_not_passes (live_tool_streaming_test.ProbeAssessmentTests.test_refusal_transport_and_incomplete_generation_are_not_passes) ... ok
+test_sse_rejection_does_not_require_impossible_late_http_header (live_tool_streaming_test.ProbeAssessmentTests.test_sse_rejection_does_not_require_impossible_late_http_header) ... ok
+test_valid_offered_call_does_not_prove_negative_fixture_was_emitted (live_tool_streaming_test.ProbeAssessmentTests.test_valid_offered_call_does_not_prove_negative_fixture_was_emitted) ... ok
+test_active_rank_refuses_before_build_or_sudo_even_with_preflight_disabled (start_display_kv_test.StartDisplayKvTest.test_active_rank_refuses_before_build_or_sudo_even_with_preflight_disabled) ... ok
+test_build_only_never_changes_drm_probes_or_starts (start_display_kv_test.StartDisplayKvTest.test_build_only_never_changes_drm_probes_or_starts) ... ok
+test_build_only_refuses_missing_display_base (start_display_kv_test.StartDisplayKvTest.test_build_only_refuses_missing_display_base) ... ok
+test_build_only_saves_state_only_after_worker_id_matches (start_display_kv_test.StartDisplayKvTest.test_build_only_saves_state_only_after_worker_id_matches) ... ok
+test_check_uses_only_drm_checks (start_display_kv_test.StartDisplayKvTest.test_check_uses_only_drm_checks) ... ok
+test_default_refuses_missing_or_mismatched_worker_image_without_copying (start_display_kv_test.StartDisplayKvTest.test_default_refuses_missing_or_mismatched_worker_image_without_copying) ... ok
+test_default_reuses_saved_state_despite_changed_stage_or_missing_base (start_display_kv_test.StartDisplayKvTest.test_default_reuses_saved_state_despite_changed_stage_or_missing_base) ... ok
+test_default_uses_saved_image_prepares_probes_then_starts (start_display_kv_test.StartDisplayKvTest.test_default_uses_saved_image_prepares_probes_then_starts) ... ok
+test_docker_and_ssh_failures_fail_closed (start_display_kv_test.StartDisplayKvTest.test_docker_and_ssh_failures_fail_closed) ... ok
+test_explicit_build_copies_then_launches (start_display_kv_test.StartDisplayKvTest.test_explicit_build_copies_then_launches) ... ok
+test_failed_automatic_restore_reports_remediation_after_both_attempts (start_display_kv_test.StartDisplayKvTest.test_failed_automatic_restore_reports_remediation_after_both_attempts) ... ok
+test_head_drm_on_failure_restores_both_nodes (start_display_kv_test.StartDisplayKvTest.test_head_drm_on_failure_restores_both_nodes) ... ok
+test_head_sudo_failure_changes_no_drm_setting (start_display_kv_test.StartDisplayKvTest.test_head_sudo_failure_changes_no_drm_setting) ... ok
+test_head_with_passwordless_sudo_never_asks_for_a_password (start_display_kv_test.StartDisplayKvTest.test_head_with_passwordless_sudo_never_asks_for_a_password) ... ok
+test_head_without_passwordless_sudo_falls_back_to_one_password_prompt (start_display_kv_test.StartDisplayKvTest.test_head_without_passwordless_sudo_falls_back_to_one_password_prompt) ... ok
+test_malformed_saved_state_refuses_before_build_or_drm (start_display_kv_test.StartDisplayKvTest.test_malformed_saved_state_refuses_before_build_or_drm) ... ok
+test_mismatched_image_ids_refuse_before_drm (start_display_kv_test.StartDisplayKvTest.test_mismatched_image_ids_refuse_before_drm) ... ok
+test_missing_saved_state_refuses_before_build_or_drm (start_display_kv_test.StartDisplayKvTest.test_missing_saved_state_refuses_before_build_or_drm) ... ok
+test_prepare_and_probe_failures_restore_drm_without_starting (start_display_kv_test.StartDisplayKvTest.test_prepare_and_probe_failures_restore_drm_without_starting) ... ok
+test_repeated_build_only_reuses_cached_image_without_copying (start_display_kv_test.StartDisplayKvTest.test_repeated_build_only_reuses_cached_image_without_copying) ... ok
+test_restore_drm_attempts_both_nodes_without_cutover (start_display_kv_test.StartDisplayKvTest.test_restore_drm_attempts_both_nodes_without_cutover) ... ok
+test_startup_failure_stops_only_owned_ranks_and_restores_drm (start_display_kv_test.StartDisplayKvTest.test_startup_failure_stops_only_owned_ranks_and_restores_drm) ... ok
+test_worker_without_passwordless_sudo_aborts_before_drm_changes (start_display_kv_test.StartDisplayKvTest.test_worker_without_passwordless_sudo_aborts_before_drm_changes) ... ok
+test_prepare_snapshot_keeps_dynamic_thinking_settings (thinking_settings_test.DisplayBundleThinkingSettingsTest.test_prepare_snapshot_keeps_dynamic_thinking_settings) ... ok
+test_allocator_cap_switch_reaches_docker (thinking_settings_test.ThinkingSettingsTest.test_allocator_cap_switch_reaches_docker) ... ok
+test_each_valid_reasoning_effort_reaches_docker_unchanged (thinking_settings_test.ThinkingSettingsTest.test_each_valid_reasoning_effort_reaches_docker_unchanged) ... ok
+test_explicit_zero_emits_no_thinking (thinking_settings_test.ThinkingSettingsTest.test_explicit_zero_emits_no_thinking) ... ok
+test_invalid_allocator_cap_stops_before_operations (thinking_settings_test.ThinkingSettingsTest.test_invalid_allocator_cap_stops_before_operations) ... ok
+test_invalid_settings_stop_before_preflight_build_or_docker (thinking_settings_test.ThinkingSettingsTest.test_invalid_settings_stop_before_preflight_build_or_docker) ... ok
+test_missing_settings_default_to_thinking_on (thinking_settings_test.ThinkingSettingsTest.test_missing_settings_default_to_thinking_on) ... ok
+test_quoted_reasoning_effort_injection_is_rejected_before_operations (thinking_settings_test.ThinkingSettingsTest.test_quoted_reasoning_effort_injection_is_rejected_before_operations) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 7.424s
+
+OK
+Prepared /home/<user>/.jcode/scratch/tmp4hv9kvrj/recipe/bundle; image fixture:display-kv; no service actions performed
+[PASS] unittest tests/*_test.py
+== unittest experiments/cache-metrics/tests/test_*.py
+test_cuda_and_display_backings_are_reported_separately (test_cache_metrics.CacheMetricsTests.test_cuda_and_display_backings_are_reported_separately) ... ok
+test_decoding_falls_back_to_context_without_inventing_missing_values (test_cache_metrics.CacheMetricsTests.test_decoding_falls_back_to_context_without_inventing_missing_values) ... ok
+test_idle_pool_and_fragmentation (test_cache_metrics.CacheMetricsTests.test_idle_pool_and_fragmentation) ... ok
+test_nonpacked_cache_bytes_are_not_silently_omitted (test_cache_metrics.CacheMetricsTests.test_nonpacked_cache_bytes_are_not_silently_omitted) ... ok
+test_prefilling_uses_filled_and_decoding_uses_cache_length (test_cache_metrics.CacheMetricsTests.test_prefilling_uses_filled_and_decoding_uses_cache_length) ... ok
+test_retained_snapshot_bytes_are_unique_and_exclude_pool_kv (test_cache_metrics.CacheMetricsTests.test_retained_snapshot_bytes_are_unique_and_exclude_pool_kv) ... ok
+test_single_sequence_engine_is_unsupported (test_cache_metrics.CacheMetricsTests.test_single_sequence_engine_is_unsupported) ... ok
+test_spill_info_is_exported_when_present (test_cache_metrics.CacheMetricsTests.test_spill_info_is_exported_when_present) ... ok
+test_absent_optional_protocols_and_dedup (test_metrics_contract.InstallerTests.test_absent_optional_protocols_and_dedup) ... ok
+test_all_syntax_checked_before_writes (test_metrics_contract.InstallerTests.test_all_syntax_checked_before_writes) ... ok
+test_anchor_rejection (test_metrics_contract.InstallerTests.test_anchor_rejection) ... ok
+test_protocol_and_unknown_paths (test_metrics_contract.InstallerTests.test_protocol_and_unknown_paths) ... ok
+test_validation_failure_never_writes (test_metrics_contract.InstallerTests.test_validation_failure_never_writes) ... ok
+test_install_in_disposable_copy (test_metrics_contract.MetricsContractTests.test_install_in_disposable_copy) ... skipped 'set TF_METRICS_SOURCE to an explicit pristine source checkout'
+test_pristine_transform_health_and_prometheus (test_metrics_contract.MetricsContractTests.test_pristine_transform_health_and_prometheus) ... skipped 'set TF_METRICS_SOURCE to an explicit pristine source checkout'
+test_a_missing_image_on_the_head_stops_before_the_copy (test_transfer.TransferTests.test_a_missing_image_on_the_head_stops_before_the_copy) ... ok
+test_different_image_ids_fail (test_transfer.TransferTests.test_different_image_ids_fail) ... ok
+test_missing_or_unsafe_tag_is_refused (test_transfer.TransferTests.test_missing_or_unsafe_tag_is_refused) ... ok
+test_the_built_tag_is_saved_and_loaded_on_the_worker_without_a_rebuild (test_transfer.TransferTests.test_the_built_tag_is_saved_and_loaded_on_the_worker_without_a_rebuild) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.035s
+
+OK (skipped=2)
+[PASS] unittest experiments/cache-metrics/tests/test_*.py
+== unittest experiments/cache-metrics/tests/*_test.py
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.000s
+
+NO TESTS RAN
+[SKIP] unittest experiments/cache-metrics/tests/*_test.py: no test files
+== unittest experiments/display-kv/tests/test_*.py
+test_cuda_equivalence (test_bounded_topk.BoundedTopkTests.test_cuda_equivalence) ... skipped 'CUDA is not available'
+test_cuda_graph_capture (test_bounded_topk.BoundedTopkTests.test_cuda_graph_capture) ... skipped 'CUDA is not available'
+test_cuda_long_context_peak_is_reduced (test_bounded_topk.BoundedTopkTests.test_cuda_long_context_peak_is_reduced) ... skipped 'CUDA is not available'
+test_extra_leading_dimensions (test_bounded_topk.BoundedTopkTests.test_extra_leading_dimensions) ... ok
+test_invalid_k (test_bounded_topk.BoundedTopkTests.test_invalid_k) ... ok
+test_random_cpu_equivalence (test_bounded_topk.BoundedTopkTests.test_random_cpu_equivalence) ... ok
+test_special_values_and_lower_index_ties (test_bounded_topk.BoundedTopkTests.test_special_values_and_lower_index_ties) ... ok
+test_wide_rows_tile_under_patched_scratch_limit (test_bounded_topk.BoundedTopkTests.test_wide_rows_tile_under_patched_scratch_limit) ... ok
+test_bundle_is_separate_and_refuses_overwrite (test_bundle.BundleTests.test_bundle_is_separate_and_refuses_overwrite) ... ok
+test_cuda_and_display_backings_are_reported_separately (test_cache_metrics.CacheMetricsTests.test_cuda_and_display_backings_are_reported_separately) ... ok
+test_decoding_falls_back_to_context_without_inventing_missing_values (test_cache_metrics.CacheMetricsTests.test_decoding_falls_back_to_context_without_inventing_missing_values) ... ok
+test_idle_pool_and_fragmentation (test_cache_metrics.CacheMetricsTests.test_idle_pool_and_fragmentation) ... ok
+test_nonpacked_cache_bytes_are_not_silently_omitted (test_cache_metrics.CacheMetricsTests.test_nonpacked_cache_bytes_are_not_silently_omitted) ... ok
+test_prefilling_uses_filled_and_decoding_uses_cache_length (test_cache_metrics.CacheMetricsTests.test_prefilling_uses_filled_and_decoding_uses_cache_length) ... ok
+test_retained_snapshot_bytes_are_unique_and_exclude_pool_kv (test_cache_metrics.CacheMetricsTests.test_retained_snapshot_bytes_are_unique_and_exclude_pool_kv) ... ok
+test_single_sequence_engine_is_unsupported (test_cache_metrics.CacheMetricsTests.test_single_sequence_engine_is_unsupported) ... ok
+test_spill_info_is_exported_when_present (test_cache_metrics.CacheMetricsTests.test_spill_info_is_exported_when_present) ... ok
+test_as_tensor_pointer_mismatch_never_falls_back (test_display_kv.DisplayKvTests.test_as_tensor_pointer_mismatch_never_falls_back) ... ok
+test_capacity_fits_and_next_does_not (test_display_kv.DisplayKvTests.test_capacity_fits_and_next_does_not) ... ok
+test_copy_rows_uses_bounded_scratch_and_memmove_order (test_display_kv.DisplayKvTests.test_copy_rows_uses_bounded_scratch_and_memmove_order) ... ok
+test_mapping_failure_unwinds (test_display_kv.DisplayKvTests.test_mapping_failure_unwinds) ... ok
+test_nvidia_detection_and_selected_connectors_only (test_display_kv.DisplayKvTests.test_nvidia_detection_and_selected_connectors_only) ... ok
+test_real_model_compression_vector_has_uncompressed_layers (test_display_kv.DisplayKvTests.test_real_model_compression_vector_has_uncompressed_layers) ... ok
+test_register_failure_and_pointer_mismatch_unwind (test_display_kv.DisplayKvTests.test_register_failure_and_pointer_mismatch_unwind) ... ok
+test_setting_validation (test_display_kv.DisplayKvTests.test_setting_validation) ... ok
+test_all_pinned_sources_transform_and_compile (test_integration.DisplayKvIntegrationTest.test_all_pinned_sources_transform_and_compile) ... ok
+test_disabled_path_keeps_ordinary_cache_allocators (test_integration.DisplayKvIntegrationTest.test_disabled_path_keeps_ordinary_cache_allocators) ... ok
+test_display_model_rope_cap_applies_to_round_cache_without_an_arena (test_integration.DisplayKvIntegrationTest.test_display_model_rope_cap_applies_to_round_cache_without_an_arena) ... ok
+test_display_pool_is_independent_of_request_limit_and_rank_flags_match (test_integration.DisplayKvIntegrationTest.test_display_pool_is_independent_of_request_limit_and_rank_flags_match) ... ok
+test_install_transforms_minimal_checkout_and_refuses_reinstall (test_integration.DisplayKvIntegrationTest.test_install_transforms_minimal_checkout_and_refuses_reinstall) ... ok
+test_new_cache_places_only_packed_planes_in_display_arena (test_integration.DisplayKvIntegrationTest.test_new_cache_places_only_packed_planes_in_display_arena) ... ok
+test_shutdown_drain_hook_is_installed (test_integration.DisplayKvIntegrationTest.test_shutdown_drain_hook_is_installed) ... ok
+test_shutdown_drain_waits_for_queued_writes (test_integration.DisplayKvIntegrationTest.test_shutdown_drain_waits_for_queued_writes) ... ok
+test_spill_calls_match_the_reused_tier (test_integration.DisplayKvIntegrationTest.test_spill_calls_match_the_reused_tier) ... ok
+test_spill_share_callback_is_installed (test_integration.DisplayKvIntegrationTest.test_spill_share_callback_is_installed) ... ok
+test_spill_share_returns_rank_zero_values_on_every_rank (test_integration.DisplayKvIntegrationTest.test_spill_share_returns_rank_zero_values_on_every_rank) ... ok
+test_spill_signature_ignores_the_driver_version (test_integration.DisplayKvIntegrationTest.test_spill_signature_ignores_the_driver_version) ... ok
+test_transform_rejects_modified_or_installed_source (test_integration.DisplayKvIntegrationTest.test_transform_rejects_modified_or_installed_source) ... ok
+test_budget_recovers_after_startup_and_shrinks_with_external_pressure (test_memory_guard.MemoryGuardTests.test_budget_recovers_after_startup_and_shrinks_with_external_pressure) ... Prepared /home/<user>/.jcode/scratch/tmpn60ughfg/bundle; image tensorfold-dsv41:07aa02585f64-display-kv-stage1; no service actions performed
+[tensorfold] rank 0: live allocator guard, floor 2 GiB, initial ceiling 102.00 GiB (refreshed per prefill chunk/decode round)
+ok
+test_cap_can_be_disabled_without_disabling_cache_cleanup_or_telemetry (test_memory_guard.MemoryGuardTests.test_cap_can_be_disabled_without_disabling_cache_cleanup_or_telemetry) ... [tensorfold] rank 0: live allocator guard, floor 2 GiB, hard cap DISABLED; cleanup only (refreshed per prefill chunk/decode round)
+ok
+test_cap_never_exceeds_device_total (test_memory_guard.MemoryGuardTests.test_cap_never_exceeds_device_total) ... [tensorfold] rank 0: live allocator guard, floor 2 GiB, initial ceiling 122.00 GiB (refreshed per prefill chunk/decode round)
+ok
+test_installer_refreshes_both_rank_prefill_and_decode_paths (test_memory_guard.MemoryGuardTests.test_installer_refreshes_both_rank_prefill_and_decode_paths) ... ok
+test_invalid_cap_setting_is_rejected (test_memory_guard.MemoryGuardTests.test_invalid_cap_setting_is_rejected) ... ok
+test_missing_meminfo_fails_initialization_but_preserves_existing_cap (test_memory_guard.MemoryGuardTests.test_missing_meminfo_fails_initialization_but_preserves_existing_cap) ... [tensorfold] rank 0: live allocator guard, floor 2 GiB, initial ceiling 102.00 GiB (refreshed per prefill chunk/decode round)
+[tensorfold] rank 0: MemAvailable unreadable; retaining last allocator budget
+ok
+test_no_growth_below_floor_and_no_pointless_cache_flush (test_memory_guard.MemoryGuardTests.test_no_growth_below_floor_and_no_pointless_cache_flush) ... [tensorfold] rank 0: live allocator guard, floor 2 GiB, initial ceiling 100.00 GiB (refreshed per prefill chunk/decode round)
+ok
+test_positive_floor_cannot_undercut_earlyoom (test_memory_guard.MemoryGuardTests.test_positive_floor_cannot_undercut_earlyoom) ... ok
+test_pressure_releases_cached_peak_and_remeasures (test_memory_guard.MemoryGuardTests.test_pressure_releases_cached_peak_and_remeasures) ... [tensorfold] rank 0: live allocator guard, floor 2 GiB, initial ceiling 100.75 GiB (refreshed per prefill chunk/decode round)
+ok
+test_actual_enginemetrics_adapter_consumes_rendered_metrics_and_health (test_metrics_contract.MetricsContractTests.test_actual_enginemetrics_adapter_consumes_rendered_metrics_and_health) ... ok
+test_health_preserves_request_counters_and_metrics_without_hook_stays_unfabricated (test_metrics_contract.MetricsContractTests.test_health_preserves_request_counters_and_metrics_without_hook_stays_unfabricated) ... ok
+test_idle_and_ordinary_backing_keep_stream_and_pool_occupancy_distinct (test_metrics_contract.MetricsContractTests.test_idle_and_ordinary_backing_keep_stream_and_pool_occupancy_distinct) ... ok
+test_snapshot_and_render_report_display_cache_without_confusing_reservations_and_streams (test_metrics_contract.MetricsContractTests.test_snapshot_and_render_report_display_cache_without_confusing_reservations_and_streams) ... ok
+test_spill_info_reaches_health_and_prometheus_gauges (test_metrics_contract.MetricsContractTests.test_spill_info_reaches_health_and_prometheus_gauges) ... ok
+test_by_kernel_bounded_copy (test_spill_tier.SpillTierTests.test_by_kernel_bounded_copy) ... ok
+test_config_validation (test_spill_tier.SpillTierTests.test_config_validation) ... ok
+test_corrupt_file_is_rejected (test_spill_tier.SpillTierTests.test_corrupt_file_is_rejected) ... [tensorfold] spill: /home/<user>/.jcode/scratch/tmp4q3uto6_/spill-d8614d5594674813 (1 GiB a rank, early writes past 70% of memory, from 1 tokens, 2 writers, O_DIRECT, floor 0 GiB free): 0 stored prompts from before this start, 0.0 GiB
+ok
+test_crcs (test_spill_tier.SpillTierTests.test_crcs) ... ok
+test_driver_id_falls_back_to_nvml (test_spill_tier.SpillTierTests.test_driver_id_falls_back_to_nvml) ... ok
+test_driver_id_raises_when_no_source_answers (test_spill_tier.SpillTierTests.test_driver_id_raises_when_no_source_answers) ... ok
+test_encode_decode_roundtrip (test_spill_tier.SpillTierTests.test_encode_decode_roundtrip) ... ok
+test_header_roundtrip (test_spill_tier.SpillTierTests.test_header_roundtrip) ... ok
+test_ids_key_and_name (test_spill_tier.SpillTierTests.test_ids_key_and_name) ... ok
+test_info_has_enginemetrics_fields (test_spill_tier.SpillTierTests.test_info_has_enginemetrics_fields) ... [tensorfold] spill: /home/<user>/.jcode/scratch/tmp_sr8pbud/spill-d8614d5594674813 (1 GiB a rank, early writes past 70% of memory, from 8192 tokens, 2 writers, O_DIRECT, floor 0 GiB free): 0 stored prompts from before this start, 0.0 GiB
+ok
+test_kept_like_object_roundtrip (test_spill_tier.SpillTierTests.test_kept_like_object_roundtrip) ... [tensorfold] spill: /home/<user>/.jcode/scratch/tmp4veypwhf/spill-d8614d5594674813 (1 GiB a rank, early writes past 70% of memory, from 1 tokens, 2 writers, O_DIRECT, floor 0 GiB free): 0 stored prompts from before this start, 0.0 GiB
+ok
+test_missing_root_takes_the_nearest_existing_owner (test_spill_tier.SpillTierTests.test_missing_root_takes_the_nearest_existing_owner) ... [tensorfold] spill: /home/<user>/.jcode/scratch/tmpr0472t1b/new/spill/spill-d8614d5594674813 (1 GiB a rank, early writes past 70% of memory, from 8192 tokens, 2 writers, O_DIRECT, floor 0 GiB free): 0 stored prompts from before this start, 0.0 GiB
+ok
+test_module_is_self_contained (test_spill_tier.SpillTierTests.test_module_is_self_contained) ... ok
+test_prune_skips_an_unreadable_old_build (test_spill_tier.SpillTierTests.test_prune_skips_an_unreadable_old_build) ... [tensorfold] spill: skip an old build folder that cannot be read: /home/<user>/.jcode/scratch/tmp8liwea53/spill/spill-old ([Errno 13] denied: '/home/<user>/.jcode/scratch/tmp8liwea53/spill/spill-old')
+[tensorfold] spill: /home/<user>/.jcode/scratch/tmp8liwea53/spill/spill-d8614d5594674813 (1 GiB a rank, early writes past 70% of memory, from 8192 tokens, 2 writers, O_DIRECT, floor 0 GiB free): 0 stored prompts from before this start, 0.0 GiB
+ok
+test_save_load_roundtrip (test_spill_tier.SpillTierTests.test_save_load_roundtrip) ... [tensorfold] spill: /home/<user>/.jcode/scratch/tmpqm3z0f3v/spill-d8614d5594674813 (1 GiB a rank, early writes past 70% of memory, from 1 tokens, 2 writers, O_DIRECT, floor 0 GiB free): 0 stored prompts from before this start, 0.0 GiB
+ok
+test_atomic_contamination_regressions (test_tool_output.ArgumentLiteralIsolation.test_atomic_contamination_regressions) ... ok
+test_cross_envelope_arguments_are_not_markdown (test_tool_output.ArgumentLiteralIsolation.test_cross_envelope_arguments_are_not_markdown) ... ok
+test_literal_controls_and_nested_markers (test_tool_output.ArgumentLiteralIsolation.test_literal_controls_and_nested_markers) ... ok
+test_quote_state_cannot_originate_in_arguments (test_tool_output.ArgumentLiteralIsolation.test_quote_state_cannot_originate_in_arguments) ... ok
+test_blockquote_prose_is_literal_only_on_its_own_line (test_tool_output.Native.test_blockquote_prose_is_literal_only_on_its_own_line) ... ok
+test_choice_and_explicit_id_types (test_tool_output.Native.test_choice_and_explicit_id_types) ... ok
+test_dsml_and_xml (test_tool_output.Native.test_dsml_and_xml) ... ok
+test_fence_info_cannot_be_its_own_closing_fence (test_tool_output.Native.test_fence_info_cannot_be_its_own_closing_fence) ... ok
+test_ids_names_and_limits_are_not_repaired (test_tool_output.Native.test_ids_names_and_limits_are_not_repaired) ... ok
+test_literal_and_ids (test_tool_output.Native.test_literal_and_ids) ... ok
+test_literal_boundaries_do_not_hide_following_attempts (test_tool_output.Native.test_literal_boundaries_do_not_hide_following_attempts) ... ok
+test_malformed_and_atomic (test_tool_output.Native.test_malformed_and_atomic) ... ok
+test_nested_schema_constraints (test_tool_output.Native.test_nested_schema_constraints) ... ok
+test_protocol_in_argument_is_data (test_tool_output.Native.test_protocol_in_argument_is_data) ... ok
+test_quoted_lines_cannot_own_unquoted_inline_state (test_tool_output.Native.test_quoted_lines_cannot_own_unquoted_inline_state) ... ok
+test_required_none_parallel (test_tool_output.Native.test_required_none_parallel) ... ok
+test_schema_before_truncation (test_tool_output.Native.test_schema_before_truncation) ... ok
+test_schema_contract_wrong_falsy_and_nonfinite (test_tool_output.Native.test_schema_contract_wrong_falsy_and_nonfinite) ... ok
+setUpClass (test_tool_output_http.ToolOutputHttpTests) ... skipped 'set TF_DISPLAY_SOURCE or use run_tool_output_cpu.py --source'
+test_evaluation_budget_error_kind_and_shared_union_accounting (test_tool_output_schema.SchemaSafetyTests.test_evaluation_budget_error_kind_and_shared_union_accounting) ... ok
+test_evaluation_evaluator_budget_not_inverted (test_tool_output_schema.SchemaSafetyTests.test_evaluation_evaluator_budget_not_inverted) ... ok
+test_evaluation_invalid_unused_schema_rejects (test_tool_output_schema.SchemaSafetyTests.test_evaluation_invalid_unused_schema_rejects) ... ok
+test_evaluation_nested_arrays (test_tool_output_schema.SchemaSafetyTests.test_evaluation_nested_arrays) ... ok
+test_evaluation_real_mismatch_combinators_still_work (test_tool_output_schema.SchemaSafetyTests.test_evaluation_real_mismatch_combinators_still_work) ... ok
+test_evaluation_recursive_allof (test_tool_output_schema.SchemaSafetyTests.test_evaluation_recursive_allof) ... ok
+test_evaluation_recursive_anyof (test_tool_output_schema.SchemaSafetyTests.test_evaluation_recursive_anyof) ... ok
+test_evaluation_recursive_contains (test_tool_output_schema.SchemaSafetyTests.test_evaluation_recursive_contains) ... ok
+test_evaluation_recursive_if (test_tool_output_schema.SchemaSafetyTests.test_evaluation_recursive_if) ... ok
+test_evaluation_recursive_not (test_tool_output_schema.SchemaSafetyTests.test_evaluation_recursive_not) ... ok
+test_evaluation_recursive_oneof (test_tool_output_schema.SchemaSafetyTests.test_evaluation_recursive_oneof) ... ok
+test_evaluation_recursive_then_else (test_tool_output_schema.SchemaSafetyTests.test_evaluation_recursive_then_else) ... ok
+test_nullable_parallel_default_and_explicit_false (test_tool_output_schema.SchemaSafetyTests.test_nullable_parallel_default_and_explicit_false) ... ok
+test_regex_allowed_nonmatches_not_inverted_as_errors (test_tool_output_schema.SchemaSafetyTests.test_regex_allowed_nonmatches_not_inverted_as_errors) ... ok
+test_regex_allowed_patterns (test_tool_output_schema.SchemaSafetyTests.test_regex_allowed_patterns) ... ok
+test_regex_bounds_are_terminal_not_just_mismatches (test_tool_output_schema.SchemaSafetyTests.test_regex_bounds_are_terminal_not_just_mismatches) ... ok
+test_regex_input_pattern_and_work_bounds (test_tool_output_schema.SchemaSafetyTests.test_regex_input_pattern_and_work_bounds) ... ok
+test_regex_pathological_and_multiple_variable_repeats (test_tool_output_schema.SchemaSafetyTests.test_regex_pathological_and_multiple_variable_repeats) ... ok
+test_regex_patternproperties_and_unused_patterns (test_tool_output_schema.SchemaSafetyTests.test_regex_patternproperties_and_unused_patterns) ... ok
+test_regex_unsafe_patterns_never_reach_compiler (test_tool_output_schema.SchemaSafetyTests.test_regex_unsafe_patterns_never_reach_compiler) ... ok
+test_regex_unsupported_regex_assertions (test_tool_output_schema.SchemaSafetyTests.test_regex_unsupported_regex_assertions) ... ok
+test_unconstrained_instance_nesting_is_not_evaluation_depth (test_tool_output_schema.SchemaSafetyTests.test_unconstrained_instance_nesting_is_not_evaluation_depth) ... ok
+test_all_character_and_two_chunk_splits (test_tool_output_stream.ProseProjectionTests.test_all_character_and_two_chunk_splits) ... ok
+test_decoder_resets_rewrites_and_final_mismatch_fail_closed (test_tool_output_stream.ProseProjectionTests.test_decoder_resets_rewrites_and_final_mismatch_fail_closed) ... ok
+test_false_alarms_release_and_provisional_markers_only_freeze (test_tool_output_stream.ProseProjectionTests.test_false_alarms_release_and_provisional_markers_only_freeze) ... ok
+test_long_pending_prefix_freezes_without_rejecting_or_truncating (test_tool_output_stream.ProseProjectionTests.test_long_pending_prefix_freezes_without_rejecting_or_truncating) ... ok
+test_no_parsing_or_call_allocation_during_projection (test_tool_output_stream.ProseProjectionTests.test_no_parsing_or_call_allocation_during_projection) ... ok
+test_ownership_revisions_and_json_prefix_failures_are_real (test_tool_output_stream.ProseProjectionTests.test_ownership_revisions_and_json_prefix_failures_are_real) ... ok
+test_projectors_are_request_local (test_tool_output_stream.ProseProjectionTests.test_projectors_are_request_local) ... ok
+test_proper_marker_prefixes_cannot_escape (test_tool_output_stream.ProseProjectionTests.test_proper_marker_prefixes_cannot_escape) ... ok
+
+----------------------------------------------------------------------
+Ran 115 tests in 0.781s
+
+OK (skipped=4)
+[PASS] unittest experiments/display-kv/tests/test_*.py
+== unittest experiments/display-kv/tests/*_test.py
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.000s
+
+NO TESTS RAN
+[SKIP] unittest experiments/display-kv/tests/*_test.py: no test files
+== unittest experiments/memory-topk/tests/test_*.py
+test_invalid_k_dimension_and_dtype (test_bounded_topk.BoundedTopkTests.test_invalid_k_dimension_and_dtype) ... skipped 'set TF_MEMORY_CPU_TESTS=1 with CPU-only torch installed'
+test_leading_dimensions_and_noncontiguous_input (test_bounded_topk.BoundedTopkTests.test_leading_dimensions_and_noncontiguous_input) ... skipped 'set TF_MEMORY_CPU_TESTS=1 with CPU-only torch installed'
+test_random_and_tile_boundaries (test_bounded_topk.BoundedTopkTests.test_random_and_tile_boundaries) ... skipped 'set TF_MEMORY_CPU_TESTS=1 with CPU-only torch installed'
+test_special_values_and_lower_index_ties (test_bounded_topk.BoundedTopkTests.test_special_values_and_lower_index_ties) ... skipped 'set TF_MEMORY_CPU_TESTS=1 with CPU-only torch installed'
+test_all_generated_ast_checked_before_writes (test_install.InstallerTests.test_all_generated_ast_checked_before_writes) ... ok
+test_dangling_overlay_symlink_rejected (test_install.InstallerTests.test_dangling_overlay_symlink_rejected) ... ok
+test_each_hash_rejected_before_writes (test_install.InstallerTests.test_each_hash_rejected_before_writes) ... ok
+test_late_transform_failure_has_no_partial_writes (test_install.InstallerTests.test_late_transform_failure_has_no_partial_writes) ... ok
+test_overlay_presence_rejected_before_writes (test_install.InstallerTests.test_overlay_presence_rejected_before_writes) ... ok
+test_revision_rejected_before_writes (test_install.InstallerTests.test_revision_rejected_before_writes) ... ok
+test_success_and_reinstall_refusal (test_install.InstallerTests.test_success_and_reinstall_refusal) ... ok
+test_contract_scope_and_overlay_ast (test_install.ProtocolTests.test_contract_scope_and_overlay_ast) ... ok
+test_missing_duplicate_and_replaced_anchors_fail (test_install.ProtocolTests.test_missing_duplicate_and_replaced_anchors_fail) ... ok
+test_real_transform_install_and_original_ceiling_preserved (test_install.SourceIntegrationTests.test_real_transform_install_and_original_ceiling_preserved) ... skipped 'set TF_MEMORY_SOURCE to pristine pinned TensorFold checkout'
+test_cap_needs_the_overlay_label_on_both_nodes (test_launcher.LauncherTests.test_cap_needs_the_overlay_label_on_both_nodes) ... ok
+test_cap_off_never_inspects_an_image (test_launcher.LauncherTests.test_cap_off_never_inspects_an_image) ... ok
+test_explicit_opt_in_for_both_ranks (test_launcher.LauncherTests.test_explicit_opt_in_for_both_ranks) ... ok
+test_invalid_values_fail_before_actions (test_launcher.LauncherTests.test_invalid_values_fail_before_actions) ... ok
+test_omitted_and_zero_keep_original_arguments (test_launcher.LauncherTests.test_omitted_and_zero_keep_original_arguments) ... ok
+test_the_feature_dockerfile_sets_the_label (test_launcher.LauncherTests.test_the_feature_dockerfile_sets_the_label) ... ok
+test_budget_recovers_and_shrinks (test_memory_guard.MemoryGuardTests.test_budget_recovers_and_shrinks) ... [tensorfold] rank 1: live allocator guard, floor 2 GiB, initial ceiling 102.00 GiB (refreshed per prefill chunk/decode round)
+ok
+test_cap_never_exceeds_device_total (test_memory_guard.MemoryGuardTests.test_cap_never_exceeds_device_total) ... [tensorfold] rank 1: live allocator guard, floor 2 GiB, initial ceiling 122.00 GiB (refreshed per prefill chunk/decode round)
+ok
+test_disabled_is_noop_without_cuda_or_proc_access (test_memory_guard.MemoryGuardTests.test_disabled_is_noop_without_cuda_or_proc_access) ... ok
+test_disabled_still_releases_idle_cache_under_pressure (test_memory_guard.MemoryGuardTests.test_disabled_still_releases_idle_cache_under_pressure) ... [tensorfold] rank 1: live allocator guard, floor 2 GiB, hard cap DISABLED; cleanup only (refreshed per prefill chunk/decode round)
+ok
+test_failed_second_read_keeps_first_measurement (test_memory_guard.MemoryGuardTests.test_failed_second_read_keeps_first_measurement) ... [tensorfold] rank 1: live allocator guard, floor 2 GiB, initial ceiling 100.00 GiB (refreshed per prefill chunk/decode round)
+ok
+test_floor_is_exact_and_zero_disables (test_memory_guard.MemoryGuardTests.test_floor_is_exact_and_zero_disables) ... ok
+test_invalid_setting_rejected (test_memory_guard.MemoryGuardTests.test_invalid_setting_rejected) ... ok
+test_missing_meminfo_fails_initially_then_retains_budget (test_memory_guard.MemoryGuardTests.test_missing_meminfo_fails_initially_then_retains_budget) ... [tensorfold] rank 1: live allocator guard, floor 2 GiB, initial ceiling 102.00 GiB (refreshed per prefill chunk/decode round)
+[tensorfold] rank 1: MemAvailable unreadable; retaining last allocator budget
+ok
+test_no_growth_below_floor_or_pointless_flush (test_memory_guard.MemoryGuardTests.test_no_growth_below_floor_or_pointless_flush) ... [tensorfold] rank 1: live allocator guard, floor 2 GiB, initial ceiling 100.00 GiB (refreshed per prefill chunk/decode round)
+ok
+test_pressure_releases_cached_peak_and_remeasures (test_memory_guard.MemoryGuardTests.test_pressure_releases_cached_peak_and_remeasures) ... [tensorfold] rank 1: live allocator guard, floor 2 GiB, initial ceiling 100.75 GiB (refreshed per prefill chunk/decode round)
+ok
+test_a_missing_image_on_the_head_stops_before_the_copy (test_transfer.TransferTests.test_a_missing_image_on_the_head_stops_before_the_copy) ... ok
+test_different_image_ids_fail (test_transfer.TransferTests.test_different_image_ids_fail) ... ok
+test_missing_or_unsafe_tag_is_refused (test_transfer.TransferTests.test_missing_or_unsafe_tag_is_refused) ... ok
+test_the_built_tag_is_saved_and_loaded_on_the_worker_without_a_rebuild (test_transfer.TransferTests.test_the_built_tag_is_saved_and_loaded_on_the_worker_without_a_rebuild) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 0.098s
+
+OK (skipped=5)
+[PASS] unittest experiments/memory-topk/tests/test_*.py
+== unittest experiments/memory-topk/tests/*_test.py
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.000s
+
+NO TESTS RAN
+[SKIP] unittest experiments/memory-topk/tests/*_test.py: no test files
+
+run_offline: no step failed

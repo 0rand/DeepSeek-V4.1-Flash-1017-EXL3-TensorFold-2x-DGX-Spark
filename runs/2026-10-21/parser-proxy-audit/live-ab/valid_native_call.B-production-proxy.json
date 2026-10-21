@@ -1,0 +1,240 @@
+{
+  "request": {
+    "model": "DeepSeek-V4.1-Flash-1017",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Call get_status once with service set to tensorfold. Do not answer in prose."
+      }
+    ],
+    "stream": true,
+    "temperature": 0.4,
+    "top_p": 1.0,
+    "seed": 0,
+    "max_tokens": 512,
+    "enable_thinking": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_status",
+          "description": "Return a service status",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "service"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ]
+  },
+  "http_status": 200,
+  "frames": [
+    {
+      "index": 0,
+      "at_ms": 32.565,
+      "raw": "data: {\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+      "data": "{\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+      "json": {
+        "id": "chatcmpl-88d9548bcec74134b73b1162",
+        "object": "chat.completion.chunk",
+        "created": 1792596481,
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "role": "assistant"
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "at_ms": 495.653,
+      "raw": "data: {\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"\\n\\n\"}, \"finish_reason\": null}]}",
+      "data": "{\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"\\n\\n\"}, \"finish_reason\": null}]}",
+      "json": {
+        "id": "chatcmpl-88d9548bcec74134b73b1162",
+        "object": "chat.completion.chunk",
+        "created": 1792596481,
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "content": "\n\n"
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "at_ms": 853.337,
+      "raw": "data: {\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_f7c82563e3d748478331c2a3\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+      "data": "{\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_f7c82563e3d748478331c2a3\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+      "json": {
+        "id": "chatcmpl-88d9548bcec74134b73b1162",
+        "object": "chat.completion.chunk",
+        "created": 1792596481,
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "tool_calls": [
+                {
+                  "index": 0,
+                  "id": "call_f7c82563e3d748478331c2a3",
+                  "type": "function",
+                  "function": {
+                    "name": "get_status",
+                    "arguments": "{\"service\":\"tensorfold\"}"
+                  }
+                }
+              ]
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "at_ms": 853.389,
+      "raw": "data: {\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.4511, \"decode_s\": 0.3565, \"rounds\": 7, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 35, \"accepted\": 32, \"token_sha\": \"b3fb7a226bb7\"}, \"usage\": {\"prompt_tokens\": 284, \"completion_tokens\": 40, \"total_tokens\": 324, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+      "data": "{\"id\": \"chatcmpl-88d9548bcec74134b73b1162\", \"object\": \"chat.completion.chunk\", \"created\": 1792596481, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.4511, \"decode_s\": 0.3565, \"rounds\": 7, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 35, \"accepted\": 32, \"token_sha\": \"b3fb7a226bb7\"}, \"usage\": {\"prompt_tokens\": 284, \"completion_tokens\": 40, \"total_tokens\": 324, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+      "json": {
+        "id": "chatcmpl-88d9548bcec74134b73b1162",
+        "object": "chat.completion.chunk",
+        "created": 1792596481,
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {},
+            "finish_reason": "tool_calls"
+          }
+        ],
+        "tensorfold": {
+          "prefill_s": 0.4511,
+          "decode_s": 0.3565,
+          "rounds": 7,
+          "drafts": true,
+          "cached": 0,
+          "min_rows": 6,
+          "drafted": 35,
+          "accepted": 32,
+          "token_sha": "b3fb7a226bb7"
+        },
+        "usage": {
+          "prompt_tokens": 284,
+          "completion_tokens": 40,
+          "total_tokens": 324,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0
+          }
+        }
+      }
+    },
+    {
+      "index": 4,
+      "at_ms": 853.413,
+      "raw": "data: [DONE]",
+      "data": "[DONE]"
+    }
+  ],
+  "events": [
+    {
+      "frame": 1,
+      "at_ms": 495.653,
+      "kind": "content",
+      "value": "\n\n"
+    },
+    {
+      "frame": 2,
+      "at_ms": 853.337,
+      "kind": "call",
+      "value": [
+        {
+          "index": 0,
+          "id": "call_f7c82563e3d748478331c2a3",
+          "type": "function",
+          "function": {
+            "name": "get_status",
+            "arguments": "{\"service\":\"tensorfold\"}"
+          }
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "at_ms": 853.389,
+      "kind": "finish",
+      "value": "tool_calls"
+    },
+    {
+      "frame": 4,
+      "at_ms": 853.413,
+      "kind": "done",
+      "value": true
+    }
+  ],
+  "transport_error": null,
+  "headers": {
+    "Connection": "close",
+    "Content-Type": "text/event-stream",
+    "Date": "Wed, 21 Oct 2026 15:28:01 GMT",
+    "Server": "Python/3.12.3",
+    "Cache-Control": "no-cache",
+    "Transfer-Encoding": "chunked",
+    "X-PreRouter-Detect": "SUB_AGENT",
+    "X-PreRouter-Intended-Lane": "fast",
+    "X-PreRouter-Body-Bytes": "524",
+    "X-PreRouter-Tool-Contract": "strict-native",
+    "X-PreRouter-Tool-Retries": "0"
+  },
+  "content_type": "text/event-stream",
+  "elapsed_ms": 853.497,
+  "metrics": {
+    "frame_count": 5,
+    "event_counts": {
+      "content": 1,
+      "call": 1,
+      "finish": 1,
+      "done": 1
+    },
+    "event_order": [
+      "content",
+      "call",
+      "finish",
+      "done"
+    ],
+    "first_content_ms": 495.653,
+    "content_chunks_before_terminal": 1,
+    "last_content_ms": 495.653,
+    "elapsed_ms": 853.497
+  },
+  "name": "valid_native_call",
+  "side": "B-production-proxy",
+  "payload_sha256": "db64366ef5ba76de8fa3ba88d2e3dc9c1277e6da5bf6cb3f8f0cd5935e949e41",
+  "status": "PASS",
+  "reason": "Valid minimal get_status call"
+}

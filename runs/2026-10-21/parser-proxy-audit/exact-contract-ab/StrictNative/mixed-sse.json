@@ -1,0 +1,186 @@
+{
+  "request": {
+    "model": "fixture",
+    "messages": [
+      {
+        "role": "user",
+        "content": "mixed"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_status",
+          "description": "Return a service status",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "service"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "stream": true
+  },
+  "http_status": 200,
+  "frames": [
+    {
+      "index": 0,
+      "at_ms": 16.223,
+      "raw": "data: {\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\", \"content\": \"    ```\\n<tool_call>{\\\"name\\\":\\\"example\\\",\\\"arguments\\\":{}}</tool_call>\\n```\\n\\n\"}, \"finish_reason\": null}]}",
+      "data": "{\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\", \"content\": \"    ```\\n<tool_call>{\\\"name\\\":\\\"example\\\",\\\"arguments\\\":{}}</tool_call>\\n```\\n\\n\"}, \"finish_reason\": null}]}",
+      "json": {
+        "id": "chatcmpl-fixture",
+        "created": 1,
+        "model": "fixture",
+        "object": "chat.completion.chunk",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "role": "assistant",
+              "content": "    ```\n<tool_call>{\"name\":\"example\",\"arguments\":{}}</tool_call>\n```\n\n"
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "at_ms": 16.239,
+      "raw": "data: {\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"id\": \"call_fixture_native\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}, \"index\": 0}]}, \"finish_reason\": null}]}",
+      "data": "{\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"id\": \"call_fixture_native\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}, \"index\": 0}]}, \"finish_reason\": null}]}",
+      "json": {
+        "id": "chatcmpl-fixture",
+        "created": 1,
+        "model": "fixture",
+        "object": "chat.completion.chunk",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "tool_calls": [
+                {
+                  "id": "call_fixture_native",
+                  "type": "function",
+                  "function": {
+                    "name": "get_status",
+                    "arguments": "{\"service\":\"tensorfold\"}"
+                  },
+                  "index": 0
+                }
+              ]
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "at_ms": 16.247,
+      "raw": "data: {\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}]}",
+      "data": "{\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}]}",
+      "json": {
+        "id": "chatcmpl-fixture",
+        "created": 1,
+        "model": "fixture",
+        "object": "chat.completion.chunk",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {},
+            "finish_reason": "tool_calls"
+          }
+        ]
+      }
+    },
+    {
+      "index": 3,
+      "at_ms": 16.254,
+      "raw": "data: [DONE]",
+      "data": "[DONE]"
+    }
+  ],
+  "events": [
+    {
+      "frame": 0,
+      "at_ms": 16.223,
+      "kind": "content",
+      "value": "    ```\n<tool_call>{\"name\":\"example\",\"arguments\":{}}</tool_call>\n```\n\n"
+    },
+    {
+      "frame": 1,
+      "at_ms": 16.239,
+      "kind": "call",
+      "value": [
+        {
+          "id": "call_fixture_native",
+          "type": "function",
+          "function": {
+            "name": "get_status",
+            "arguments": "{\"service\":\"tensorfold\"}"
+          },
+          "index": 0
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "at_ms": 16.247,
+      "kind": "finish",
+      "value": "tool_calls"
+    },
+    {
+      "frame": 3,
+      "at_ms": 16.254,
+      "kind": "done",
+      "value": true
+    }
+  ],
+  "transport_error": null,
+  "headers": {
+    "Connection": "close",
+    "Content-Type": "text/event-stream",
+    "Date": "Wed, 21 Oct 2026 15:30:38 GMT",
+    "Server": "Python/3.12.3",
+    "Transfer-Encoding": "chunked",
+    "X-PreRouter-Detect": "SUB_AGENT",
+    "X-PreRouter-Intended-Lane": "fast",
+    "X-PreRouter-Body-Bytes": "336",
+    "X-PreRouter-Tool-Contract": "strict-native"
+  },
+  "content_type": "text/event-stream",
+  "elapsed_ms": 16.275,
+  "metrics": {
+    "frame_count": 4,
+    "event_counts": {
+      "content": 1,
+      "call": 1,
+      "finish": 1,
+      "done": 1
+    },
+    "event_order": [
+      "content",
+      "call",
+      "finish",
+      "done"
+    ],
+    "first_content_ms": 16.223,
+    "content_chunks_before_terminal": 1,
+    "last_content_ms": 16.223,
+    "elapsed_ms": 16.275
+  },
+  "contract": "StrictNative",
+  "case": "mixed",
+  "preserves_contract": true
+}

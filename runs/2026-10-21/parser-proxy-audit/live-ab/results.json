@@ -1,0 +1,650 @@
+{
+  "schema_version": 1,
+  "started_utc": "2026-10-21T15:27:53.793075+00:00",
+  "finished_utc": "2026-10-21T15:28:08.549717+00:00",
+  "kind": "functional_direct_proxy_ab_not_performance",
+  "safety": {
+    "generated_tools_executed": false,
+    "service_restarts": 0,
+    "guard_toggle": false,
+    "max_tokens_per_request": 512,
+    "coordinator_retries": 0,
+    "production_proxy_retry_may_occur": true
+  },
+  "health_before": {
+    "A-direct": {
+      "ok": true,
+      "busy": false,
+      "requests_running": 0,
+      "requests_total": 525,
+      "streams": {
+        "decoding": 0,
+        "prefilling": 0,
+        "max": 8
+      },
+      "kv_cache_backing": "display"
+    },
+    "B-production-proxy": {
+      "ok": true,
+      "primary": {
+        "url": "http://127.0.0.1:8100",
+        "toolOutputContract": "StrictNative",
+        "cureRawToolCalls": false,
+        "sampling": {
+          "temperature": 0.4,
+          "top_p": 1,
+          "enforced": true
+        }
+      },
+      "unavailableToolRetry": {
+        "enabled": true,
+        "maxRetries": 1,
+        "retryRawToolCallAborts": false,
+        "strictGuardOnly": true,
+        "includeRequestContext": true,
+        "maxResponseBytes": 16777216,
+        "metrics": {
+          "scan_count": 0,
+          "detour_ok": 0,
+          "detour_timeout": 0,
+          "detour_fail": 0,
+          "cache_hit": 0,
+          "cache_miss": 0,
+          "rewrite_ok": 0,
+          "stt_ok": 0,
+          "stt_fail": 0,
+          "rehome_ok": 0,
+          "sampling_pinned": 106,
+          "sampling_kept": 0,
+          "sampling_parse_fail": 0,
+          "loop_guard_checks": 8,
+          "loop_guard_nudges": 0,
+          "loop_guard_errors": 0,
+          "loop_guard_advisor_ms": 0,
+          "loop_guard_wedges": 32,
+          "loop_guard_wedge_ms": 86944,
+          "unavailable_tool_retries": 1,
+          "unavailable_tool_retry_success": 0,
+          "unavailable_tool_retry_fail": 1,
+          "tool_retry_skipped_visible": 0,
+          "tool_retry_skipped_not_guard": 0,
+          "tool_retry_fail_by_category": {
+            "strict_guard_rejection": 1
+          }
+        }
+      }
+    }
+  },
+  "health_after": {
+    "A-direct": {
+      "ok": true,
+      "busy": false,
+      "requests_running": 0,
+      "requests_total": 540,
+      "streams": {
+        "decoding": 0,
+        "prefilling": 0,
+        "max": 8
+      },
+      "kv_cache_backing": "display"
+    },
+    "B-production-proxy": {
+      "ok": true,
+      "primary": {
+        "url": "http://127.0.0.1:8100",
+        "toolOutputContract": "StrictNative",
+        "cureRawToolCalls": false,
+        "sampling": {
+          "temperature": 0.4,
+          "top_p": 1,
+          "enforced": true
+        }
+      },
+      "unavailableToolRetry": {
+        "enabled": true,
+        "maxRetries": 1,
+        "retryRawToolCallAborts": false,
+        "strictGuardOnly": true,
+        "includeRequestContext": true,
+        "maxResponseBytes": 16777216,
+        "metrics": {
+          "scan_count": 0,
+          "detour_ok": 0,
+          "detour_timeout": 0,
+          "detour_fail": 0,
+          "cache_hit": 0,
+          "cache_miss": 0,
+          "rewrite_ok": 0,
+          "stt_ok": 0,
+          "stt_fail": 0,
+          "rehome_ok": 0,
+          "sampling_pinned": 120,
+          "sampling_kept": 0,
+          "sampling_parse_fail": 0,
+          "loop_guard_checks": 8,
+          "loop_guard_nudges": 0,
+          "loop_guard_errors": 0,
+          "loop_guard_advisor_ms": 0,
+          "loop_guard_wedges": 34,
+          "loop_guard_wedge_ms": 88725,
+          "unavailable_tool_retries": 2,
+          "unavailable_tool_retry_success": 1,
+          "unavailable_tool_retry_fail": 1,
+          "tool_retry_skipped_visible": 0,
+          "tool_retry_skipped_not_guard": 0,
+          "tool_retry_fail_by_category": {
+            "strict_guard_rejection": 1
+          }
+        }
+      }
+    }
+  },
+  "summary": {
+    "PASS": 10,
+    "INCONCLUSIVE": 4
+  },
+  "results": [
+    {
+      "name": "prose_no_tools",
+      "side": "A-direct",
+      "payload_sha256": "8a2d76e4a9568237fba257aa6c50b3dc3a354a10d722d29313f841d9aa3b0b8b",
+      "status": "PASS",
+      "reason": "Multiple content chunks before terminal",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 35,
+        "event_counts": {
+          "content": 32,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 587.982,
+        "content_chunks_before_terminal": 32,
+        "last_content_ms": 1786.752,
+        "elapsed_ms": 1787.87
+      },
+      "call_names": [],
+      "headers": {}
+    },
+    {
+      "name": "prose_no_tools",
+      "side": "B-production-proxy",
+      "payload_sha256": "8a2d76e4a9568237fba257aa6c50b3dc3a354a10d722d29313f841d9aa3b0b8b",
+      "status": "INCONCLUSIVE",
+      "reason": "Missing terminal finish/DONE (possibly truncated generation)",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 34,
+        "event_counts": {
+          "content": 32,
+          "finish": 1
+        },
+        "event_order": [
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "finish"
+        ],
+        "first_content_ms": 173.528,
+        "content_chunks_before_terminal": 32,
+        "last_content_ms": 1349.96,
+        "elapsed_ms": 1353.267
+      },
+      "call_names": [],
+      "headers": {}
+    },
+    {
+      "name": "prose_with_tools",
+      "side": "A-direct",
+      "payload_sha256": "6871daf859628841fe12afe9f716c8c91caf0826e787514a9bd6058565250ea5",
+      "status": "PASS",
+      "reason": "Multiple content chunks before terminal",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 35,
+        "event_counts": {
+          "content": 32,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 509.371,
+        "content_chunks_before_terminal": 32,
+        "last_content_ms": 1655.409,
+        "elapsed_ms": 1656.005
+      },
+      "call_names": [],
+      "headers": {}
+    },
+    {
+      "name": "prose_with_tools",
+      "side": "B-production-proxy",
+      "payload_sha256": "6871daf859628841fe12afe9f716c8c91caf0826e787514a9bd6058565250ea5",
+      "status": "PASS",
+      "reason": "Multiple content chunks before terminal",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 35,
+        "event_counts": {
+          "content": 32,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 509.163,
+        "content_chunks_before_terminal": 32,
+        "last_content_ms": 1655.213,
+        "elapsed_ms": 1655.927
+      },
+      "call_names": [],
+      "headers": {
+        "X-PreRouter-Tool-Retries": "0"
+      }
+    },
+    {
+      "name": "valid_native_call",
+      "side": "A-direct",
+      "payload_sha256": "db64366ef5ba76de8fa3ba88d2e3dc9c1277e6da5bf6cb3f8f0cd5935e949e41",
+      "status": "PASS",
+      "reason": "Valid minimal get_status call",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 5,
+        "event_counts": {
+          "content": 1,
+          "call": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "call",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 587.235,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 587.235,
+        "elapsed_ms": 948.228
+      },
+      "call_names": [
+        "get_status"
+      ],
+      "headers": {}
+    },
+    {
+      "name": "valid_native_call",
+      "side": "B-production-proxy",
+      "payload_sha256": "db64366ef5ba76de8fa3ba88d2e3dc9c1277e6da5bf6cb3f8f0cd5935e949e41",
+      "status": "PASS",
+      "reason": "Valid minimal get_status call",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 5,
+        "event_counts": {
+          "content": 1,
+          "call": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "call",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 495.653,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 495.653,
+        "elapsed_ms": 853.497
+      },
+      "call_names": [
+        "get_status"
+      ],
+      "headers": {
+        "X-PreRouter-Tool-Retries": "0"
+      }
+    },
+    {
+      "name": "four_space_fenced_literal",
+      "side": "A-direct",
+      "payload_sha256": "d100546766b0a5aa2f34ebb90cc630310e357fc213488194def0852f8249727f",
+      "status": "INCONCLUSIVE",
+      "reason": "Model did not copy fixture exactly",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 6,
+        "event_counts": {
+          "content": 3,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "content",
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 518.221,
+        "content_chunks_before_terminal": 3,
+        "last_content_ms": 765.825,
+        "elapsed_ms": 765.962
+      },
+      "call_names": [],
+      "headers": {}
+    },
+    {
+      "name": "four_space_fenced_literal",
+      "side": "B-production-proxy",
+      "payload_sha256": "d100546766b0a5aa2f34ebb90cc630310e357fc213488194def0852f8249727f",
+      "status": "INCONCLUSIVE",
+      "reason": "Model did not copy fixture exactly",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 6,
+        "event_counts": {
+          "content": 3,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "content",
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 517.704,
+        "content_chunks_before_terminal": 3,
+        "last_content_ms": 764.308,
+        "elapsed_ms": 764.395
+      },
+      "call_names": [],
+      "headers": {
+        "X-PreRouter-Tool-Retries": "0"
+      }
+    },
+    {
+      "name": "unoffered_json",
+      "side": "A-direct",
+      "payload_sha256": "b8ef44a2ea6cb876b998e26be2314eb99b63e9d59c4a52138f3419e19b728000",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract",
+      "http_status": 500,
+      "metrics": {
+        "frame_count": 0,
+        "event_counts": {},
+        "event_order": [],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 755.333
+      },
+      "call_names": [],
+      "headers": {
+        "x-should-retry": "false"
+      }
+    },
+    {
+      "name": "unoffered_json",
+      "side": "B-production-proxy",
+      "payload_sha256": "b8ef44a2ea6cb876b998e26be2314eb99b63e9d59c4a52138f3419e19b728000",
+      "status": "INCONCLUSIVE",
+      "reason": "Model may have completed or changed the fixture into a valid offered call",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 0,
+        "event_counts": {},
+        "event_order": [],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 1627.059
+      },
+      "call_names": [
+        "get_status"
+      ],
+      "headers": {
+        "X-PreRouter-Tool-Retries": "1"
+      }
+    },
+    {
+      "name": "unoffered_sse",
+      "side": "A-direct",
+      "payload_sha256": "827276fcf8ff81550ede83a64f266b3747d67edc7c7c8691306988aa8e5ff303",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 3,
+        "event_counts": {
+          "error": 1,
+          "done": 1
+        },
+        "event_order": [
+          "error",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 758.671
+      },
+      "call_names": [],
+      "headers": {}
+    },
+    {
+      "name": "unoffered_sse",
+      "side": "B-production-proxy",
+      "payload_sha256": "827276fcf8ff81550ede83a64f266b3747d67edc7c7c8691306988aa8e5ff303",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 3,
+        "event_counts": {
+          "error": 1,
+          "done": 1
+        },
+        "event_order": [
+          "error",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 762.387
+      },
+      "call_names": [],
+      "headers": {
+        "X-PreRouter-Tool-Retries": "0"
+      }
+    },
+    {
+      "name": "no_tools_executable_envelope",
+      "side": "A-direct",
+      "payload_sha256": "b711e8344a4fb976a4bb3b2fb6f181e51ba217e46cba130e3aa2182af020987b",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 3,
+        "event_counts": {
+          "error": 1,
+          "done": 1
+        },
+        "event_order": [
+          "error",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 475.28
+      },
+      "call_names": [],
+      "headers": {}
+    },
+    {
+      "name": "no_tools_executable_envelope",
+      "side": "B-production-proxy",
+      "payload_sha256": "b711e8344a4fb976a4bb3b2fb6f181e51ba217e46cba130e3aa2182af020987b",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract",
+      "http_status": 200,
+      "metrics": {
+        "frame_count": 3,
+        "event_counts": {
+          "error": 1,
+          "done": 1
+        },
+        "event_order": [
+          "error",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 488.416
+      },
+      "call_names": [],
+      "headers": {}
+    }
+  ]
+}

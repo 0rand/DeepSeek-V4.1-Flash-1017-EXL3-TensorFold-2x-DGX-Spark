@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "primary": {
+    "url": "http://127.0.0.1:33197",
+    "toolOutputContract": "LegacyRaw",
+    "cureRawToolCalls": true,
+    "sampling": {
+      "temperature": null,
+      "top_p": null,
+      "enforced": false
+    }
+  }
+}

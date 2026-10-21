@@ -1,5 +1,9 @@
 # Runs of 21 October 2026 (UTC): release gate of engine `dsv41-1.1.0`
 
+## Parser and proxy consistency audit
+
+- [Parser and MediaLLMProxy audit](parser-proxy-audit/README.md): display image `tensorfold-dsv41:display-kv-0dc9c3fefb06`, strict guard and streaming enabled, proxy `StrictNative`, temperature 0.4. Real inference 5/5, installed parser 70 tests normal and 70 under `-O`, proxy 287/287. Functional A/B confirms strict-native literal preservation and reproduces missing SSE terminal framing on the proxy loop-guard path. No service or production config changes were made by the audit.
+
 Same pair of DGX Spark as `runs/2026-10-18/`. The gate ran in a lock window from 02:17 to 02:49 UTC (the node clock). Each step started a fresh engine, then ran the same checks in the same order, with the whole suite sent straight to the engine (`v41_suite.py`):
 
 1. start, then a structured-output smoke test;

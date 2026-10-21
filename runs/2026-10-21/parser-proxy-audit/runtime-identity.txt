@@ -1,0 +1,28 @@
+observed_utc=2026-10-21T15:31:22Z
+repo_head=42bb551e22184fb7ca9f06a9509e5f226cee4d73
+
+rank0 identity:
+image=tensorfold-dsv41:display-kv-0dc9c3fefb06 image_id=sha256:4dd9d9a7f234e057f72c37661075fdaf6fd2143706e55f7abcedad748b3e9d09 started=2026-10-21T08:33:45.535676156Z
+TF_TOOL_OUTPUT_STREAMING=1
+
+rank0 installed guard:
+3ae1213289babe2f64bdc7a8bb8a97af65e4450746d5ee086b3169ec7f13fef2
+
+rank1 identity:
+image=tensorfold-dsv41:display-kv-0dc9c3fefb06 image_id=sha256:4dd9d9a7f234e057f72c37661075fdaf6fd2143706e55f7abcedad748b3e9d09 started=2026-10-21T08:33:48.543356861Z
+TF_TOOL_OUTPUT_STREAMING=1
+3ae1213289babe2f64bdc7a8bb8a97af65e4450746d5ee086b3169ec7f13fef2  -
+
+proxy deployed dll:
+bf284a21c6d860f7e3e489e3869a6d87d74fb5de67ddcd605b66e16767ec6461
+
+proxy source head:
+2e7ceb5094aa9c2e02d70e288ef753303ef140af
+
+service state:
+MainPID=1596934
+NRestarts=4
+ExecMainStartTimestamp=Wed 2026-10-21 13:12:47 CEST
+ActiveState=active
+SubState=running
+ActiveEnterTimestamp=Wed 2026-10-21 13:12:47 CEST

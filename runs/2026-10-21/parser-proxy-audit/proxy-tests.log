@@ -1,0 +1,6 @@
+  OAIPreRouter.Cli -> /home/<user>/Development/src/MediaLLMProxy/OAIPreRouter.Cli/bin/Release/net10.0/OAIPreRouter.Cli.dll
+  OAIPreRouter.Tester -> /home/<user>/Development/src/MediaLLMProxy/OAIPreRouter.Tester/bin/Release/net10.0/OAIPreRouter.Tester.dll
+Test run for /home/<user>/Development/src/MediaLLMProxy/OAIPreRouter.Tester/bin/Release/net10.0/OAIPreRouter.Tester.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   287, Skipped:     0, Total:   287, Duration: 203 ms - OAIPreRouter.Tester.dll (net10.0)

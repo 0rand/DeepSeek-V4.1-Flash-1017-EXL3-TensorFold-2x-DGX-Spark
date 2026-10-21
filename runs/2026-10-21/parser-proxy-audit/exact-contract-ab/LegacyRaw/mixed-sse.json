@@ -1,0 +1,180 @@
+{
+  "request": {
+    "model": "fixture",
+    "messages": [
+      {
+        "role": "user",
+        "content": "mixed"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_status",
+          "description": "Return a service status",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "service"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "stream": true
+  },
+  "http_status": 200,
+  "frames": [
+    {
+      "index": 0,
+      "at_ms": 17.188,
+      "raw": "data: {\"id\":\"chatcmpl-fixture\",\"created\":1,\"model\":\"fixture\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":null},\"finish_reason\":null}]}",
+      "data": "{\"id\":\"chatcmpl-fixture\",\"created\":1,\"model\":\"fixture\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":null},\"finish_reason\":null}]}",
+      "json": {
+        "id": "chatcmpl-fixture",
+        "created": 1,
+        "model": "fixture",
+        "object": "chat.completion.chunk",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "role": "assistant",
+              "content": null
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "at_ms": 17.208,
+      "raw": "data: {\"id\":\"chatcmpl-fixture\",\"created\":1,\"model\":\"fixture\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"id\":\"call_fixture_native\",\"type\":\"function\",\"function\":{\"name\":\"get_status\",\"arguments\":\"{\\u0022service\\u0022:\\u0022tensorfold\\u0022}\"},\"index\":0}]},\"finish_reason\":null}]}",
+      "data": "{\"id\":\"chatcmpl-fixture\",\"created\":1,\"model\":\"fixture\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"id\":\"call_fixture_native\",\"type\":\"function\",\"function\":{\"name\":\"get_status\",\"arguments\":\"{\\u0022service\\u0022:\\u0022tensorfold\\u0022}\"},\"index\":0}]},\"finish_reason\":null}]}",
+      "json": {
+        "id": "chatcmpl-fixture",
+        "created": 1,
+        "model": "fixture",
+        "object": "chat.completion.chunk",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "tool_calls": [
+                {
+                  "id": "call_fixture_native",
+                  "type": "function",
+                  "function": {
+                    "name": "get_status",
+                    "arguments": "{\"service\":\"tensorfold\"}"
+                  },
+                  "index": 0
+                }
+              ]
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "at_ms": 20.511,
+      "raw": "data: {\"error\":{\"type\":\"model_output_error\",\"code\":\"invalid_raw_tool_call\",\"source\":\"mediallmproxy.raw_tool_guard\",\"reason\":\"mixed_native_raw_calls\",\"message\":\"The model response contained an invalid raw tool call (reason: mixed_native_raw_calls).\"}}",
+      "data": "{\"error\":{\"type\":\"model_output_error\",\"code\":\"invalid_raw_tool_call\",\"source\":\"mediallmproxy.raw_tool_guard\",\"reason\":\"mixed_native_raw_calls\",\"message\":\"The model response contained an invalid raw tool call (reason: mixed_native_raw_calls).\"}}",
+      "json": {
+        "error": {
+          "type": "model_output_error",
+          "code": "invalid_raw_tool_call",
+          "source": "mediallmproxy.raw_tool_guard",
+          "reason": "mixed_native_raw_calls",
+          "message": "The model response contained an invalid raw tool call (reason: mixed_native_raw_calls)."
+        }
+      }
+    },
+    {
+      "index": 3,
+      "at_ms": 20.541,
+      "raw": "data: [DONE]",
+      "data": "[DONE]"
+    }
+  ],
+  "events": [
+    {
+      "frame": 1,
+      "at_ms": 17.208,
+      "kind": "call",
+      "value": [
+        {
+          "id": "call_fixture_native",
+          "type": "function",
+          "function": {
+            "name": "get_status",
+            "arguments": "{\"service\":\"tensorfold\"}"
+          },
+          "index": 0
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "at_ms": 20.511,
+      "kind": "error",
+      "value": {
+        "type": "model_output_error",
+        "code": "invalid_raw_tool_call",
+        "source": "mediallmproxy.raw_tool_guard",
+        "reason": "mixed_native_raw_calls",
+        "message": "The model response contained an invalid raw tool call (reason: mixed_native_raw_calls)."
+      }
+    },
+    {
+      "frame": 3,
+      "at_ms": 20.541,
+      "kind": "done",
+      "value": true
+    }
+  ],
+  "transport_error": null,
+  "headers": {
+    "Connection": "close",
+    "Content-Type": "text/event-stream",
+    "Date": "Wed, 21 Oct 2026 15:30:37 GMT",
+    "Server": "Python/3.12.3",
+    "Transfer-Encoding": "chunked",
+    "X-PreRouter-Detect": "SUB_AGENT",
+    "X-PreRouter-Intended-Lane": "fast",
+    "X-PreRouter-Body-Bytes": "336",
+    "X-PreRouter-Tool-Contract": "legacy-raw"
+  },
+  "content_type": "text/event-stream",
+  "elapsed_ms": 20.598,
+  "metrics": {
+    "frame_count": 4,
+    "event_counts": {
+      "call": 1,
+      "error": 1,
+      "done": 1
+    },
+    "event_order": [
+      "call",
+      "error",
+      "done"
+    ],
+    "first_content_ms": null,
+    "content_chunks_before_terminal": 0,
+    "last_content_ms": null,
+    "elapsed_ms": 20.598
+  },
+  "contract": "LegacyRaw",
+  "case": "mixed",
+  "preserves_contract": false
+}

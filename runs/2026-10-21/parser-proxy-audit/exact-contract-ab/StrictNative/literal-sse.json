@@ -1,0 +1,137 @@
+{
+  "request": {
+    "model": "fixture",
+    "messages": [
+      {
+        "role": "user",
+        "content": "literal"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_status",
+          "description": "Return a service status",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "service": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "service"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    ],
+    "stream": true
+  },
+  "http_status": 200,
+  "frames": [
+    {
+      "index": 0,
+      "at_ms": 17.629,
+      "raw": "data: {\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\", \"content\": \"    ```\\n<tool_call><name>get_status</name><parameters>{\\\"service\\\":\\\"tensorfold\\\"}</parameters></tool_call>\\n```\\n\\n\"}, \"finish_reason\": null}]}",
+      "data": "{\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\", \"content\": \"    ```\\n<tool_call><name>get_status</name><parameters>{\\\"service\\\":\\\"tensorfold\\\"}</parameters></tool_call>\\n```\\n\\n\"}, \"finish_reason\": null}]}",
+      "json": {
+        "id": "chatcmpl-fixture",
+        "created": 1,
+        "model": "fixture",
+        "object": "chat.completion.chunk",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "role": "assistant",
+              "content": "    ```\n<tool_call><name>get_status</name><parameters>{\"service\":\"tensorfold\"}</parameters></tool_call>\n```\n\n"
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "at_ms": 17.646,
+      "raw": "data: {\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}]}",
+      "data": "{\"id\": \"chatcmpl-fixture\", \"created\": 1, \"model\": \"fixture\", \"object\": \"chat.completion.chunk\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}]}",
+      "json": {
+        "id": "chatcmpl-fixture",
+        "created": 1,
+        "model": "fixture",
+        "object": "chat.completion.chunk",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {},
+            "finish_reason": "stop"
+          }
+        ]
+      }
+    },
+    {
+      "index": 2,
+      "at_ms": 17.654,
+      "raw": "data: [DONE]",
+      "data": "[DONE]"
+    }
+  ],
+  "events": [
+    {
+      "frame": 0,
+      "at_ms": 17.629,
+      "kind": "content",
+      "value": "    ```\n<tool_call><name>get_status</name><parameters>{\"service\":\"tensorfold\"}</parameters></tool_call>\n```\n\n"
+    },
+    {
+      "frame": 1,
+      "at_ms": 17.646,
+      "kind": "finish",
+      "value": "stop"
+    },
+    {
+      "frame": 2,
+      "at_ms": 17.654,
+      "kind": "done",
+      "value": true
+    }
+  ],
+  "transport_error": null,
+  "headers": {
+    "Connection": "close",
+    "Content-Type": "text/event-stream",
+    "Date": "Wed, 21 Oct 2026 15:30:38 GMT",
+    "Server": "Python/3.12.3",
+    "Transfer-Encoding": "chunked",
+    "X-PreRouter-Detect": "SUB_AGENT",
+    "X-PreRouter-Intended-Lane": "fast",
+    "X-PreRouter-Body-Bytes": "338",
+    "X-PreRouter-Tool-Contract": "strict-native"
+  },
+  "content_type": "text/event-stream",
+  "elapsed_ms": 17.696,
+  "metrics": {
+    "frame_count": 3,
+    "event_counts": {
+      "content": 1,
+      "finish": 1,
+      "done": 1
+    },
+    "event_order": [
+      "content",
+      "finish",
+      "done"
+    ],
+    "first_content_ms": 17.629,
+    "content_chunks_before_terminal": 1,
+    "last_content_ms": 17.629,
+    "elapsed_ms": 17.696
+  },
+  "contract": "StrictNative",
+  "case": "literal",
+  "preserves_contract": true
+}
