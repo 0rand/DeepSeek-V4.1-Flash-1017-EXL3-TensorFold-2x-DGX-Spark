@@ -72,6 +72,23 @@ class SpillBundleTests(unittest.TestCase):
         prepare.prepare(destination, image="fixture:display-kv")
         self.assertIn("SPILL_GIB=0\n", (destination / ".env").read_text())
 
+    def test_the_bundle_turns_the_memory_cap_off_because_these_images_lack_its_label(self):
+        text = (self.root / ".env").read_text()
+        self.assertIn("MEM_CAP=0", text)
+        (self.root / ".env").write_text(text.replace("MEM_CAP=0", "MEM_CAP=1"))
+        for spill in (True, False):
+            with self.subTest(spill=spill):
+                destination = self.root / f"bundle-{spill}"
+                prepare.prepare(destination, image="fixture:display", spill=spill)
+                self.assertEqual((destination / ".env").read_text().count("MEM_CAP=0"), 1)
+                self.assertNotIn("MEM_CAP=1", (destination / ".env").read_text())
+        # An older .env with no MEM_CAP line gets one.
+        kept = [line for line in (self.root / ".env").read_text().splitlines() if not line.startswith("MEM_CAP=")]
+        (self.root / ".env").write_text("\n".join(kept) + "\n")
+        destination = self.root / "bundle-old"
+        prepare.prepare(destination, image="fixture:display", spill=True)
+        self.assertIn("MEM_CAP=0", (destination / ".env").read_text())
+
     def test_the_image_build_copies_named_files_never_a_whole_folder(self):
         # The build context is the repository root, where a private bundle-launch-* folder (with a .env file) may be.
         repo = ROOT.parent.parent

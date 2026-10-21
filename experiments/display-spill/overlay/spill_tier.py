@@ -573,6 +573,7 @@ class SpillStore:
         before = len(self.index)
         self._make_room(0)                                    # a lower cap than the last run's: the oldest entries go
         dropped += before - len(self.index)
+        self._start()                                         # (a failure here is agreed by the caller, like any other)
         if self.rank == 0 and not quiet:
             print(f"[tensorfold] spill: {self.top} ({cfg.gib:g} GiB a rank, write-through "
                   f"from {cfg.min_tokens} tokens, {cfg.writers} writers"
@@ -613,6 +614,15 @@ class SpillStore:
     def _total(self) -> int:
         with self.lock:
             return sum(e.size for e in self.index.values())
+
+    def _short(self, size: int) -> int:
+        """Bytes this rank's disk would be below the free-disk floor after a write of ``size`` (queued writes count as
+        written)."""
+
+        floor = int(self.cfg.min_free_gib * (1 << 30))
+        with self.lock:
+            queued = sum(j.nbytes for j in self.pending.values() if not j.done.is_set())
+        return max(0, floor + size + queued - self.disk_free())
 
     def disk_free(self) -> int:
         try:
@@ -1063,10 +1073,7 @@ class SpillStore:
                     **(meta or {})}
             header, data = _header(items, info)
             size = len(header) + data
-            floor = int(self.cfg.min_free_gib * (1 << 30))
-            with self.lock:                            # (writes still queued here count as written)
-                queued = sum(j.nbytes for j in self.pending.values() if not j.done.is_set())
-            short = max(0, floor + size + queued - self.disk_free())   # bytes this rank's disk would be below the floor
+            short = self._short(size)                  # bytes this rank's disk would be below the floor
         except Exception as exc:                     # noqa: BLE001  (a rank-local failure: share it, never skip the gather)
             if self.world < 2 or self.gather is None:
                 raise
@@ -1083,15 +1090,23 @@ class SpillStore:
             return None
         if short:
             # A queued write still holds its whole file: removing its entry frees no bytes until the writer ends. Wait
-            # for the queue first, so the entries that go are files on disk. (The index decides who goes, not this wait.)
-            self.drain(FLOOR_DRAIN_S)
+            # for the queue first, so the entries that go are files on disk, then measure again and agree on the
+            # result. (The index decides who goes, not this wait.) A rank whose queue did not finish stops every rank.
+            drained = self.drain(FLOOR_DRAIN_S)
+            short = self._short(size)
+            if self.world > 1 and self.gather is not None:
+                got = self.gather([-(-short >> 20), int(drained)])
+                short = max(r[0] for r in got) << 20
+                drained = all(r[1] for r in got)
+            if not drained:
+                self.stats.no_space += 1
+                return None
         if short and not self._make_room(size, keep, cap=self._total() + size - short):
             self.stats.no_space += 1               # below the floor even with every entry outside ``keep`` gone
             return None
         if not self._make_room(size, keep):
             self.stats.full += 1
             return None
-        self._start()
         self._throttle(size)
         name = key_name(key, n)
         entry = Entry(key, n, name, size, ids=np.asarray(ids, dtype=np.int64), head=head,

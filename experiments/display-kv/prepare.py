@@ -63,12 +63,13 @@ fi
             break
     else:
         raise ValueError("start.sh prefill anchor changed; review the experiment")
-    overrides = [("IMAGE", image), ("PREFILL_CHUNK", "512")]
+    # MEM_CAP=1 needs the memory-topk image label, which these images do not have: the bundle starts with it off.
+    overrides = [("IMAGE", image), ("PREFILL_CHUNK", "512"), ("MEM_CAP", "0")]
     if not spill:
         overrides.append(("SPILL_GIB", "0"))
     for key, value in overrides:
         config, count = re.subn(rf"(?m)^{key}=.*$", f"{key}={value}", config)
-        if count == 0 and key in ("PREFILL_CHUNK", "SPILL_GIB"):
+        if count == 0 and key in ("PREFILL_CHUNK", "SPILL_GIB", "MEM_CAP"):
             config = config.rstrip() + f"\n{key}={value}\n"
             count = 1
         if count != 1:

@@ -446,6 +446,58 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(rooms, [])
             self.assertEqual(store.stats.full, 1)
 
+    def new_state(self, first=500):
+        ids = list(range(first, first + 100))
+        return ids, Snap(ids=ids, ring=torch.arange(len(ids) * 4, dtype=torch.uint8).reshape(len(ids), 4))
+
+    def test_a_save_that_cannot_drain_its_queue_is_skipped_by_every_rank(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            rooms = []
+            real = store._make_room
+            store._make_room = lambda *a, **k: rooms.append(a) or real(*a, **k)
+            store.drain = lambda timeout=None: False                      # a write is still queued after the wait
+            store.disk_free = lambda: 0
+            sent = self.gathered(store, [0, 1, 0])
+            self.assertEqual(sent, [])
+            new, snap = self.new_state()
+            self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(rooms, [])                                   # nothing was evicted
+            self.assertEqual(len(store.index), 1)
+            self.assertEqual(store.stats.no_space, 1)
+            self.assertEqual(sent[-1][1], 0)                              # this rank told the others it did not drain
+            # The peer reports a drain that did not finish; this rank's own drain did.
+            store.drain = lambda timeout=None: True
+            store.world, store.gather = 2, lambda row: [list(row), [0, 0]] if len(row) == 2 else [list(row), [0, 1, 0]]
+            self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(rooms, [])
+
+    def test_the_floor_shortage_is_measured_again_after_the_drain(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            rooms = []
+            real = store._make_room
+            store._make_room = lambda *a, **k: rooms.append(k.get("cap")) or real(*a, **k)
+            readings = iter([0, 1 << 40, 1 << 40, 1 << 40])               # short before the drain, none after it
+            store.disk_free = lambda: next(readings, 1 << 40)
+            store.drain = lambda timeout=None: True
+            new, snap = self.new_state()
+            self.assertIsNotNone(store.save(new, snap, skip=("ids",)))
+            self.assertNotIn(True, [cap is not None for cap in rooms])    # no eviction for the floor
+            self.assertEqual(len(store.index), 2)
+
+    def test_the_writer_threads_start_with_the_store_and_a_start_failure_is_an_error_of_the_constructor(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            self.assertEqual(len(store._threads), store.cfg.writers)      # started before the first save
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.threading.Thread, "start", side_effect=RuntimeError("no thread")):
+                with self.assertRaises(RuntimeError):
+                    self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
