@@ -916,6 +916,47 @@ class SpillTierTests(unittest.TestCase):
                 store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
             self.assertEqual(store.stats.unlink_failed, 1)
 
+    def test_a_file_that_cannot_be_read_at_start_is_counted(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            path = self.entry_path(store)
+            real_stat = os.stat
+
+            def stat(target, *args, **kwargs):
+                if target == path:
+                    raise OSError(5, "I/O error")
+                return real_stat(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.os, "stat", stat), contextlib.redirect_stdout(io.StringIO()):
+                again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            self.assertEqual(again.stats.unlink_failed, 1)
+
+    def test_a_dropped_entry_whose_file_cannot_be_removed_after_its_write_is_counted(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            path = self.entry_path(store)
+            job = self.sp.Job.__new__(self.sp.Job)
+            job.key, job.path, job.entry = (1, 2), path, None
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target == path:
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
+                store._entry_done(job, True)                          # the key is not in the index: the file goes
+            self.assertEqual(store.stats.unlink_failed, 1)
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io

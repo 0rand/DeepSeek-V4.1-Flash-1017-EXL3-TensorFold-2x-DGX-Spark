@@ -674,7 +674,8 @@ class SpillStore:
         return done and not os.path.lexists(top)
 
     def _unlink_failed(self, path: str, exc: OSError, what: str = "remove") -> None:
-        self.stats.unlink_failed += 1
+        with self.lock:
+            self.stats.unlink_failed += 1
         print(f"[tensorfold] spill rank {self.rank}: could not {what} {path}: {exc!r}", flush=True)
 
     def _prune_builds(self) -> int:
@@ -745,8 +746,10 @@ class SpillStore:
             if name.endswith(".safetensors"):
                 try:
                     found.append((os.stat(path).st_mtime, name))
-                except OSError:
+                except FileNotFoundError:
                     pass
+                except OSError as exc:                         # (its bytes stay on disk, out of the index)
+                    self._unlink_failed(path, exc, "read")
         for _, name in sorted(found):                          # oldest first: recency follows the files' age
             path = os.path.join(self.dir, name)
             try:
@@ -1117,8 +1120,10 @@ class SpillStore:
                 pass
             try:
                 os.remove(path)
-            except OSError:
+            except FileNotFoundError:
                 pass
+            except OSError as exc:
+                self._unlink_failed(path, exc)
             return False
 
     @staticmethod
@@ -1310,8 +1315,10 @@ class SpillStore:
                 if job.key not in self.index:              # dropped after its rename: the file goes too
                     try:
                         os.remove(job.path)
-                    except OSError:
+                    except FileNotFoundError:
                         pass
+                    except OSError as exc:
+                        self._unlink_failed(job.path, exc)
             elif self.index.get(job.key) is job.entry:
                 job.entry.bad = True                       # stays indexed (every rank alike); a read fails here
 
