@@ -34,6 +34,8 @@ Prefill with cold prompts (bertholomus's kit_bench client, median of 3 runs):
 
 ## What you get
 
+Optional: [cache accounting for health and Prometheus](experiments/cache-metrics/README.md). This experiment does not change the ordinary image.
+
 - **About 2× the decode speed** of the standard vLLM setup: 57 vs 27 tok/s on prose, 92 vs 40 tok/s on code.
 - **Fast prefill.** About 2,000 to 2,200 tok/s for prompts up to 64K tokens.
 - **Ready for AI agents.** Forced tool calls (`tool_choice` set to `required` or to one tool) and structured output (a JSON schema, a regex or a list of choices).
@@ -265,6 +267,7 @@ Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROV
 | `scripts/` | download, template fix, setup checks, safe engine install (`_raw_*`: the scripts as they ran on the tested pair) |
 | `docker/` | the engine build |
 | `tests/` | the 32 agent tests, the format check, the benchmark, the prompt tests, the Hermes test ([guide](tests/README.md)) |
+| `experiments/memory-topk/` | opt-in image with bounded top-k scratch and an opt-in allocator policy ([guide](docs/MEMORY-TOPK.md)) |
 | `experiments/tool-output/` | opt-in image that rejects unoffered model tool calls ([guide](docs/TOOL-OUTPUT.md)) |
 | `.github/` | CI (offline tests, ruff, shellcheck, link check), the pull request and issue templates |
 | `runs/2026-10-17/` | every log and result behind this page |

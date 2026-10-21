@@ -27,6 +27,14 @@ TF_DISPLAY_SOURCE=/path/to/pinned/tensorfold python3 -m unittest discover -s exp
 
 This command reads source files but does not modify that checkout. Hermetic installer tests still run without it. Full hardware validation is pending. See [the display guide](../docs/DISPLAY-KV.md).
 
+## Memory and top-k experiment checks
+
+The opt-in memory/top-k image has CPU and mock tests in
+`experiments/memory-topk/tests/`. Source integration tests run only when
+`TF_MEMORY_SOURCE` names an explicit pinned checkout. Numerical top-k tests need
+`TF_MEMORY_CPU_TESTS=1` and a CPU-only PyTorch install. See
+[Memory and top-k](../docs/MEMORY-TOPK.md#validation-limits).
+
 ## Tool-output experiment checks
 
 The opt-in tool-output guard has CPU, loopback HTTP and fake-engine tests in
