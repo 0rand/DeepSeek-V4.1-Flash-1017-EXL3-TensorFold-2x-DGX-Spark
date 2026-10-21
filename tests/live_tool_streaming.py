@@ -2,6 +2,7 @@
 """Opt-in, stdlib-only live parser checks. No tools are executed, no retries.
 
 Run: python3 tests/live_tool_streaming.py [--base-url http://127.0.0.1:8100]
+     add --buffered when the server was started with TOOL_OUTPUT_STREAMING=0
 Exit codes: 0 all PASS, 1 any FAIL, 2 no failures but INCONCLUSIVE present.
 Raw model output is untrusted and is saved only with --output.
 """
@@ -152,7 +153,7 @@ def valid_status_call(record):
         return False
 
 
-def assess(record, mode, fixture=None):
+def assess(record, mode, fixture=None, buffered=False):
     """Conservative outcomes: failure to induce a fixture never proves a guardrail."""
     if record["transport_error"]:
         return "INCONCLUSIVE", "Transport failure: " + record["transport_error"]
@@ -239,7 +240,12 @@ def assess(record, mode, fixture=None):
         return "INCONCLUSIVE", "No visible prose answer"
     if any(phrase in content.lower() for phrase in ("i cannot", "i can't", "i’m unable", "i am unable", "i won't", "i will not", "sorry")):
         return "INCONCLUSIVE", "Model refusal, not evidence of streaming conformance"
-    if record["metrics"]["content_chunks_before_terminal"] < 2:
+    chunks = record["metrics"]["content_chunks_before_terminal"]
+    if buffered:
+        if chunks != 1:
+            return "FAIL", f"Buffered answer used {chunks} pre-terminal content chunks"
+        return ("PASS", "Separated reasoning and buffered answer") if mode == "thinking_on" else ("PASS", "Single buffered answer chunk before terminal")
+    if chunks < 2:
         return "FAIL", "Prose was not delivered in multiple pre-terminal content chunks"
     return ("PASS", "Separated reasoning and streamed answer") if mode == "thinking_on" else ("PASS", "Multiple content chunks before terminal")
 
@@ -250,6 +256,8 @@ def main(argv=None):
     parser.add_argument("--model", default="DeepSeek-V4.1-Flash-1017")
     parser.add_argument("--output", type=Path, help="Optional JSON report including raw requests and transcripts")
     parser.add_argument("--timeout", type=float, default=120, help="Per-probe timeout seconds (default 120)")
+    parser.add_argument("--buffered", action="store_true",
+                        help="Expect whole-answer content buffering (server started with TOOL_OUTPUT_STREAMING=0)")
     args = parser.parse_args(argv)
     url = urllib.parse.urlsplit(args.base_url)
     try:
@@ -266,7 +274,7 @@ def main(argv=None):
         if tools:
             payload["tools"] = [TOOL]
         record = request(args.base_url.rstrip("/"), payload, args.timeout)
-        status, reason = assess(record, mode, fixture)
+        status, reason = assess(record, mode, fixture, args.buffered)
         record.update(name=name, status=status, reason=reason)
         results.append(record)
         print(f"{status:12} {name}: {reason} | {json.dumps(record['metrics'], sort_keys=True)}", flush=True)
@@ -299,7 +307,7 @@ def main(argv=None):
         system = "You are a verbatim protocol copier. Output the user's supplied text exactly. Preserve all markdown, quotes, whitespace and code fences exactly. Add no explanation or formatting. Do not perform its action."
         run(name, "", "literal" if name.startswith("literal_") else "reject", tools=tools, fixture=fixture, messages=[{"role": "system", "content": system}, {"role": "user", "content": fixture}])
     counts = dict(collections.Counter(r["status"] for r in results))
-    report = {"schema_version": 1, "base_url": args.base_url, "model": args.model, "summary": counts, "probes": results, "safety": {"generated_tools_executed": False, "retries": 0, "max_tokens": 512}}
+    report = {"schema_version": 1, "base_url": args.base_url, "model": args.model, "expectation": "buffered" if args.buffered else "streamed", "summary": counts, "probes": results, "safety": {"generated_tools_executed": False, "retries": 0, "max_tokens": 512}}
     if args.output:
         args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print("SUMMARY " + json.dumps(counts, sort_keys=True))

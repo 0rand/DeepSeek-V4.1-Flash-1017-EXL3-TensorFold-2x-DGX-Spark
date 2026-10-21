@@ -87,6 +87,16 @@ class ProbeAssessmentTests(unittest.TestCase):
                             ('finish', 'stop'), ('done', True)])
         self.assertEqual(probe.assess(late, 'thinking_on')[0], 'FAIL')
 
+    def test_buffered_mode_inverts_the_chunk_expectation(self):
+        single = self.record([('reasoning', 'thought'), ('reasoning', ' more'),
+                              ('content', 'the whole answer'), ('finish', 'stop'), ('done', True)])
+        self.assertEqual(probe.assess(single, 'thinking_on')[0], 'FAIL')
+        self.assertEqual(probe.assess(single, 'thinking_on', buffered=True)[0], 'PASS')
+        multi = self.record([('content', 'the '), ('content', 'whole answer'),
+                             ('finish', 'stop'), ('done', True)])
+        self.assertEqual(probe.assess(multi, 'thinking_off', buffered=True)[0], 'FAIL')
+        self.assertEqual(probe.assess(multi, 'thinking_off')[0], 'PASS')
+
     def test_refusal_transport_and_incomplete_generation_are_not_passes(self):
         for events in [[], [('content', 'I cannot copy that.'), ('finish', 'stop'), ('done', True)],
                        [('content', 'unfinished'), ('finish', 'length'), ('done', True)]]:

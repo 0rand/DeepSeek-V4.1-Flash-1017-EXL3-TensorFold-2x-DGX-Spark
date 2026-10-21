@@ -45,6 +45,11 @@ provided. Exit 1 means at least one failure; exit 2 means no failure but at leas
 one inconclusive case. A model refusal or failure to generate the target fixture
 cannot prove that a parser guardrail passed. Run `./verify.sh` as well.
 
+When the server was started with `TOOL_OUTPUT_STREAMING=0`, add `--buffered`.
+It expects exactly one pre-terminal content chunk per prose answer and still
+requires reasoning to be separate, so a rollback cannot be mistaken for a
+streaming success (or the reverse).
+
 ## Run everything
 
 Run this on the head node, with the server up:
