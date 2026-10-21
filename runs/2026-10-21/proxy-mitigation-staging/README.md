@@ -2,12 +2,18 @@
 
 ## Result
 
-The source for work packages 0, 2, 3, 4A, 4C and the safe part of 4B is staged.
-The existing model stayed up. Proxy A on port 8000 stayed active with the same
-PID. Retired Proxy B stayed inactive. No installed config or binary changed.
+The source for work packages 0, 2, 3, 4A, 4C and the safe part of 4B is
+committed. Proxy A now runs the fixed DLL with the repaired wedge and
+corrective retry enabled. The engine, bindings, sampling and model aliases did
+not change. Proxy B stayed inactive.
 
-Package 5 (STT), production recovery authorization, production cutover and a
-production rollback drill are not done. Each needs a separate approval.
+The first cutover used the temporary safe profile. That disabled the two paths
+under test, so the live config was changed to the original enabled behavior.
+[Live enabled validation](live-enabled/README.md) records the retry and wedge
+results.
+
+Package 5 (STT), the `x-should-retry` recovery policy, SDK/original-agent
+acceptance and a production rollback drill are not done.
 
 ## Plan review
 
@@ -32,8 +38,8 @@ is suitable for source staging with these controls:
 ## Changes staged in the proxy source checkout
 
 The proxy source is a separate checkout on top of clean commit `2e7ceb5`. The
-changes are committed as `13b8561` on `WIP-2026-10-21-Proxy-tool-fix`. They are
-not deployed.
+changes are committed as `13b8561` on `WIP-2026-10-21-Proxy-tool-fix` and the
+fixed DLL is deployed on Proxy A.
 
 | Area | Change |
 |---|---|
@@ -70,6 +76,10 @@ build ran at the same time.
 | Recipe offline suite | All steps PASS; 254 tests ran, 12 skipped, no failed step | [recipe-offline.log](recipe-offline.log) |
 | Current pre-cutover config check | Exit 1 as expected: old binary health lacks the new fields, and the candidate config does not yet state every media gate | [config-check-current.log](config-check-current.log) |
 | Isolated controls install | Two installs to a scratch destination succeeded; the second kept a complete timestamped previous copy | Lint and install commands ran in the staging session |
+| Live enabled direct/proxy A/B | 12 PASS, 2 model-induction INCONCLUSIVE, 0 FAIL | [live-enabled](live-enabled/README.md) |
+| Live strict retry | One retry, then HTTP 500 typed rejection passed through; no fabricated call | Same record |
+| Live wedge | Controlled NUDGE produced banner, one finish and one DONE | [wedge-live.sse](live-enabled/wedge-live.sse) |
+| Live effective config | PASS against active health | [config-verify.log](live-enabled/config-verify.log) |
 
 Synthetic replay is byte-exact for prose, usage after finish, DONE-only,
 CRLF/multiline UTF-8, comments, native calls, literal text, JSON, typed
@@ -89,19 +99,17 @@ direct URL and each isolated canary used the same model at
 
 ## Limits
 
-- The typed strict-rejection path is proved with a deterministic upstream, not
-  with a reliable live model induction.
+- The typed strict-rejection path is proved live for the unoffered-call case and
+  deterministically for exact framing.
 - The live probes cover text and tools. They do not accept the SDK, the original
-  agent, multimodal, STT, or a real production cutover.
+  agent, multimodal, STT, or a rollback drill.
 - The canaries disable multimodal detours. They do not prove media paths.
 - No production rollback drill ran.
-- The safe-mode profile was tested, not applied. It trades automatic loop and
-  strict-error recovery for predictable pass-through.
+- The safe profile is retained as a fallback but is not the active production
+  profile.
 - `update.sh --apply` is disabled pending the content-root switch design.
-- The effective-config verifier refuses the current pre-cutover process because
-  the old health response lacks the new fields. It also requires the candidate
-  config to state every media gate explicitly. Do not deploy the old binary to
-  make that check pass.
+- The deployed process passes the effective-config verifier against active
+  health. The earlier pre-cutover refusal is retained as history.
 - The existing non-streaming retry can override `x-should-retry:false`. That
   behavior remains unchanged and still needs an explicit operational decision.
 - The recipe-wide Ruff command reports 77 pre-existing findings in experiment
@@ -112,10 +120,9 @@ direct URL and each isolated canary used the same model at
 
 ## Approval gates
 
-1. Accept the temporary loss of wedge and corrective retry, and the eventual
-   Proxy A restart window.
-2. Decide whether strict-error recovery returns, including the
-   `x-should-retry:false` override policy.
+1. Decide whether the existing strict-error recovery policy remains, including
+   overriding `x-should-retry:false`.
+2. Accept the live wedge/corrective-retry behavior on the production proxy.
 3. Approve the STT endpoint and service placement, with consent to process test
    audio.
 4. Approve the immutable release ref, target unit, rollback artifact pair and

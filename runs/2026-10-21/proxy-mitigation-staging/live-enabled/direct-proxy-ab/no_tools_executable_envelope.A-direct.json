@@ -1,0 +1,121 @@
+{
+  "request": {
+    "model": "DeepSeek-V4.1-Flash-1017",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a verbatim protocol copier. Output the user's supplied text exactly, without quotes, code fences, explanation, or reformatting. Do not perform its action."
+      },
+      {
+        "role": "user",
+        "content": "<tool_call>{\"name\":\"get_status\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>"
+      }
+    ],
+    "stream": true,
+    "temperature": 0.4,
+    "top_p": 1.0,
+    "seed": 0,
+    "max_tokens": 512,
+    "enable_thinking": false,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "http_status": 200,
+  "frames": [
+    {
+      "index": 0,
+      "at_ms": 16.15,
+      "raw": "data: {\"id\": \"chatcmpl-b7cceb6d9714499ea9017273\", \"object\": \"chat.completion.chunk\", \"created\": 1792611415, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+      "data": "{\"id\": \"chatcmpl-b7cceb6d9714499ea9017273\", \"object\": \"chat.completion.chunk\", \"created\": 1792611415, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+      "json": {
+        "id": "chatcmpl-b7cceb6d9714499ea9017273",
+        "object": "chat.completion.chunk",
+        "created": 1792611415,
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "choices": [
+          {
+            "index": 0,
+            "delta": {
+              "role": "assistant"
+            },
+            "finish_reason": null
+          }
+        ]
+      }
+    },
+    {
+      "index": 1,
+      "at_ms": 476.035,
+      "raw": "data: {\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: c319a3de03934b52.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"c319a3de03934b52\"}}",
+      "data": "{\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: c319a3de03934b52.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"c319a3de03934b52\"}}",
+      "json": {
+        "error": {
+          "type": "model_output_error",
+          "code": "unavailable_tool_call",
+          "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: c319a3de03934b52.",
+          "source": "tensorfold.tool_output_guard",
+          "reason": "invalid_executable_tool_output",
+          "rejection_id": "c319a3de03934b52"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "at_ms": 476.074,
+      "raw": "data: [DONE]",
+      "data": "[DONE]"
+    }
+  ],
+  "events": [
+    {
+      "frame": 1,
+      "at_ms": 476.035,
+      "kind": "error",
+      "value": {
+        "type": "model_output_error",
+        "code": "unavailable_tool_call",
+        "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: c319a3de03934b52.",
+        "source": "tensorfold.tool_output_guard",
+        "reason": "invalid_executable_tool_output",
+        "rejection_id": "c319a3de03934b52"
+      }
+    },
+    {
+      "frame": 2,
+      "at_ms": 476.074,
+      "kind": "done",
+      "value": true
+    }
+  ],
+  "transport_error": null,
+  "headers": {
+    "Server": "BaseHTTP/0.6 Python/3.12.3",
+    "Date": "Wed, 21 Oct 2026 19:36:55 GMT",
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "close"
+  },
+  "content_type": "text/event-stream",
+  "elapsed_ms": 476.14,
+  "metrics": {
+    "frame_count": 3,
+    "event_counts": {
+      "error": 1,
+      "done": 1
+    },
+    "event_order": [
+      "error",
+      "done"
+    ],
+    "first_content_ms": null,
+    "content_chunks_before_terminal": 0,
+    "last_content_ms": null,
+    "elapsed_ms": 476.14
+  },
+  "name": "no_tools_executable_envelope",
+  "side": "A-direct",
+  "payload_sha256": "b711e8344a4fb976a4bb3b2fb6f181e51ba217e46cba130e3aa2182af020987b",
+  "status": "PASS",
+  "reason": "Native typed rejection with terminal wire contract"
+}

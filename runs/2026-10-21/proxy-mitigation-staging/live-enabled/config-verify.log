@@ -1,0 +1,30 @@
+instance=a environment=proxy-a config=verified
+effective requested gates (redacted):
+  primary.url=<url sha256=8b4e9662d544>
+  primary.toolOutputContract=<string sha256=d10e8d700c36>
+  primary.cureRawToolCallsRequested=false
+  primary.sampling.temperature=0.4
+  primary.sampling.top_p=1.0
+  bridge.enabled=true
+  bridge.vision=<url sha256=18b8ff6d4723>
+  bridge.audio=<url sha256=f6020e45013e>
+  bridge.videoSupport=false
+  bridge.detourVision=false
+  bridge.detourAudio=true
+  bridge.rehomeToolMedia=true
+  bridge.rehomeAtEnd=false
+  bridge.urlPolicy.allowDataUrls=true
+  bridge.urlPolicy.allowHttpsHostsSha256=<string sha256=cd372fb85148>
+  bridge.urlPolicy.maxMediaBytes=5000000
+  loopGuard.enabled=true
+  loopGuard.wedgeEnabled=true
+  loopGuard.threshold=8192
+  unavailableToolRetry.enabled=true
+  unavailableToolRetry.policy=<string sha256=c79779ad1129>
+  unavailableToolRetry.shouldRetryOverridePolicy=<string sha256=130a0efe7fca>
+  unavailableToolRetry.maxRetries=1
+  unavailableToolRetry.retryRawToolCallAborts=false
+  unavailableToolRetry.includeRequestContext=true
+  unavailableToolRetry.maxResponseBytes=16777216
+  primary.cureRawToolCalls=false
+OK: effective configuration is verified against active health
