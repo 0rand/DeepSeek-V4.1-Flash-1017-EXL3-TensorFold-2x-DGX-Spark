@@ -468,6 +468,20 @@ class ToolOutputTests(unittest.TestCase):
         content, calls = self.guard().parse(call + "<tool_call>{" * 60)           # a few open tags are no runaway
         self.assertEqual(len(calls), 1)
 
+    def test_malformed_qwen_and_glm_blocks_are_read_fast_without_tools(self):
+        import time
+
+        qwen = "<tool_call><function=task>" + "<parameter=x" * 30000 + ">v</parameter></function></tool_call>"
+        glm = "<tool_call>task" + "<arg_key>k</arg_key>" * 30000 + "<arg_value>v</arg_value></tool_call>"
+        for text in (qwen, glm):
+            for max_calls in (None, 1):
+                with self.subTest(text=text[:30], max_calls=max_calls):
+                    start = time.perf_counter()
+                    with self.assertRaises(self.module.ModelOutputError) as caught:
+                        self.module.ToolOutputGuard(None).parse(text, max_calls=max_calls)
+                    self.assertEqual(caught.exception.diagnostic["reason"], "unavailable_tool")
+                    self.assertLess(time.perf_counter() - start, 5.0)
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"

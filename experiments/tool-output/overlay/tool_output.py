@@ -167,6 +167,9 @@ class ToolOutputGuard:
             end = bisect.bisect_right(starts, last - 1) - 1
             return moved(first), (segments[end][3] if end >= 0 and last - 1 < segments[end][1] else moved(last)), False
 
+        # The parser's single-call checks (leftover text after the arguments) matter only when it can make a call, that
+        # is with offered tools. Without tools the guard reads names only, as in the default mode (fail-closed).
+        single = max_calls is not None and bool(self.tools)
         blocks = list(reply_text._TOOL_CALL_BLOCK_RE.finditer(converted))
         if not blocks:                                 # (the parser's result for an answer without a call block)
             return (converted.strip(), None) if self.tools else (text, None)
@@ -182,7 +185,7 @@ class ToolOutputGuard:
             if self._open_tail(inner, "<arg_value>", "</arg_value>") and inner.count("<arg_key>") > self._RUNAWAY:
                 raise reject("", "runaway_markup", start, stop, wrapper)
             try:
-                names = self._call_names(reply_text, block.group(1).strip(), complete=max_calls is not None)
+                names = self._call_names(reply_text, block.group(1).strip(), complete=single)
             except (ValueError, RecursionError):       # a value that the JSON decoder refuses
                 raise reject("", "undecodable_call", start, stop, wrapper) from None
             for name, kind in names:
@@ -240,5 +243,14 @@ class ToolOutputGuard:
             if complete and reply_text._TOOL_PARAMETER_BLOCK_RE.sub("", xml.group(2)).strip():
                 return []
             return [(xml.group(1).strip(), "qwen_xml")]
+        if not complete:
+            # The name of a GLM call is the text before its first key. The parser's pairing expression for the keys
+            # and values is not needed for the name, and it can be quadratic on malformed output.
+            from tensorfold.server import tools as engine_tools
+
+            name_re = getattr(engine_tools, "_GLM_NAME_RE", None)
+            if name_re is not None:
+                name = block.partition("<arg_key>")[0].strip()
+                return [(name, "glm")] if name_re.fullmatch(name) else []
         glm = reply_text.parse_glm_tool_call_block(block, self.tools, complete=complete)
         return [(str(glm[0]).strip(), "glm")] if glm is not None and str(glm[0]).strip() else []
