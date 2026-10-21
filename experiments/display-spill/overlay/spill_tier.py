@@ -40,6 +40,7 @@ import json
 import os
 import queue
 import re
+import stat
 import struct
 import threading
 import time
@@ -689,6 +690,17 @@ class SpillStore:
                 continue
             total -= size
 
+    def _is_dir(self, path: str) -> bool:
+        """Whether ``path`` is a folder. A path that cannot be read is counted and logged (and is not a folder)."""
+
+        try:
+            return stat.S_ISDIR(os.stat(path).st_mode)
+        except FileNotFoundError:
+            return False
+        except OSError as exc:
+            self._unlink_failed(path, exc, "read")
+            return False
+
     def _remove_tree(self, top: str) -> bool:
         """Remove a folder with everything in it. A path that cannot be removed is counted and logged, the rest goes,
         and the result says whether the folder is gone."""
@@ -736,15 +748,25 @@ class SpillStore:
         except OSError as exc:                                # (older builds may stay: counted and logged)
             self._unlink_failed(self.cfg.root, exc, "list")
             return 0
-        others = [d for d in others if os.path.isdir(d)]
-        others.sort(key=lambda d: os.stat(d).st_mtime, reverse=True)
+        dated = []
+        for d in others:
+            try:
+                status = os.stat(d)
+            except FileNotFoundError:
+                continue
+            except OSError as exc:                            # (the build stays: counted and logged)
+                self._unlink_failed(d, exc, "read")
+                continue
+            if stat.S_ISDIR(status.st_mode):
+                dated.append((status.st_mtime, d))
+        others = [d for _, d in sorted(dated, reverse=True)]
         gone = 0
         for d in others[:max(0, self.cfg.keep_builds)]:       # a kept build: its unfinished writes go, and its oldest
             mine = os.path.join(d, f"rank{self.rank}")        # files until it fits the current cap
             self._trim_kept_build(mine)
         for d in others[max(0, self.cfg.keep_builds):]:
             mine = os.path.join(d, f"rank{self.rank}")
-            if os.path.isdir(mine) and self._remove_tree(mine):
+            if self._is_dir(mine) and self._remove_tree(mine):
                 gone += 1
             try:
                 os.rmdir(d)                                    # empty once every rank pruned its own

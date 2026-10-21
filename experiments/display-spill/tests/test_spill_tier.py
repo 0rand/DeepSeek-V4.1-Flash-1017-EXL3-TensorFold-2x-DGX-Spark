@@ -58,7 +58,7 @@ class SpillTierTests(unittest.TestCase):
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imports.add(node.module.split(".")[0])
         allowed = {"__future__", "base64", "contextlib", "ctypes", "dataclasses", "errno", "hashlib", "importlib", "json",
-                   "os", "queue", "re", "shutil", "struct", "threading", "time", "zlib", "collections",
+                   "os", "queue", "re", "shutil", "stat", "struct", "threading", "time", "zlib", "collections",
                    "concurrent", "typing", "pathlib", "numpy", "torch", "tensorfold"}
         self.assertEqual(imports - allowed, set())
 
@@ -995,6 +995,26 @@ class SpillTierTests(unittest.TestCase):
         with mock.patch("builtins.open", no_proc), mock.patch.object(ctypes, "CDLL", side_effect=OSError("none")):
             with self.assertRaises(RuntimeError):                        # no source: not an empty key
                 self.sp._driver_id()
+
+    def test_an_old_build_folder_that_cannot_be_read_is_counted(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-0000000000000000")
+            os.makedirs(os.path.join(old, "rank0"))
+            real_stat = os.stat
+
+            def stat(target, *args, **kwargs):
+                if target == old:
+                    raise PermissionError("denied")
+                return real_stat(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
+            with mock.patch.object(self.sp.os, "stat", stat), contextlib.redirect_stdout(io.StringIO()):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertEqual(store.stats.unlink_failed, 1)
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
