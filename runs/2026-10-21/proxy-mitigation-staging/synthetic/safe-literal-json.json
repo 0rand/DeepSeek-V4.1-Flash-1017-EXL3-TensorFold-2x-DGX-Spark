@@ -1,0 +1,1 @@
+{"id": "fixture", "choices": [{"index": 0, "message": {"role": "assistant", "content": "    <tool_call>{\"name\":\"not_offered\",\"arguments\":{}}</tool_call>"}, "finish_reason": "stop"}]}

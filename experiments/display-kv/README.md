@@ -13,7 +13,15 @@ parser/fake-HTTP coverage and was live-validated on
 `tensorfold-dsv41:display-kv-58e319cb2866` (`./verify.sh` 5/5; probe 12 PASS,
 2 INCONCLUSIVE, 0 FAIL).
 See the [2026-10-21 continuation record](../../runs/2026-10-21/parser-guardrails/README.md)
-for the old-image baseline, CPU gates and new-image results.
+for the old-image baseline, CPU gates and new-image results. The later
+[proxy audit](../../runs/2026-10-21/parser-proxy-audit/README.md) recorded
+`tensorfold-dsv41:display-kv-0dc9c3fefb06` with the same guard hash. These are
+historical image observations. To inspect the current image, run
+`docker inspect --format '{{.Config.Image}} {{.Image}} {{.State.StartedAt}}' tfv41-r0`
+on the head. Use `tfv41-r1` on the worker. Do not enter a serving rank with
+`docker exec`. See the
+[proxy mitigation staging record](../../runs/2026-10-21/proxy-mitigation-staging/README.md)
+for the separate, approval-gated proxy work.
 
 The supported entry point is the self-contained root `./start-display-kv.sh`.
 With explicit `--build` it prepares a source-tagged image on both nodes; normal

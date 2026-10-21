@@ -1,0 +1,315 @@
+{
+  "mode": "synthetic",
+  "generated_tools_executed": false,
+  "sequential": true,
+  "profiles": {
+    "wedge": {
+      "wedge": true,
+      "retry": false
+    },
+    "retry": {
+      "wedge": true,
+      "retry": true
+    },
+    "safe": {
+      "wedge": false,
+      "retry": false
+    }
+  },
+  "limits": "Text/tool forwarding only. Multimodal disabled in isolated canaries. No production, SDK, agent, STT or rollback acceptance.",
+  "summary": {
+    "PASS": 36,
+    "FAIL": 0,
+    "INCONCLUSIVE": 0
+  },
+  "records": [
+    {
+      "case": "wedge-prose",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-usage",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-crlf-utf8-multiline",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-native-rejection",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-done-only",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-truncated-event",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-literal-stream",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-native-stream",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-literal-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-native-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-rejection-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "wedge-transport-fault",
+      "outcome": "PASS",
+      "byte_identical": false,
+      "transport_failure": true,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-prose",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-usage",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-crlf-utf8-multiline",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-native-rejection",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-done-only",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-truncated-event",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-literal-stream",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-native-stream",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-literal-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-native-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "retry-rejection-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 2,
+      "expected_attempts": 2
+    },
+    {
+      "case": "retry-transport-fault",
+      "outcome": "PASS",
+      "byte_identical": false,
+      "transport_failure": true,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-prose",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-usage",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-crlf-utf8-multiline",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-native-rejection",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-done-only",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-truncated-event",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-literal-stream",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-native-stream",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-literal-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-native-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-rejection-json",
+      "outcome": "PASS",
+      "byte_identical": true,
+      "transport_failure": false,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    },
+    {
+      "case": "safe-transport-fault",
+      "outcome": "PASS",
+      "byte_identical": false,
+      "transport_failure": true,
+      "upstream_attempts": 1,
+      "expected_attempts": 1
+    }
+  ]
+}

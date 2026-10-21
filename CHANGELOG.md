@@ -40,6 +40,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 
 ### Repo
 
+- `docs/TOOL-OUTPUT.md` and the display-KV README now name the earlier proxy audit images as historical observations and show how to inspect the current rank image. They do not call an old image permanently deployed.
 - CI: a defaults guard test, a home-path and public-IP scan, workflow checks (actionlint, zizmor) and a secret scan (gitleaks).
 - CI: the secret scan refuses a `.gitleaksignore` in the checkout, because gitleaks loads it in any case.
 - CI: the secret scan runs from the base branch (`secret-scan.yml`, `pull_request_target`), so a pull request cannot change it.

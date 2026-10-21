@@ -1,0 +1,29 @@
+UTC 2026-10-21T17:52:42Z
+recipe_ref 5212f35b1f84ec6a217e9330fd137ed33f22c310
+proxy_ref 2e7ceb5094aa9c2e02d70e288ef753303ef140af
+sdk 10.0.400
+Microsoft.AspNetCore.App 10.0.11 [<dotnet-root>/shared/Microsoft.AspNetCore.App]
+Microsoft.NETCore.App 10.0.11 [<dotnet-root>/shared/Microsoft.NETCore.App]
+
+Proxy A
+MainPID=1596934
+ExecMainStartTimestamp=Wed 2026-10-21 13:12:47 CEST
+ActiveState=active
+ActiveEnterTimestamp=Wed 2026-10-21 13:12:47 CEST
+
+Retired Proxy B
+ActiveState=inactive
+UnitFileState=disabled
+
+Deployed artifacts
+e58caae8b99e7ada39bace6fc6514539594d526a37edd9264521c3b89b92f017  bin/OAIPreRouter.Cli.deps.json
+bf284a21c6d860f7e3e489e3869a6d87d74fb5de67ddcd605b66e16767ec6461  bin/OAIPreRouter.Cli.dll
+f71b4c67b5233a19be9131b5fe4b45fe7829997cf2b42e762d6baa037da93863  bin/OAIPreRouter.Cli.runtimeconfig.json
+
+Config hashes (contents withheld)
+52f950581a816135b6b340f1f9185db28a5e930e3204ccfa5109835188dee6f0  appsettings.json
+565d35d1bfd3c0cd17c2d33a04edd927dc6df556af78af89506a07676addfe95  appsettings.proxy-a.json
+1f46110292a303fc3808ef248860196d4daa76cd6a15dc8764c094119dd6c679  appsettings.proxy-b.json
+
+Rank 0
+e362f8c08b332fde0894435a59e7d9155c0688ec2d0346728a861a570ec3f845 tensorfold-dsv41:display-kv-0dc9c3fefb06 2026-10-21T15:55:52.944988657Z

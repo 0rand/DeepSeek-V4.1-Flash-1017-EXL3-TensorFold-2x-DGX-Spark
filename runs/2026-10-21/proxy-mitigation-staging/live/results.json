@@ -1,0 +1,401 @@
+{
+  "mode": "live",
+  "generated_tools_executed": false,
+  "sequential": true,
+  "profiles": {
+    "wedge": {
+      "wedge": true,
+      "retry": false
+    },
+    "retry": {
+      "wedge": true,
+      "retry": true
+    },
+    "safe": {
+      "wedge": false,
+      "retry": false
+    }
+  },
+  "limits": "Text/tool forwarding only. Multimodal disabled in isolated canaries. No production, SDK, agent, STT or rollback acceptance.",
+  "summary": {
+    "PASS": 22,
+    "FAIL": 0,
+    "INCONCLUSIVE": 0
+  },
+  "records": [
+    {
+      "case": "wedge-no-tools-1-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "f4d3a302bb694979b93cd899dfa58e1a792dcbe1bf9e05aa31f68bc8190c3f0c"
+    },
+    {
+      "case": "wedge-no-tools-1-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "dcc7f5496c5fe17c7f48d510e6d2d583c1c613a0650de9a9f3dbd78c1ae1a931"
+    },
+    {
+      "case": "wedge-no-tools-2-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "5b0ac8b187c4760fc0e9d9a3fb07448635ba7e6075bdd48322a29fc06de03860"
+    },
+    {
+      "case": "wedge-no-tools-2-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "da57c2b98cb98761ec765c777d6cb0c4409f7e0e5f26dc6cda48602df86e042a"
+    },
+    {
+      "case": "wedge-no-tools-3-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "887976769c222405d3b5d57ab5bbfc39163ff96f63cadbe87cf1296c1532e06b"
+    },
+    {
+      "case": "wedge-no-tools-3-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "38ac8e74857372c0281d51b43842fa63317168de4a20556c0a60526a00dd53db"
+    },
+    {
+      "case": "wedge-tools-prose-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 26,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 23,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "74b7dd2844389bf31089d43cd96e69cd9a609eb2cf0658cd40b7cd88a31a7a60",
+      "response_sha256": "0d79d271a9007d9064642249c5afc15c1e0e66f58bd20824337d320b187891b2"
+    },
+    {
+      "case": "wedge-tools-prose-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 26,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 23,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "74b7dd2844389bf31089d43cd96e69cd9a609eb2cf0658cd40b7cd88a31a7a60",
+      "response_sha256": "1b544154c6da336a86057aaddc84f908f070b3249d84584f10973751ee634a83"
+    },
+    {
+      "case": "wedge-native-call-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 4,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 0,
+        "call_count": 1,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "de8741d263532aa4ff38318d59a577ef4291eb202f832d20e7ea1da146722b0a",
+      "response_sha256": "15004e49e93b4771a3cd85f30c012bc34dc082c8d1cd356b17b045ac327d58fc"
+    },
+    {
+      "case": "wedge-native-call-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 4,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 0,
+        "call_count": 1,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "de8741d263532aa4ff38318d59a577ef4291eb202f832d20e7ea1da146722b0a",
+      "response_sha256": "5818cc148863ce53209958d0a70fcc054e92e1884715ccf97ebc1cbbb05e626c"
+    },
+    {
+      "case": "retry-no-tools-1-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "61785468e499951d268ee90783a2328e281260df1b7a7ae52cdb7276a068ef34"
+    },
+    {
+      "case": "retry-no-tools-1-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "3726f5f779868194420a5963bd6b8719f1cc2bb7ff418f41b65f87f2d9f89c58"
+    },
+    {
+      "case": "retry-tools-prose-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 26,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 23,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "74b7dd2844389bf31089d43cd96e69cd9a609eb2cf0658cd40b7cd88a31a7a60",
+      "response_sha256": "7402882160d4265f8f11b73e220200019836420dfc15d438c541f562c3917c8a"
+    },
+    {
+      "case": "retry-tools-prose-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 26,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 23,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "74b7dd2844389bf31089d43cd96e69cd9a609eb2cf0658cd40b7cd88a31a7a60",
+      "response_sha256": "88de0f350a9418cc8c1ac1dfca3a571cdb68ffdd5adaa2eb798eeec05e2bbc66"
+    },
+    {
+      "case": "retry-native-call-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 4,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 0,
+        "call_count": 1,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "de8741d263532aa4ff38318d59a577ef4291eb202f832d20e7ea1da146722b0a",
+      "response_sha256": "c58c43fe855e3484a897f40980ce6031679dc9abdb4067263ab07afee73f0237"
+    },
+    {
+      "case": "retry-native-call-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 4,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 0,
+        "call_count": 1,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "de8741d263532aa4ff38318d59a577ef4291eb202f832d20e7ea1da146722b0a",
+      "response_sha256": "fbfced6171149ae3612cade72384b880a15f53b023e58784bd58c961ed49b92a"
+    },
+    {
+      "case": "safe-no-tools-1-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "62c9b8e0ce4ddf4647e940f040c6dd9bdacb21afa8d6b33528b8e0bbd4c6a161"
+    },
+    {
+      "case": "safe-no-tools-1-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 24,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 21,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "02f9b0e3a9da4bb0a74bc836223285762b185bd628a11812cff9ae2121bf062d",
+      "response_sha256": "826f4bd254f8c0e96a19fb7f709f5250a0d42504c461fd89d6ce2b751e40d92d"
+    },
+    {
+      "case": "safe-tools-prose-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 26,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 23,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "74b7dd2844389bf31089d43cd96e69cd9a609eb2cf0658cd40b7cd88a31a7a60",
+      "response_sha256": "d6491f211e1226dbc2402c18a3eb678bdeeb91ab6abab2206fb22ec419e36106"
+    },
+    {
+      "case": "safe-tools-prose-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 26,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 23,
+        "call_count": 0,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "74b7dd2844389bf31089d43cd96e69cd9a609eb2cf0658cd40b7cd88a31a7a60",
+      "response_sha256": "05119eb066c5ead547e538464036856fd9ae7e233bcffeac21132fd185ea1c29"
+    },
+    {
+      "case": "safe-native-call-direct",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 4,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 0,
+        "call_count": 1,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "de8741d263532aa4ff38318d59a577ef4291eb202f832d20e7ea1da146722b0a",
+      "response_sha256": "d4aa644278aa05499ca70e61426566b8df5a9ac9572a5c3d07b1fa6ab085dd2a"
+    },
+    {
+      "case": "safe-native-call-canary",
+      "outcome": "PASS",
+      "reasons": [],
+      "facts": {
+        "event_count": 4,
+        "done_count": 1,
+        "finish_count": 1,
+        "content_event_count": 0,
+        "call_count": 1,
+        "native_error_count": 0,
+        "fully_separated": true,
+        "has_trailing_usage": true
+      },
+      "request_sha256": "de8741d263532aa4ff38318d59a577ef4291eb202f832d20e7ea1da146722b0a",
+      "response_sha256": "810658cf056618e8ef5a47448b6eb74a8ccb3bf4d10d22154923ff96be59a7d7"
+    }
+  ]
+}

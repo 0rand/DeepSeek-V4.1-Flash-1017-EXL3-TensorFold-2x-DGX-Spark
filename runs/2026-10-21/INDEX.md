@@ -80,3 +80,14 @@ negative control, and the streaming default was restored and re-validated.
 - Differential, bench and Hermes were skipped (`ENCODING_DIR`, `BENCH`,
   `HERMES` not set).
 - The suite log's repository path is sanitized to `<repo>`.
+
+## Proxy mitigation source staging
+
+[Proxy mitigation staging record](proxy-mitigation-staging/README.md): work
+packages 0, 2, 3, 4A, 4C and the stage-only part of 4B. The proxy source worktree
+passed 308/308 unit tests, 25/25 control tests in normal and optimized Python,
+36/36 actual-DLL synthetic route cases, 22/22 bounded direct/canary probes and
+`./verify.sh` 5/5. The five pass contract fixtures exit 0; the negative fixtures
+exit 1 as required. Production Proxy A, its config, the engine and rank images
+were not changed. A production cutover, recovery authorization, STT restoration
+and rollback drill remain approval gates. No generated tool was executed.
