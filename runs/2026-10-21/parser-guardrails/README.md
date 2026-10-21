@@ -110,10 +110,15 @@ proven parser failure. Offline assessment tests lock in both distinctions.
 
 ## Staged image provenance and outstanding live gate
 
-For the existing base image and staged source at this checkpoint, the launcher's
-expected new image tag is `tensorfold-dsv41:display-kv-1fe0a7c3556a`, source
-fingerprint `1fe0a7c3556a603cc4b8bee5d83d990fe01ddcaf7240fc9178d5160ead47e7aa`.
-It is an expected build identity, **not proof that an image was built**.
+For the existing base image `sha256:2aede715ee121bef05c4c92894e143fe0979b4c2f7730b013d1ddbf43793da1c`
+and the staged source at this checkpoint, the launcher's current expected image
+tag is `tensorfold-dsv41:display-kv-df444454947e`, source fingerprint
+`df444454947e096d732021b7c0f9289535f9f1478567904b09a82f8f8e46551a`.
+Only the base image, `Dockerfile`, `.dockerignore`, `apply.py`, `probe.py` and
+`overlay/*.py` feed that fingerprint, so `prepare.py` and the probe script do
+not change it. Recompute it with the launcher rather than trusting this tag.
+It is an expected build identity, **not proof that an image was built**; neither
+node has that variant image yet.
 
 | Source | SHA-256 |
 |---|---|
@@ -125,6 +130,13 @@ The previous `.display-kv-image` identity was saved before considering a cutover
 The service was deliberately left running because head `sudo -n true` requires
 a password. The worker's noninteractive sudo was available. Do not stop a
 healthy stack without being able to complete the head's DRM preparation.
+
+Rechecked at 07:07 UTC before committing: both ranks were up on
+`display-kv-40a46c96d4bd`, `./start-display-kv.sh --check` reported both cards
+with inactive outputs and the live compute reference, worker SSH and
+noninteractive sudo succeeded, the head base image and both nodes' `/var/lib/docker`
+had ~1.1 TB free, and head `sudo -n true` still required a password. No DRM
+parameter, rank or image was changed.
 
 Once sudo is available, run in the head-node terminal:
 
