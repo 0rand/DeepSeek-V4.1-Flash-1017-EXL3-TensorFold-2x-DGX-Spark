@@ -43,7 +43,7 @@ Optional: [cache accounting for health and Prometheus](experiments/cache-metrics
 - **Prefix cache.** A second question about the same long document has a TTFT of about 1 s instead of 13 s. Cached prompts also go to disk, so after a restart the TTFT is about 3 s.
 - **Fault isolation.** One failed request ends only that request, not the whole server.
 - **1M-token context.** The full 1,048,576-token context window. A needle test with a 1,035,020-token prompt passed.
-- **Optional display-backed KV lane.** `./start-display-kv.sh` maps 1792 MiB of the display reservation per node into a 2.1M-position pool and keeps the SSD spill tier, memory guard, cache metrics, bounded top-k and tool-output validation in one opt-in image. The experiment uses the 1.0.0 engine base; the ordinary `./start.sh` uses engine 1.1.0. See [Display KV](docs/DISPLAY-KV.md).
+- **Optional display-backed KV lane.** `./start-display-kv.sh` maps 1792 MiB of the display reservation per node into a 2.1M-position pool and keeps the SSD spill tier, memory guard, cache metrics, bounded top-k and tool-output validation in one opt-in image. This branch uses the 1.0.0 engine base for both the ordinary and display lanes. See [Display KV](docs/DISPLAY-KV.md).
 
 ---
 
@@ -251,7 +251,7 @@ Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 |---|---|
 | Model weights | `LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-2.9bpw` @ `afc7aa0a` (43 files) |
 | Engram tables | `deepseek-ai/DeepSeek-V4.1-Flash-1017` @ `1bae0e10`, files 47 and 48 |
-| Engine | [Elevatormusic/TensorFold](https://github.com/Elevatormusic/TensorFold) @ `730d41abd8f4`, [release dsv41-1.1.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.1.0) (TensorFold 0.6.6 + bertholomus's V4.1 engine + the fork pull requests listed in [What I changed](docs/WHAT-I-CHANGED.md)) |
+| Engine | [Elevatormusic/TensorFold](https://github.com/Elevatormusic/TensorFold) @ `07aa02585f64`, [release dsv41-1.0.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.0.0) (TensorFold 0.6.6 + bertholomus's V4.1 engine + the fork pull requests listed in [What I changed](docs/WHAT-I-CHANGED.md)) |
 | Base image | `nvcr.io/nvidia/pytorch:26.07-py3` |
 | Chat template | MiaAI kit `files/chat_template.jinja` @ `6f7d1590` + [our patch](runs/2026-10-17/template-patch.diff) |
 | vLLM comparison | MiaAI kit @ `6f7d1590`, image `sha256:2f0cf3ad...` |

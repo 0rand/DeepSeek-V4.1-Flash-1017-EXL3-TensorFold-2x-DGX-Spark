@@ -31,12 +31,12 @@ case "${DROP_UNOFFERED_TOOL_CALLS:-1}" in
   *) echo "DROP_UNOFFERED_TOOL_CALLS must be 0 or 1" >&2; exit 1 ;;
 esac
 
-case "${THINKING:-0}" in
+case "${THINKING:-1}" in
   0|1) ;;
   *) echo "THINKING must be 0 or 1" >&2; exit 1 ;;
 esac
 
-case "${REASONING_EFFORT:-}" in
+case "${REASONING_EFFORT:-high}" in
   ""|low|medium|high|xhigh) ;;
   *) echo "REASONING_EFFORT must be low, medium, high or xhigh" >&2; exit 1 ;;
 esac
@@ -52,14 +52,14 @@ run_args() {  # $1 = rank. Every TF_DS_* setting below is explained in docs/WHAT
   local r=$1 key=""
   [ -n "${API_KEY_FILE:-}" ] && [ "$r" = 0 ] && key="-v $API_KEY_FILE:/run/keys:ro"   # rank 0 serves HTTP
   cat <<EOF
--d --name tfv41-r$r --restart ${RESTART_POLICY:-no} $( [ -n "${CGROUP_PARENT-tensorfold.slice}" ] && echo "--cgroup-parent ${CGROUP_PARENT-tensorfold.slice}" ) --gpus all --network host --ipc host --shm-size 32g --oom-score-adj 1000
+-d --name tfv41-r$r --restart ${RESTART_POLICY:-unless-stopped} $( [ -n "${CGROUP_PARENT-tensorfold.slice}" ] && echo "--cgroup-parent ${CGROUP_PARENT-tensorfold.slice}" ) --gpus all --network host --ipc host --shm-size 32g --oom-score-adj 1000
 --ulimit memlock=-1 --ulimit stack=67108864 --device /dev/infiniband --cap-add IPC_LOCK --cap-add SYS_PTRACE
 -v $MODEL_VIEW/model:/model:ro -v $MODEL_VIEW/engram:/engram:ro -v $CACHE_DIR:/cache $key
 -e TF_DS_REPLAY=1 -e TF_DS_REPLAY_FLOOR=1 -e TF_DS_PREFILL_CHUNK=${PREFILL_CHUNK:-2048}
 -e TF_DS_RANK_CACHE=/cache/tf-ds-rank -e TF_DS_RANK_CACHE_READERS=32
 -e TF_DS_WARM_LENGTHS=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,33,131,514,1024,2113 -e TF_DS_ENGRAM=/engram
--e TF_DS_SPILL_GIB=${SPILL_GIB:-64} -e TF_DS_SPILL_DIR=/cache/tf-ds-spill
--e TF_DS_ENGRAM_DONTNEED=1 -e TF_DS_MEM_FLOOR_GIB=${MEM_FLOOR_GIB:-1.5}
+-e TF_DS_SPILL_GIB=${SPILL_GIB:-32} -e TF_DS_SPILL_DIR=/cache/tf-ds-spill
+-e TF_DS_ENGRAM_DONTNEED=1 -e TF_DS_MEM_FLOOR_GIB=${MEM_FLOOR_GIB:-1.0}
 -e TF_DROP_UNOFFERED_TOOL_CALLS=${DROP_UNOFFERED_TOOL_CALLS:-1}
 $( [ "${MEM_CAP:-0}" = 1 ] && echo '-e TF_DS_MEM_CAP=1' )
 -e TRITON_CACHE_DIR=/cache/triton -e CUDA_CACHE_PATH=/cache/nv
@@ -70,8 +70,8 @@ $( [ "${MEM_CAP:-0}" = 1 ] && echo '-e TF_DS_MEM_CAP=1' )
 --host $BIND_HOST --port $PORT --name $SERVED_NAME $( [ -n "${SERVED_ALIAS:-}" ] && echo "--alias $SERVED_ALIAS" )
 $( [ -n "$key" ] && echo "--api-key-file /run/keys" )
 --context $CONTEXT $( [ "${VISION:-1}" = 1 ] && echo --vision ) --parallel $PARALLEL --mtp-drafts $MTP_DRAFTS
---temperature $TEMPERATURE --top-p $TOP_P $( [ "${THINKING:-0}" = 1 ] && echo --thinking || echo --no-thinking )
-$( [ -n "${REASONING_EFFORT:-}" ] && echo --reasoning-effort $REASONING_EFFORT ) --no-update-check
+--temperature $TEMPERATURE --top-p $TOP_P $( [ "${THINKING:-1}" = 1 ] && echo --thinking || echo --no-thinking )
+$( [ -n "${REASONING_EFFORT:-high}" ] && echo --reasoning-effort ${REASONING_EFFORT:-high} ) --no-update-check
 EOF
 }
 

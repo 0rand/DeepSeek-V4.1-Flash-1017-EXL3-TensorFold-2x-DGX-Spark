@@ -126,14 +126,14 @@ class ThinkingSettingsTest(unittest.TestCase):
         self.assertEqual(args[args.index("--reasoning-effort") + 1], effort)
         self.assertEqual(operations.read_text(), "wssh\nbuild\n")
 
-    def test_missing_settings_default_to_thinking_off(self):
+    def test_missing_settings_default_to_thinking_on(self):
         result, operations = self.invoke()
         commands = self.docker_commands()
         self.assertEqual(result.returncode, 37, result.stderr)
         self.assertEqual([command[0] for command in commands], ["rm", "run"])
         args = commands[-1]
-        self.assertIn("--no-thinking", args)
-        self.assertNotIn("--reasoning-effort", args)
+        self.assertIn("--thinking", args)
+        self.assertEqual(args[args.index("--reasoning-effort") + 1], "high")
         self.assertEqual(operations.read_text(), "wssh\nbuild\n")
 
     def test_explicit_zero_emits_no_thinking(self):
@@ -211,8 +211,8 @@ class DisplayBundleThinkingSettingsTest(unittest.TestCase):
             start = (bundle / "start.sh").read_text()
             config = dict(line.split("=", 1) for line in (bundle / ".env").read_text().splitlines()
                           if line and not line.startswith("#"))
-            self.assertIn('$( [ "${THINKING:-0}" = 1 ] && echo --thinking || echo --no-thinking )', start)
-            self.assertIn('$( [ -n "${REASONING_EFFORT:-}" ] && echo --reasoning-effort $REASONING_EFFORT )', start)
+            self.assertIn('$( [ "${THINKING:-1}" = 1 ] && echo --thinking || echo --no-thinking )', start)
+            self.assertIn('$( [ -n "${REASONING_EFFORT:-high}" ] && echo --reasoning-effort ${REASONING_EFFORT:-high} )', start)
             self.assertNotIn('--no-thinking --reasoning-effort low', start)
             self.assertEqual(config["IMAGE"], "fixture:display-kv")
             self.assertEqual(config["SPILL_GIB"], "64")

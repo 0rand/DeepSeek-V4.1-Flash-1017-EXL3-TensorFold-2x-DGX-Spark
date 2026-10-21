@@ -24,7 +24,7 @@ Then give the user the three client settings from [docs/CONNECT.md](docs/CONNECT
 - **Keep `BIND_HOST=127.0.0.1`** unless the user asks for network access. Then set `API_KEY_FILE` too ([docs/CONNECT.md](docs/CONNECT.md)).
 - **If the server stops with exit code 75**, the lane broke on a device fault. Run `./stop.sh && ./start.sh`.
 - **If NCCL hangs at start after a cable or reboot event**, the RoCE GID index moved. Set `GID_INDEX=-1` in `.env` and restart ([docs/NETWORK.md](docs/NETWORK.md)).
-- **Display-backed KV is opt-in.** Use `./stop.sh` then `./start-display-kv.sh`; it handles DRM preparation and probes on both nodes using this repo only. The display experiment builds from `DISPLAY_KV_BASE` (default `tensorfold-dsv41:07aa02585f64`, engine 1.0.0); the ordinary `./start.sh` uses `IMAGE` (engine 1.1.0). Never run it over live ranks or stop GDM to bypass a safety check. See [docs/DISPLAY-KV.md](docs/DISPLAY-KV.md).
+- **Display-backed KV is opt-in.** Use `./stop.sh` then `./start-display-kv.sh`; it handles DRM preparation and probes on both nodes using this repo only. Both the ordinary `IMAGE` and the display `DISPLAY_KV_BASE` are the 1.0.0 base `tensorfold-dsv41:07aa02585f64`. Never run it over live ranks or stop GDM to bypass a safety check. See [docs/DISPLAY-KV.md](docs/DISPLAY-KV.md).
 
 ## Issues and pull requests
 

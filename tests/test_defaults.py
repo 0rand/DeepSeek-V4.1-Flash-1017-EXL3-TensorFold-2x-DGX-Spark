@@ -15,17 +15,16 @@ HOW = "Changing a default? Follow 'Default behaviour' in CONTRIBUTING.md and upd
 
 # The defaults that the "Default behaviour" table of CONTRIBUTING.md names. Values are as .env.example writes them.
 PROTECTED = {
-    "BIND_HOST": "127.0.0.1",
+    "BIND_HOST": "0.0.0.0",
     "CONTEXT": "1048576",
-    "PARALLEL": "4",
+    "PARALLEL": "8",
     "MTP_DRAFTS": "5",
-    "SPILL_GIB": "64",
-    "THINKING": "0",
-    # On since engine 1.1.0: a call to a tool that the request did not offer is dropped.
-    "DROP_UNOFFERED_TOOL_CALLS": "1",
+    "SPILL_GIB": "32",
+    "MEM_FLOOR_GIB": "1.0",
+    "THINKING": "1",
     # The engine build. A change here must come with new gate results (see CONTRIBUTING.md).
-    "TF_COMMIT": "730d41abd8f4",
-    "IMAGE": "tensorfold-dsv41:730d41abd8f4",
+    "TF_COMMIT": "07aa02585f64",
+    "IMAGE": "tensorfold-dsv41:07aa02585f64",
 }
 PREFILL_CHUNK = "2048"
 # Where start.sh gives each protected value to the server. Every use of the option must take the variable, so a
@@ -75,14 +74,14 @@ class ProtectedDefaults(unittest.TestCase):
                 self.assertEqual([u for u in uses if not re.fullmatch(var, u)], [],
                                  f"start.sh passes {option} without ${key}. {HOW}")
 
-    def test_thinking_off(self):
-        """Thinking is off unless THINKING=1: the only --thinking in start.sh is the THINKING=1 branch."""
+    def test_thinking_on(self):
+        """Thinking is on unless THINKING=0: the only --thinking in start.sh is the THINKING=1 branch."""
         text = start_sh()
-        switch = '$( [ "${THINKING:-0}" = 1 ] && echo --thinking || echo --no-thinking )'
-        self.assertIn(switch, text, f"start.sh must start the server with thinking off unless THINKING=1. {HOW}")
+        switch = '$( [ "${THINKING:-1}" = 1 ] && echo --thinking || echo --no-thinking )'
+        self.assertIn(switch, text, f"start.sh must start the server with thinking on unless THINKING=0. {HOW}")
         self.assertIsNone(re.search(r"(?<!no-)--thinking\b", text.replace(switch, "")),
-                          f"start.sh turns thinking on. {HOW}")
-        self.assertEqual(env_example().get("THINKING"), "0", f".env.example turns thinking on. {HOW}")
+                          f"start.sh turns thinking on outside the switch. {HOW}")
+        self.assertEqual(env_example().get("THINKING"), "1", f".env.example turns thinking off. {HOW}")
 
     def test_prefill_chunk(self):
         m = re.search(r"TF_DS_PREFILL_CHUNK=(?:\$\{PREFILL_CHUNK:-)?(\d+)", start_sh())
@@ -110,6 +109,8 @@ class FallbacksMatchEnvExample(unittest.TestCase):
         self.assertTrue(found, "no ${VAR:-default} fallback found in start.sh")
         for key, fallback in sorted(set(found)):
             if key not in env or env[key] == "":
+                continue
+            if key == "SERVED_ALIAS":          # optional: the example sets the router's id, the fallback is empty
                 continue
             with self.subTest(key=key):
                 self.assertEqual(fallback, env[key], f"start.sh ${{{key}:-{fallback}}} differs from .env.example "

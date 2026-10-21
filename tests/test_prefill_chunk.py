@@ -59,8 +59,8 @@ sleep() { echo 'unexpected sleep' >&2; exit 99; }
                     args = shlex.split(command)
                     self.assertIn(f"TF_DS_PREFILL_CHUNK={expected}", args)
                     self.assertIn(f"tfv41-r{rank}", args)
-                    self.assertIn("--no-thinking", args)
-                    self.assertNotIn("--thinking", args)
+                    self.assertIn("--thinking", args)
+                    self.assertNotIn("--no-thinking", args)
                 self.assertTrue(commands.startswith("preflight.sh\n"), commands)
                 self.assertIn("build_extensions.sh\n", commands)
 

@@ -15,10 +15,9 @@ Run from the head after normal setup, host tuning, and the base image build:
 
 The launcher reads the current `.env`, including `WORKER_SSH`, `DISPLAY_KV_BASE`,
 paths, networking, context, API binding and authentication settings. It does not
-modify that file. The ordinary `./start.sh` uses `IMAGE` (engine 1.1.0,
-`730d41abd8f4`), but the display experiment needs the 1.0.0 engine base:
-`DISPLAY_KV_BASE` defaults to `tensorfold-dsv41:07aa02585f64`. The source
-installer requires the pinned TensorFold revision
+modify that file. This branch uses the 1.0.0 engine base for both lanes:
+`IMAGE` and `DISPLAY_KV_BASE` default to `tensorfold-dsv41:07aa02585f64`. The
+source installer requires the pinned TensorFold revision
 `07aa02585f64cfb04c60a96de6554c0d4708ed46`; it refuses source drift rather than
 guessing how to patch another version.
 

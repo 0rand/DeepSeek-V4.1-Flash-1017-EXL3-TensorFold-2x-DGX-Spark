@@ -31,7 +31,7 @@ class LauncherTests(unittest.TestCase):
             self.assertEqual(default.returncode, 0, default.stderr)
             self.assertEqual(default.stdout, zero.stdout)
             self.assertNotIn("TF_DS_MEM_CAP", default.stdout)
-            self.assertIn("TF_DS_MEM_FLOOR_GIB=1.5", default.stdout)
+            self.assertIn("TF_DS_MEM_FLOOR_GIB=1.0", default.stdout)
             self.assertIn("TF_DS_PREFILL_CHUNK=2048", default.stdout)
 
     def test_explicit_opt_in_for_both_ranks(self):

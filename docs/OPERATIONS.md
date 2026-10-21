@@ -65,7 +65,7 @@ Draft ranking (fork PR #20): `TF_DS_DEPTH_POLICY=rank` is the default. The engin
 
 ## Display-KV variant
 
-`./start-display-kv.sh` is the opt-in display-backed lane. Stop both ranks first, build the 1.0.0 base if needed, then run `./start-display-kv.sh --build`. The launcher prepares DRM on both nodes, probes the full 1792 MiB mapping and starts a private bundle. It uses `DISPLAY_KV_BASE` (default `tensorfold-dsv41:07aa02585f64`, engine 1.0.0) while the ordinary `./start.sh` uses `IMAGE` (engine 1.1.0). Keep `BIND_HOST=127.0.0.1` unless network access and an API key are explicitly configured. Never stop GDM. Never use `docker exec` in a serving rank. See [Display KV](DISPLAY-KV.md) for settings, spill, tool-output validation and rollback.
+`./start-display-kv.sh` is the opt-in display-backed lane. Stop both ranks first, build the 1.0.0 base if needed, then run `./start-display-kv.sh --build`. The launcher prepares DRM on both nodes, probes the full 1792 MiB mapping and starts a private bundle. Both `IMAGE` and `DISPLAY_KV_BASE` are the 1.0.0 base `tensorfold-dsv41:07aa02585f64`. Keep `BIND_HOST=127.0.0.1` unless network access and an API key are explicitly configured. Never stop GDM. Never use `docker exec` in a serving rank. See [Display KV](DISPLAY-KV.md) for settings, spill, tool-output validation and rollback.
 
 ## Native tool-output errors (display-KV variant)
 
