@@ -606,6 +606,44 @@ class SpillStore:
             except OSError:
                 pass
 
+    def _trim_kept_build(self, mine: str) -> None:
+        """Remove the unfinished writes of a kept build and its oldest files until it fits the cap. A file that cannot
+        be removed is counted and logged, and the next victim goes."""
+
+        try:
+            names = os.listdir(mine)
+        except OSError:
+            return
+        finished = []
+        for name in names:
+            path = os.path.join(mine, name)
+            try:
+                if name.endswith(".partial"):
+                    os.remove(path)
+                elif name.endswith(".safetensors"):
+                    status = os.stat(path)
+                    finished.append((status.st_mtime, path, status.st_size))
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                self._unlink_failed(path, exc)
+        total = sum(size for _, _, size in finished)
+        for _, path, size in sorted(finished):
+            if total <= self.cap:
+                break
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                self._unlink_failed(path, exc)
+                continue
+            total -= size
+
+    def _unlink_failed(self, path: str, exc: OSError) -> None:
+        self.stats.unlink_failed += 1
+        print(f"[tensorfold] spill rank {self.rank}: could not remove {path}: {exc!r}", flush=True)
+
     def _prune_builds(self) -> int:
         """Folders of other compatibility hashes (other builds, models, layouts): the newest ``keep_builds`` stay."""
 
@@ -619,23 +657,7 @@ class SpillStore:
         gone = 0
         for d in others[:max(0, self.cfg.keep_builds)]:       # a kept build: its unfinished writes go, and its oldest
             mine = os.path.join(d, f"rank{self.rank}")        # files until it fits the current cap
-            try:
-                finished = []
-                for name in os.listdir(mine):
-                    path = os.path.join(mine, name)
-                    if name.endswith(".partial"):
-                        os.remove(path)
-                    elif name.endswith(".safetensors"):
-                        status = os.stat(path)
-                        finished.append((status.st_mtime, path, status.st_size))
-                total = sum(size for _, _, size in finished)
-                for _, path, size in sorted(finished):
-                    if total <= self.cap:
-                        break
-                    os.remove(path)
-                    total -= size
-            except OSError:
-                pass
+            self._trim_kept_build(mine)
         for d in others[max(0, self.cfg.keep_builds):]:
             mine = os.path.join(d, f"rank{self.rank}")
             if os.path.isdir(mine):

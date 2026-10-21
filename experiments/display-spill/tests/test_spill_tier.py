@@ -731,6 +731,34 @@ class SpillTierTests(unittest.TestCase):
             self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
             self.assertEqual([os.path.exists(path) for path in paths], [False, True, True])   # the oldest file went
 
+    def test_a_kept_build_trim_goes_on_after_a_file_that_cannot_be_removed(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-0000000000000000", "rank0")
+            os.makedirs(old)
+            paths = []
+            for number in range(3):
+                path = os.path.join(old, f"{number}.safetensors")
+                with open(path, "wb") as f:
+                    f.write(b"x" * (1 << 20))
+                os.utime(path, (1000 + number, 1000 + number))
+                paths.append(path)
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target == paths[0]:
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1.5 / 1024, min_free_gib=0, min_tokens=1, keep_builds=1)
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertEqual([os.path.exists(path) for path in paths], [True, False, False])   # the next victims went
+            self.assertEqual(store.stats.unlink_failed, 1)
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io
