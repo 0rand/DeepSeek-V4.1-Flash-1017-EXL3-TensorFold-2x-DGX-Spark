@@ -136,7 +136,9 @@ class ToolOutputGuard:
             for source in (function, payload):         # (an empty nested object falls back to the flat form)
                 name = source.get("name") if isinstance(source, dict) else None
                 if name and str(name).strip():
-                    return [(str(name).strip(), "json")]
+                    # The parser matches the name as written. Offered names are trimmed, so a name with outer white
+                    # space can never match one: it is no call.
+                    return [(str(name), "json")] if str(name) == str(name).strip() else []
             return []
         xml = reply_text._TOOL_FUNCTION_BLOCK_RE.match(block)
         if xml:

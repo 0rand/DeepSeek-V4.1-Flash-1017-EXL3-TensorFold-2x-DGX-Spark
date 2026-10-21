@@ -344,6 +344,16 @@ class ToolOutputTests(unittest.TestCase):
                 self.assertEqual(self.guard().parse(text), reply_text.parse_tool_calls(text, self.tools))
                 self.assertIsNone(self.guard().parse(text)[1])
 
+    def test_a_name_with_outer_white_space_is_no_call_for_the_guard_as_for_the_parser(self):
+        from tensorfold.cuda import reply_text
+
+        for text in ('<tool_call>{"name":" unoffered ","arguments":{}}</tool_call>',
+                     '<｜DSML｜ calls><｜DSML｜ invoke name=" unoffered "> </｜DSML｜ invoke></｜DSML｜ calls>'):
+            with self.subTest(text=text[:40]):
+                offered = [{"type": "function", "function": {"name": " unoffered ", "parameters": {"type": "object"}}}]
+                self.assertIsNone(reply_text.parse_tool_calls(text, offered)[1])      # trimmed spec name: never matches
+                self.assertEqual(self.guard().parse(text), reply_text.parse_tool_calls(text, self.tools))
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 
