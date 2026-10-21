@@ -94,10 +94,13 @@ class SpillIntegrationTests(unittest.TestCase):
         """Run the block on a fake decoder; ``rows`` is what the other ranks answer in each agreement."""
         _, init = self.init_block()
         calls, created = [], []
+        self.stores, self.released = [], []
 
         def gather(values):
             calls.append(list(values))
             return [list(values)] + [list(row) for row in rows.pop(0)] if rows else [list(values)]
+
+        outer = self
 
         class Store:
             def __init__(self, *args, **kwargs):
@@ -105,8 +108,13 @@ class SpillIntegrationTests(unittest.TestCase):
                     raise store_error
                 created.append(kwargs)
                 self.dir = "/x"
+                self.closed = False
+                outer.stores.append(self)
 
             announced = False
+
+            def close(self):
+                self.closed = True
 
             def info(self):
                 return {"entries": 0, "stored_bytes": 0}
@@ -121,6 +129,7 @@ class SpillIntegrationTests(unittest.TestCase):
 
         module = types.ModuleType("tensorfold.cuda.spill")
         module.SpillStore, module.build_id = Store, build_id
+        module.release_pinned = lambda: self.released.append(1)
         module.weights_id = (lambda *dirs: weights.append(dirs) or "w") if weights is not None else (lambda *dirs: "w")
         engine = types.SimpleNamespace(world=2, rank=0, display_bytes=1 << 20, model_dir="/m")
         decoder = self.fake_decoder(gather, draft)
@@ -240,6 +249,11 @@ class SpillIntegrationTests(unittest.TestCase):
         decoder, calls, created = self.run_init([[[1]], [[0]]])          # this rank is fine, another is not
         self.assertEqual(calls, [[1], [1]])
         self.assertIsNone(decoder.spill)
+        self.assertTrue(self.stores[0].closed)                           # its threads and buffers go with it
+        decoder, calls, created = self.run_init([[[1]], [[1]]], store_error=OSError("disk"))
+        self.assertEqual(self.released, [1])                             # a rank without a store lets go of the staging
+        decoder, calls, created = self.run_init([[[0]]])                 # a peer fails in the first agreement
+        self.assertEqual(self.released, [1])
 
     def test_the_start_line_comes_after_every_rank_agreed_and_a_peer_failure_is_reported(self):
         import contextlib

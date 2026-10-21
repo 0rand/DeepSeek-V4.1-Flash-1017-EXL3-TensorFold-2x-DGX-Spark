@@ -1257,6 +1257,20 @@ class SpillTierTests(unittest.TestCase):
             self.assertFalse(os.path.exists(linked))
             self.assertTrue(os.path.exists(target))                                   # the target is not touched
 
+    def test_close_stops_the_threads_and_lets_go_of_the_buffers(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            self.sp.preallocate(cfg)
+            self.assertTrue(self.sp._PINNED)
+            store, ids, classes = self.stored(root)
+            lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            store.finish_load(lj)                                        # the reader thread runs too
+            threads = list(store._threads) + [store._reader]
+            store.close()
+            self.assertTrue(all(not t.is_alive() for t in threads))
+            self.assertFalse(self.sp._PINNED)
+            self.assertIsNone(store._read_stage)
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io

@@ -178,6 +178,12 @@ def preallocate(cfg: SpillConfig | None) -> None:
     _PINNED["read"] = _pinned(2)
 
 
+def release_pinned() -> None:
+    """Drop the staging buffers of ``preallocate`` (a tier that every rank turned off must not keep them)."""
+
+    _PINNED.clear()
+
+
 def _driver_id() -> str:
     """The NVIDIA driver, from the first source that answers: the proc file, NVML, or the CUDA driver API (a coarser
     version, but present wherever CUDA runs). Raises ``RuntimeError`` when none answers."""
@@ -1129,6 +1135,20 @@ class SpillStore:
             raise
         self._threads = threads
 
+    def close(self) -> None:
+        """Stop the threads of a store that will not be used (a peer turned the tier off) and let go of its buffers."""
+
+        threads, reader = self._threads, self._reader
+        self._threads, self._reader = [], None
+        for _ in threads:
+            self.jobs.put(None)
+        if reader is not None:
+            self.reads.put(None)
+        for thread in threads + ([reader] if reader is not None else []):
+            thread.join(5.0)
+        self._read_stage = None
+        release_pinned()
+
     def drain(self, timeout: float | None = None) -> bool:
         """Wait until every queued write is on disk (a shutdown). True when the writes finished in time."""
 
@@ -1583,6 +1603,8 @@ class SpillStore:
             failed = exc
         while True:
             lj = self.reads.get()
+            if lj is None:                                 # (close)
+                return
             try:
                 if failed is not None:
                     raise failed
