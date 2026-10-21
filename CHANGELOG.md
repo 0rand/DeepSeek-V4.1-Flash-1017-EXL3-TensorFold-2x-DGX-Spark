@@ -2,6 +2,9 @@
 
 This file lists the notable changes of each release. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The versions follow [Semantic Versioning](https://semver.org/):
 
+
+2026-10-21 - took PR#1 idea by https://github.com/jlacroix82 and re-implemented as streaming/buffered combo approach to cure tool calls and DSML leaks (0rand)
+
 - **Major**: a change that needs action from users, for example a new engine image, new model files or a changed default.
 - **Minor**: a new opt-in feature or setting.
 - **Patch**: a fix or a docs change.
