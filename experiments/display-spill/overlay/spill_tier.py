@@ -373,6 +373,7 @@ class Stats:
     crc_failed: int = 0                # reads whose data did not match its CRC-32 (the entry goes, a prefill)
     load_unfit: int = 0                # reads without the draft caches the request needs (the entry goes, a prefill)
     pruned: int = 0
+    unlink_failed: int = 0             # evicted files that could not be removed (other than already gone)
     save_s: float = 0.0
     write_s: float = 0.0
     load_s: float = 0.0
@@ -727,8 +728,11 @@ class SpillStore:
             if job is None or job.entry is not e:             # (one being written: its writer drops the file)
                 try:
                     os.remove(os.path.join(self.dir, e.name + ".safetensors"))
-                except OSError:
+                except FileNotFoundError:
                     pass
+                except OSError as exc:                         # the bytes stay on disk: save() measures the disk again
+                    self.stats.unlink_failed += 1
+                    print(f"[tensorfold] spill rank {self.rank}: could not remove {e.name}: {exc!r}", flush=True)
             self.stats.pruned += 1
 
     def touch(self, e: Entry) -> None:
@@ -1045,6 +1049,7 @@ class SpillStore:
         try:
             stream = torch.cuda.Stream(device=self.device) if torch.cuda.is_available() else None
             hasher = ThreadPoolExecutor(1, thread_name_prefix=f"spill-crc-w{self.rank}")
+            hasher.submit(lambda: None).result()       # (the pool starts its thread on the first task: start it now)
         except Exception as exc:                       # noqa: BLE001  (reported to the constructor)
             if ready is not None:
                 ready.put(exc)
@@ -1163,6 +1168,18 @@ class SpillStore:
         if not self._make_room(size, keep):
             self.stats.full += 1
             return None
+        if short:
+            # Entries went to make room for the floor. Check that their bytes really left the disk (a file that could
+            # not be removed does not), and agree: one rank without room stops the save on every rank.
+            try:
+                room = self._short(size) == 0
+            except OSError:
+                room = False
+            if self.world > 1 and self.gather is not None:
+                room = all(r[0] for r in self.gather([int(room)]))
+            if not room:
+                self.stats.no_space += 1
+                return None
         self._throttle(size)
         with self.lock:                                    # the index changes here, on every rank alike
             old = self.index.get(key)
@@ -1442,7 +1459,7 @@ class SpillStore:
                 "no_space": s.no_space, "deferred": s.deferred, "behind": s.behind,
                 "unwritten_evicted": s.unwritten_evicted, "write_failed": s.write_failed, "loaded": s.loaded,
                 "load_failed": s.load_failed, "crc_failed": s.crc_failed, "load_unfit": s.load_unfit,
-                "pruned": s.pruned,
+                "pruned": s.pruned, "unlink_failed": s.unlink_failed,
                 "save_s": round(s.save_s, 2),
                 "write_s": round(s.write_s, 2), "copy_wait_s": round(s.copy_wait_s, 2), "copy_waits": s.copy_waits,
                 "behind_s": round(s.behind_s, 2),

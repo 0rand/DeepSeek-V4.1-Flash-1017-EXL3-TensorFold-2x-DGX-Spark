@@ -621,6 +621,53 @@ class SpillTierTests(unittest.TestCase):
                 store.announce()
             self.assertIn("stored prompts from before this start", out.getvalue())
 
+    def test_the_checksum_thread_starts_before_a_writer_reports_ready(self):
+        from unittest import mock
+
+        class Pool:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def submit(self, fn, *args):
+                raise RuntimeError("can't start new thread")            # what the lazy pool does at its first task
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp, "ThreadPoolExecutor", Pool):
+                with self.assertRaises(RuntimeError):
+                    self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+
+    def test_a_file_that_cannot_be_removed_stops_the_save_that_counted_on_its_bytes(self):
+        from unittest import mock
+
+        for removable in (True, False):
+            with self.subTest(removable=removable), tempfile.TemporaryDirectory() as root:
+                store, ids, classes = self.stored(root)
+                path = self.entry_path(store)
+                for entry in store.index.values():
+                    entry.size = 4 << 20                                      # (the agreement counts whole MiB)
+                store.gather, store.world = (lambda row: [list(row), list(row)]), 2
+                # The disk is full while the file exists and has room once the file is gone.
+                store.disk_free = lambda: 0 if os.path.exists(path) else 1 << 40
+                real_remove = os.remove
+
+                def remove(target, *args, **kwargs):
+                    if target == path and not removable:
+                        raise PermissionError("immutable")
+                    return real_remove(target, *args, **kwargs)
+
+                new, snap = self.new_state()
+                with mock.patch.object(self.sp.os, "remove", remove):
+                    job = store.save(new, snap, skip=("ids",))
+                if removable:
+                    self.assertIsNotNone(job)
+                    self.assertEqual(store.stats.unlink_failed, 0)
+                else:
+                    self.assertIsNone(job)                                    # the bytes did not come back
+                    self.assertEqual(store.stats.unlink_failed, 1)
+                    self.assertEqual(store.stats.no_space, 1)
+                    self.assertEqual(store.info()["unlink_failed"], 1)
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
