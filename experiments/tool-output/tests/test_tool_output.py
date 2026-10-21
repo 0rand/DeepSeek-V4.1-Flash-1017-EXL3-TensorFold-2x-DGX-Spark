@@ -335,6 +335,15 @@ class ToolOutputTests(unittest.TestCase):
                 self.assertEqual([call["function"]["name"] for call in got], [call["function"]["name"] for call in calls])
         self.assertGreater(found, 30)
 
+    def test_valid_json_that_is_not_an_object_is_no_call_for_the_guard_as_for_the_parser(self):
+        from tensorfold.cuda import reply_text
+
+        for body in ("123", '"todowrite"', "[1]", "true", "null", "1.5"):
+            text = f"<tool_call>{body}</tool_call>"
+            with self.subTest(body=body):
+                self.assertEqual(self.guard().parse(text), reply_text.parse_tool_calls(text, self.tools))
+                self.assertIsNone(self.guard().parse(text)[1])
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 

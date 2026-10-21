@@ -128,8 +128,10 @@ class ToolOutputGuard:
         try:
             payload = json.loads(block)
         except json.JSONDecodeError:
-            payload = None
-        if isinstance(payload, dict):
+            pass                                       # not JSON: the parser tries the Qwen and GLM forms
+        else:
+            if not isinstance(payload, dict):
+                return []                              # (valid JSON that is not an object is no call for the parser)
             function = payload.get("function")
             for source in (function, payload):         # (an empty nested object falls back to the flat form)
                 name = source.get("name") if isinstance(source, dict) else None
