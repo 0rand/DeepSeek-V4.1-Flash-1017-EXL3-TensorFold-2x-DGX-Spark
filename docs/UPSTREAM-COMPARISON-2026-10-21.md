@@ -25,8 +25,8 @@ The improvements are real and worth taking, but **a single `git merge recipe/mai
 | local `main` | working directory | `02d53ac` | 9 commits ahead of `origin/main` (unpushed) |
 | `recipe/main` | original upstream | `1b3066d` | 96 commits ahead of fork point |
 | `origin/PR-branch` | old reunification branch | `251b0ee` | 32 ahead of `recipe/main`, 10 behind local `main` |
-| `origin/split/display-ssd-spill` | in-flight upstream branch | `ec02221` | 24 ahead of `recipe/main` |
-| `origin/split/tool-output` | in-flight upstream branch | `22bd21a` | 30 ahead of `recipe/main` |
+| `origin/split/display-ssd-spill` | in-flight upstream branch | `c9151e8` | 26 ahead of `recipe/main` |
+| `origin/split/tool-output` | in-flight upstream branch | `879d943` | 31 ahead of `recipe/main` |
 
 Upstream tags: `v1.0.0` only. The engine release tag lives on the TensorFold repo, not this recipe repo.
 
@@ -125,8 +125,8 @@ Our local repo violates this: `.gitignore` still has `runs/*` and `/data/benchma
 
 | Branch | Tip | Content |
 |---|---|---|
-| `split/display-ssd-spill` | `ec02221` (21 Oct) | New `experiments/display-spill/` with `spill_tier.py` **format 4** (1578 lines): header CRC (`hcrc`), base64 int64 token ids, max header 64 MiB, writer readiness, start-up agreement, trim kept builds, shared display lock, `docs/SPILL.md`, `start-display-spill.sh`. A more robust version of our local spill tier (format 2, 1240 lines). |
-| `split/tool-output` | `22bd21a` (21 Oct) | New `experiments/tool-output/` with a simpler 241-line guard that rejects complete unoffered calls. Our local `tool_output.py` is 729 lines and much more advanced (atomic validation, schema checks, literal containers, streaming isolation). |
+| `split/display-ssd-spill` | `c9151e8` (21 Oct) | New `experiments/display-spill/` with `spill_tier.py` **format 4** (1578 lines): header CRC (`hcrc`), base64 int64 token ids, max header 64 MiB, writer readiness, start-up agreement, trim kept builds, shared display lock, `docs/SPILL.md`, `start-display-spill.sh`. A more robust version of our local spill tier (format 2, 1240 lines). Two later fixes: read the driver from a second source and create a missing root for its owner; count an old build folder that cannot be read. |
+| `split/tool-output` | `879d943` (21 Oct) | New `experiments/tool-output/` with a simpler 241-line guard that rejects complete unoffered calls. Our local `tool_output.py` is 729 lines and much more advanced (atomic validation, schema checks, literal containers, streaming isolation). A later fix counts open markup in source order, in each block. |
 | `PR-branch` | `251b0ee` (20 Oct) | Old reunification branch: upstream main + our local work + review fixes, but 10 commits behind local `main` (lacks our latest streaming tool-validation work), keeps engine 1.0.0, `THINKING=0`, deletes the `runs/2026/10` layout. Not a good merge target. |
 
 ## 4. What our repo has that upstream does not
@@ -362,6 +362,8 @@ Key upstream commits:
 
 In-flight upstream branches:
 
-- `origin/split/display-ssd-spill` at `ec02221` (24 commits ahead of `recipe/main`)
-- `origin/split/tool-output` at `22bd21a` (30 commits ahead of `recipe/main`)
+- `origin/split/display-ssd-spill` at `c9151e8` (26 commits ahead of `recipe/main`)
+- `origin/split/tool-output` at `879d943` (31 commits ahead of `recipe/main`)
+
+Upstream is active: re-fetch `recipe` and the split branches before a merge. The tips above are from 2026-10-21 08:10 UTC.
 - `origin/PR-branch` at `251b0ee` (32 commits ahead of `recipe/main`, 10 behind local `main`)
