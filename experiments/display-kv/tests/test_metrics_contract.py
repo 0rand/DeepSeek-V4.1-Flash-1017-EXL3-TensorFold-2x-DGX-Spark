@@ -58,7 +58,7 @@ def fake_engine(*, display: bool = True, live: bool = True, spill: bool = False)
         "entries": 3, "pending": 1, "stored_bytes": 1234, "written": 2, "written_bytes": 1000,
         "loaded": 1, "loaded_bytes": 500, "loaded_tokens": 64,
         "restore_ms_p50": 12.5, "restore_ms_p95": 20.0,
-        "write_failed": 0, "crc_failed": 0, "load_failed": 0, "load_unfit": 0,
+        "write_failed": 0, "crc_failed": 0, "load_failed": 0, "load_unfit": 0, "prune_unreadable": 1,
         "disk_free_bytes": 9999, "highwater": 0.7, "writers": 2, "direct": True,
         "stored_gib": 0.0, "written_gib": 0.0, "loaded_gib": 0.0,
     }
@@ -160,6 +160,7 @@ class MetricsContractTests(unittest.TestCase):
         self.assertIn("tensorfold:spill_restore_seconds_p50 0.0125", rendered)
         self.assertIn("tensorfold:spill_written_total 2", rendered)
         self.assertIn("tensorfold:spill_loaded_tokens_total 64", rendered)
+        self.assertIn("tensorfold:spill_prune_unreadable_total 1", rendered)
         self.assertNotIn("tensorfold:spill_stored_gib", rendered)
 
         plain = metrics.render(types.SimpleNamespace(engine=fake_engine(spill=False)))
