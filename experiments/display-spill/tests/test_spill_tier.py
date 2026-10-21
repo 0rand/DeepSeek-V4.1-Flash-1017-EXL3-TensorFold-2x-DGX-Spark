@@ -1581,6 +1581,45 @@ class SpillTierTests(unittest.TestCase):
             self.assertFalse(complete)
             self.assertEqual([name for name, _ in builds], ["spill-00000000000000aa"])
 
+    def test_folders_that_are_not_builds_of_this_tier_are_never_pruned(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root:
+            keep = os.path.join(root, "spill-backup", "rank0")
+            os.makedirs(keep)
+            with open(os.path.join(keep, "mine.txt"), "wb") as f:
+                f.write(b"x")
+            empty = os.path.join(root, "spill-new-scheme", "rank0")
+            os.makedirs(empty)
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertTrue(os.path.exists(os.path.join(keep, "mine.txt")))
+            self.assertTrue(os.path.exists(empty))
+
+    def test_a_partial_file_that_stays_at_start_holds_capacity(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            partial = os.path.join(store.dir, "x.partial")
+            with open(partial, "wb") as f:
+                f.write(b"p" * 30)
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target == partial:
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
+                again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            self.assertEqual(again.stuck, {partial: 30})
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io

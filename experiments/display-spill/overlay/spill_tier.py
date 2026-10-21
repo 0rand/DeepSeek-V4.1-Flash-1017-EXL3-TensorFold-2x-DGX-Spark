@@ -816,7 +816,7 @@ class SpillStore:
         complete = True
         try:
             names = [d for d in os.listdir(self.root)
-                     if d.startswith("spill-") and os.path.join(self.root, d) != self.top]
+                     if _build_name_ok(d) and os.path.join(self.root, d) != self.top]   # (only this tier's folders)
         except FileNotFoundError:
             return [], True
         except OSError as exc:                                # (older builds may stay: counted and logged)
@@ -948,8 +948,12 @@ class SpillStore:
                     os.remove(path)
                 except FileNotFoundError:
                     pass
-                except OSError as exc:
+                except OSError as exc:                         # its bytes stay: they hold capacity
                     self._unlink_failed(path, exc)
+                    try:
+                        self.stuck[path] = os.lstat(path).st_size
+                    except OSError:
+                        pass
                 continue
             if name.endswith(".safetensors"):
                 try:

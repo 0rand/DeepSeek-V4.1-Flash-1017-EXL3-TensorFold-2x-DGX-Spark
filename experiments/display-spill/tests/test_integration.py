@@ -57,6 +57,14 @@ class SpillIntegrationTests(unittest.TestCase):
         changed = self.changed(spill.HTTP)
         self.assertIn('hook = getattr(app, "on_exit", None)', changed)
 
+    def test_every_argument_of_save_is_made_before_the_call_inside_the_guard(self):
+        text = self.changed(spill.MULTI)
+        call = text.index("job = self.spill.save(")
+        guarded = text[text.rindex("try:", 0, call):call]
+        for needle in ("self._spill_obj(k)", "self._spill_rows(k)", "k.host.view()"):
+            self.assertIn(needle, guarded)                                # a failure joins the save agreement
+        self.assertNotIn("k.host.view()", text[call:text.index(chr(10), text.index("tokens=", call))])
+
     def test_the_composed_engine_accepts_a_nonzero_spill_size(self):
         guard = "display-only KV requires TF_DS_SPILL_GIB=0"
         pristine = (SOURCE / spill.ENGINE).read_text()
