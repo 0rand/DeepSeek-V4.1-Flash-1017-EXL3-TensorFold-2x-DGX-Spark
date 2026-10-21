@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import textwrap
 import types
 import unittest
 from unittest import mock
@@ -174,6 +175,57 @@ class SpillIntegrationTests(unittest.TestCase):
         start = text.index("spill_cfg, spill_problem, spill_wanted")
         self.assertLess(start, text.index("preallocate(spill_cfg)"))
         self.assertLess(text.index("preallocate(spill_cfg)"), text.index("if spill_wanted:"))
+
+    def test_a_restored_prompt_without_a_snapshot_at_the_cut_falls_back_to_a_fresh_fill(self):
+        text = self.changed(spill.MULTI)
+        start = text.index("            if disk:\n                key, at, t0")
+        end = text.index("            elif how != \"fresh\":", start)
+        block = textwrap.dedent(text[start:end])
+
+        def run(snaps):
+            seen = []
+
+            class Spill:
+                def load_async(self, key, dst):
+                    return key
+
+                def finish_load(self, job):
+                    return types.SimpleNamespace(snaps=snaps, host=[1, 2]), [], {}
+
+                def forget(self, key):
+                    seen.append(("forget", key))
+
+            class Self:
+                spill = Spill()
+                keep_stats = {}
+
+                def _dst_for(self, base):
+                    return None
+
+                def _all(self, value):
+                    seen.append(("all", bool(value)))
+                    return bool(value)
+
+                def _restore(self, index, snap):
+                    seen.append(("restore", snap))
+
+            namespace = {"time": __import__("time"), "HostIds": lambda ids: ids, "e": types.SimpleNamespace(rank=1),
+                         "reuse": ["disk", (1, 2), 100], "disk": True, "base": 0, "index": 0,
+                         "slot": types.SimpleNamespace(sc=types.SimpleNamespace()),
+                         "s": types.SimpleNamespace(prompt=[0] * 200, snaps=None, lineage=None)}
+            body = "def f(self, how):\n    cut = 0\n" + textwrap.indent(block, "    ") + "    return cut\n"
+            exec(compile(body, "load", "exec"), namespace)
+            cut = namespace["f"](Self(), "fresh")
+            return cut, seen
+
+        cut, seen = run({"32": "a", "64": "b"})                           # snapshots at 32 and 64, none at 100
+        self.assertEqual(cut, 0)
+        self.assertIn(("all", False), seen)
+        self.assertIn(("forget", (1, 2)), seen)
+        self.assertNotIn("restore", [item[0] for item in seen])
+        cut, seen = run({"32": "a", "100": "b"})                          # a snapshot at the cut: the restore runs
+        self.assertEqual(cut, 100)
+        self.assertIn(("restore", "b"), seen)
 
     def test_a_store_that_fails_to_start_on_one_rank_is_dropped_on_every_rank(self):
         decoder, calls, created = self.run_init([[[1]], [[1]]], store_error=OSError("disk"))
