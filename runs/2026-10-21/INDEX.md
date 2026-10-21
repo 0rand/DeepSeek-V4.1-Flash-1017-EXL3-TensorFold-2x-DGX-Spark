@@ -6,7 +6,7 @@
 review, integrated strict-validator foundation, conservative prose projector,
 installed-source CPU checks and old-image model-backed baseline.
 
-The new code is staged in source, **not yet deployed or model-validated**.
-The existing two-node display-KV server was left running because the head's
-DRM preparation requires interactive sudo authorization. The run record lists
-the expected image fingerprint and the remaining cutover/live-validation steps.
+The code is deployed as `tensorfold-dsv41:display-kv-58e319cb2866` on both nodes
+and live-validated: `./verify.sh` 5/5, parser probe 12 PASS / 2 INCONCLUSIVE /
+0 FAIL. The two inconclusive cases are fixture-induction limits, not parser
+failures. The rollback switch still needs a separate restart to test live.

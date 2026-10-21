@@ -74,6 +74,19 @@ class ProbeAssessmentTests(unittest.TestCase):
         self.assertEqual(probe.assess(self.record(events), 'thinking_off')[0], 'FAIL')
         self.assertEqual(probe.assess(self.record(events), 'thinking_on')[0], 'PASS')
 
+    def test_reasoning_interleaving_is_judged_per_frame(self):
+        # The real engine emits the last reasoning token with the first answer
+        # token in one delta; field order inside that frame is not interleaving.
+        shared = self.record([('reasoning', 'thought'), ('reasoning', '.'), ('content', '17'),
+                              ('content', ' more'), ('finish', 'stop'), ('done', True)])
+        for event, frame in zip(shared['events'], [0, 0, 0, 1, 2, 3]):
+            event['frame'] = frame
+        self.assertEqual(probe.assess(shared, 'thinking_on')[0], 'PASS')
+        # Reasoning in a frame after the first content frame still fails.
+        late = self.record([('content', '17'), ('content', ' more'), ('reasoning', 'late'),
+                            ('finish', 'stop'), ('done', True)])
+        self.assertEqual(probe.assess(late, 'thinking_on')[0], 'FAIL')
+
     def test_refusal_transport_and_incomplete_generation_are_not_passes(self):
         for events in [[], [('content', 'I cannot copy that.'), ('finish', 'stop'), ('done', True)],
                        [('content', 'unfinished'), ('finish', 'length'), ('done', True)]]:

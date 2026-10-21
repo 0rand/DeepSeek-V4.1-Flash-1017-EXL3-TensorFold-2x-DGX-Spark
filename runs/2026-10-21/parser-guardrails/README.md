@@ -2,13 +2,13 @@
 
 ## Status and scope
 
-At 06:53 UTC the serving image was still
-`tensorfold-dsv41:display-kv-40a46c96d4bd`, image ID
-`sha256:97b3670b1c160a658c76a3a88decdaf1cc77ced74df66a2cffd53970cd361be0`.
-The strict foundation and conservative prose projector are integrated in source,
-**not yet deployed or model-validated**. Head-node sudo authorization is needed
-for the display launcher's DRM preparation. No service was stopped, no live rank
-was entered with `docker exec`, and no second model server was started.
+The strict foundation and conservative prose projector were integrated in source
+and, after user-assisted head authorization, deployed at 07:08 UTC as
+`tensorfold-dsv41:display-kv-58e319cb2866` (image ID
+`sha256:3a791c6a6f9d64e898ed29ec3a09de80c93c9f7c92db4e820ca0d207bbb2f278`) on
+both nodes. Live validation passed: `./verify.sh` 5/5 and the opt-in parser probe
+12 PASS, 2 INCONCLUSIVE, 0 FAIL. No live rank was entered with `docker exec`,
+and no second model server was started.
 
 This work does not upgrade the engine, change the user's `.env`, alter DRM,
 change memory/spill behavior or claim a performance improvement.
@@ -108,45 +108,97 @@ this durable baseline was captured: established SSE cannot add a late HTTP retry
 header, and an offered call on a requested malformed/literal fixture is not a
 proven parser failure. Offline assessment tests lock in both distinctions.
 
-## Staged image provenance and outstanding live gate
+## Deployed image provenance
 
-For the existing base image `sha256:2aede715ee121bef05c4c92894e143fe0979b4c2f7730b013d1ddbf43793da1c`
-and the staged source at this checkpoint, the launcher's current expected image
-tag is `tensorfold-dsv41:display-kv-df444454947e`, source fingerprint
-`df444454947e096d732021b7c0f9289535f9f1478567904b09a82f8f8e46551a`.
-Only the base image, `Dockerfile`, `.dockerignore`, `apply.py`, `probe.py` and
-`overlay/*.py` feed that fingerprint, so `prepare.py` and the probe script do
-not change it. Recompute it with the launcher rather than trusting this tag.
-It is an expected build identity, **not proof that an image was built**; neither
-node has that variant image yet.
+The launcher's fingerprint is the SHA-256 of the base image ID followed by
+`sha256sum` lines for the **absolute** `$ROOT/experiments/display-kv/{Dockerfile,
+.dockerignore,apply.py,probe.py,overlay/*.py}` paths. For base image
+`sha256:2aede715ee121bef05c4c92894e143fe0979b4c2f7730b013d1ddbf43793da1c` and the
+committed source, it is
+`58e319cb2866cd0cc843b8bfdd59b835520cd9a26899250a3a50f3ea605ced9e`, so the variant
+tag is `tensorfold-dsv41:display-kv-58e319cb2866`. Hashes of the image's
+`apply.py` and `overlay/tool_output.py` equal the committed files
+(`1ba8020b…` and `3ae12132…`), and the same image ID is present on both nodes.
+Recomputing with relative paths yields a different value; use the launcher's own
+computation. The earlier record's `1fe0a7c3556a` and `df444454947e` values came
+from such relative-path recomputations and are withdrawn.
 
 | Source | SHA-256 |
 |---|---|
 | `experiments/display-kv/apply.py` | `1ba8020b5984d131dcb63fe56494a931edb889f0363d2fa5be00376d01e06785` |
 | `experiments/display-kv/overlay/tool_output.py` | `3ae1213289babe2f64bdc7a8bb8a97af65e4450746d5ee086b3169ec7f13fef2` |
-| `tests/live_tool_streaming.py` | `521f646258f9739a169227c63d57aec2cf94d7d96f224598bca701d65e72d5d5` |
+| `tests/live_tool_streaming.py` | `bad8ba8db32aabd41023f46645ee4d5ca37d8e8aced18144e624b31baace3cab` |
+| `tests/live_tool_streaming_test.py` | `8f151acb80c9d0e5c989579e4e915fa5e96d4e015a923544da91e70f64de81b8` |
 
-The previous `.display-kv-image` identity was saved before considering a cutover.
-The service was deliberately left running because head `sudo -n true` requires
-a password. The worker's noninteractive sudo was available. Do not stop a
-healthy stack without being able to complete the head's DRM preparation.
+The previous `.display-kv-image` identity was saved before the cutover. The old
+stack was left running until the user could authorize the head's DRM preparation;
+head `sudo -n true` still required a password while the worker's noninteractive
+sudo worked. Keep that rule: do not stop a healthy stack unless the head's DRM
+preparation can be completed.
 
-Rechecked at 07:07 UTC before committing: both ranks were up on
+Before the cutover, at 07:07 UTC: both old ranks were up on
 `display-kv-40a46c96d4bd`, `./start-display-kv.sh --check` reported both cards
 with inactive outputs and the live compute reference, worker SSH and
-noninteractive sudo succeeded, the head base image and both nodes' `/var/lib/docker`
-had ~1.1 TB free, and head `sudo -n true` still required a password. No DRM
-parameter, rank or image was changed.
-
-Once sudo is available, run in the head-node terminal:
+noninteractive sudo succeeded, both nodes' `/var/lib/docker` had ~1.1 TB free,
+and head `sudo -n true` still required a password. The user then ran, in the
+head-node terminal:
 
 ```bash
 ./stop.sh && ./start-display-kv.sh --build
+```
+
+which produced the image above. The remaining acceptance steps were run from
+this session:
+
+```bash
 ./verify.sh
-python3 -B tests/live_tool_streaming.py --base-url http://127.0.0.1:8100 --output /path/to/after.json
+python3 -B tests/live_tool_streaming.py --base-url http://127.0.0.1:8100 --output runs/2026-10-21/parser-guardrails/after.json
 ```
 
 The live probe script is loopback-only, blocks redirects/proxies, runs no tools
 and has bounded generation. Exit 1 means failures, 2 means only inconclusive
 cases remain. Preserve those distinctions. Also validate actual SDK/proxy retry
 handling and the original agent scenario without enabling an unavailable tool.
+
+## New-image model-backed validation (07:14-07:15 UTC)
+
+[verify-after.log](verify-after.log): all five real `./verify.sh` checks passed,
+so two-node inference works on the new image.
+
+[after.json](after.json) and [after-probes.log](after-probes.log) hold the opt-in
+probe: **12 PASS, 2 INCONCLUSIVE, 0 FAIL** (exit 2). No tool was executed, each
+probe ran once, and no request retried.
+
+| Probe | New-image observation |
+|---|---|
+| Prose, no tools | 19 content chunks before terminal, first at 154 ms, PASS |
+| Prose with tools | 32 content chunks before terminal, PASS |
+| Explicit thinking off, tools on | 17 content chunks, PASS |
+| Explicit thinking on, tools on | 14 reasoning frames then streamed answer, PASS |
+| Valid offered call | Correct `get_status(service="tensorfold")`, PASS |
+| Tool-result round trip | Synthetic result reflected, PASS |
+| Unoffered JSON / SSE | Native typed rejection, terminal wire contract, 2 PASS |
+| Malformed envelope | Native typed rejection, PASS |
+| No-tools executable envelope | Native typed rejection, PASS |
+| Truncated fixture | Offered structured call, INCONCLUSIVE |
+| Plain and fenced literals | Exact literals preserved, 2 PASS |
+| Inline-code literal | Model invoked the tool instead, INCONCLUSIVE |
+
+The two inconclusive cases are the same limits as the old-image baseline: the
+model may have completed or replaced the requested fixture. They are not parser
+passes, and exact classifier ownership still needs raw-token capture.
+
+The first probe run produced one FAIL, `thinking_explicit_true: Reasoning
+interleaved after visible answer`. The raw frame showed
+`{"reasoning_content": ".", "content": "17"}` in a single delta: the engine
+emits the last reasoning token and the first answer token together. The probe
+judged ordering by event position inside that frame; it now compares frame
+indices and only fails reasoning in a frame after the first content frame.
+[`tests/live_tool_streaming_test.py`](../../../tests/live_tool_streaming_test.py)
+locks in both the shared-transition pass and the later-frame failure. This was
+a missing probe rule, not a parser or stream-ordering defect.
+
+Not yet validated live: the `TOOL_OUTPUT_STREAMING=0` rollback needs another
+launcher restart. It is covered by the installed-source CPU HTTP tests
+(`test_roll_back_to_whole_answer_buffering`). SDK/proxy retry behavior and the
+original agent scenario also remain open.

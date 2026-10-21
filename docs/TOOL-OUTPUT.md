@@ -3,9 +3,12 @@
 The display-KV recipe's existing source installer validates the complete
 DeepSeek-V4.1 **answer** before returning executable calls. Inert prose before
 the first possible protocol marker can stream early. This is a
-CPU-tested protocol/schema hardening change, not evidence of actual-model tool
-reliability or a GPU performance improvement. The previously recorded live
-checks for the narrower unoffered-tool guard do not validate this revision.
+protocol/schema hardening change, not evidence of actual-model tool reliability
+or a GPU performance improvement. The deployed image
+`tensorfold-dsv41:display-kv-58e319cb2866` passed `./verify.sh` 5/5 and the
+opt-in parser probe with 12 PASS, 2 INCONCLUSIVE and 0 FAIL; the two
+inconclusive cases are fixture-induction limits, not parser passes. See the
+[run record](../runs/2026-10-21/parser-guardrails/README.md).
 
 ## Contract and compatibility changes
 
@@ -21,7 +24,10 @@ checks for the narrower unoffered-tool guard do not validate this revision.
   cannot turn an unoffered executable envelope into ordinary answer text. This
   does not prevent ordinary no-tool answers from streaming. Reasoning remains
   separately streamed and is not treated as executable answer output. Other
-  families keep their legacy path.
+  families keep their legacy path. The engine may put the last reasoning token
+  and the first answer token in one delta; clients must route by field, and the
+  live probe treats that shared frame as an acceptable transition, not an
+  interleaving.
 - JSON, Qwen function/parameter XML, GLM argument tags and both spaced and
   unspaced DeepSeek DSML wrappers are supported. Duplicate JSON/parameter keys,
   nonfinite numbers, unexpected envelope fields and unparsed residue reject.
@@ -180,8 +186,8 @@ passing rejection evidence. Check cancellation and reasoning latency on the
 real serving path. This change makes no memory, RDMA, prebuilt-extension,
 host-tuning, distributed-liveness or measured throughput claims.
 
-For the 2026-10-21 continuation's CPU checks, old-image live baseline and
-deployment status, see [the run record](../runs/2026-10-21/parser-guardrails/README.md).
+For the 2026-10-21 continuation's CPU checks, old-image live baseline and the
+new-image live results, see [the run record](../runs/2026-10-21/parser-guardrails/README.md).
 The opt-in `tests/live_tool_streaming.py` captures per-frame timings, explicit
 thinking modes, tool-result round trips, rejection/recovery and literal probes.
 It runs only against an HTTP loopback IP, blocks redirects and proxies, never

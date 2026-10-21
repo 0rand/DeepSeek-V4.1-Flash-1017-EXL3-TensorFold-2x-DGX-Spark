@@ -9,9 +9,11 @@ The current draft rejects malformed, unavailable and schema-invalid calls
 atomically. Prose streams until the first possible protocol marker, then the
 remainder and all calls wait for final validation. `TOOL_OUTPUT_STREAMING=0`
 restores whole-answer content buffering without disabling validation. It has CPU
-parser/fake-HTTP coverage; earlier live checks do not validate this revision.
+parser/fake-HTTP coverage and was live-validated on
+`tensorfold-dsv41:display-kv-58e319cb2866` (`./verify.sh` 5/5; probe 12 PASS,
+2 INCONCLUSIVE, 0 FAIL).
 See the [2026-10-21 continuation record](../../runs/2026-10-21/parser-guardrails/README.md)
-for the old-image baseline, CPU gates and pending new-image deployment.
+for the old-image baseline, CPU gates and new-image results.
 
 The supported entry point is the self-contained root `./start-display-kv.sh`.
 With explicit `--build` it prepares a source-tagged image on both nodes; normal

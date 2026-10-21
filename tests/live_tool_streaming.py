@@ -225,10 +225,12 @@ def assess(record, mode, fixture=None):
     if "<think>" in content or "</think>" in content:
         return "FAIL", "Reasoning delimiters leaked into content"
     if mode == "thinking_on":
-        reasoning = [i for i, e in enumerate(events) if e["kind"] == "reasoning"]
-        visible = [i for i, e in enumerate(events) if e["kind"] == "content"]
+        reasoning = [e["frame"] for e in events if e["kind"] == "reasoning"]
+        visible = [e["frame"] for e in events if e["kind"] == "content"]
         if not reasoning or not visible:
             return "INCONCLUSIVE", "No observable separate reasoning and answer"
+        # The engine may put the last reasoning token and the first answer token
+        # in one delta. Field order inside a frame is not an interleaving.
         if max(reasoning) > min(visible):
             return "FAIL", "Reasoning interleaved after visible answer"
     if mode == "roundtrip":

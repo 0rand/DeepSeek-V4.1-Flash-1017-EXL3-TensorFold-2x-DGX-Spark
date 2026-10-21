@@ -32,7 +32,7 @@ launcher below does not enable display-backed KV.
 
 ## Native tool-output errors (display-KV variant)
 
-The staged display-KV image uses [strict tool-output validation](TOOL-OUTPUT.md).
+The deployed display-KV image uses [strict tool-output validation](TOOL-OUTPUT.md).
 `model_output_error` / `unavailable_tool_call` from
 `source=tensorfold.tool_output_guard` is a terminal model-response rejection,
 not a broken distributed lane. Do not enable an unoffered tool, retry the same
