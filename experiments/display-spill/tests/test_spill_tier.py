@@ -836,6 +836,8 @@ class SpillTierTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             old = os.path.join(root, "spill-0000000000000000", "rank0")
             os.makedirs(old)
+            with open(os.path.join(old, "0.safetensors"), "wb") as f:
+                f.write(b"x")
             real_listdir = os.listdir
 
             def listdir(path="."):
@@ -1198,6 +1200,62 @@ class SpillTierTests(unittest.TestCase):
                     pass
             self.assertTrue(os.path.exists(os.path.join(root, "spill-00000000000000aa", "rank0")))   # common: kept
             self.assertFalse(os.path.exists(os.path.join(root, "spill-00000000000000bb", "rank0")))  # only here: removed
+
+    def test_a_failure_while_one_rank_prunes_builds_is_shared(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            folder = os.path.join(root, "spill-00000000000000aa", "rank0")
+            os.makedirs(folder)
+            with open(os.path.join(folder, "0.safetensors"), "wb") as f:
+                f.write(b"x")
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            store.gather, store.world = gather, 2
+            with mock.patch.object(store, "_trim_kept_build", side_effect=MemoryError("sort")):
+                with self.assertRaises(MemoryError):
+                    store._prune_builds()
+            self.assertEqual(rounds[-1], [1])                              # the failure is in the agreement
+
+    def test_the_number_of_kept_builds_is_limited_to_what_the_ranks_exchange(self):
+        for value in (-1, self.sp.BUILDS_SHARED + 1):
+            with self.assertRaises(ValueError):
+                self.sp.SpillConfig(root="/x", gib=1, keep_builds=value)
+        self.sp.SpillConfig(root="/x", gib=1, keep_builds=self.sp.BUILDS_SHARED)
+        names = [f"spill-{n:016x}" for n in range(self.sp.BUILDS_SHARED)]
+        self.assertEqual(self.sp._decode_builds(self.sp._encode_builds(names)), names)
+
+    def test_a_link_in_a_retained_build_takes_no_retention_slot(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as outside:
+            real = os.path.join(root, "spill-00000000000000aa", "rank0")
+            linked = os.path.join(root, "spill-00000000000000bb", "rank0")
+            for folder in (real, linked):
+                os.makedirs(folder)
+            with open(os.path.join(real, "0.safetensors"), "wb") as f:
+                f.write(b"x")
+            target = os.path.join(outside, "target")
+            with open(target, "wb") as f:
+                f.write(b"x")
+            try:
+                os.symlink(target, os.path.join(linked, "0.safetensors"))
+            except (OSError, NotImplementedError):
+                self.skipTest("no symbolic links here")
+            os.utime(os.path.join(root, "spill-00000000000000aa"), (1000, 1000))     # the linked build is newer
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertTrue(os.path.exists(os.path.join(real, "0.safetensors")))      # the healthy rollback stays
+            self.assertFalse(os.path.exists(linked))
+            self.assertTrue(os.path.exists(target))                                   # the target is not touched
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib

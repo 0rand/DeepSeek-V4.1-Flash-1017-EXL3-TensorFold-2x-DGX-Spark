@@ -102,6 +102,8 @@ class SpillConfig:
             raise ValueError(f"TF_DS_SPILL_MIN_FREE_GIB: zero or more (0 keeps no reserve), not {self.min_free_gib}")
         if self.writers < 1:
             raise ValueError("TF_SPILL_WRITERS: at least 1")
+        if not 0 <= self.keep_builds <= BUILDS_SHARED:
+            raise ValueError(f"TF_DS_SPILL_KEEP_BUILDS: from 0 to {BUILDS_SHARED}, not {self.keep_builds}")
 
     @classmethod
     def from_args(cls, args: Any) -> SpillConfig | None:
@@ -126,7 +128,7 @@ def _pinned(n: int) -> list[torch.Tensor]:
     return [torch.empty(CHUNK, dtype=torch.uint8, pin_memory=pin) for _ in range(n)]
 
 
-BUILDS_SHARED = 16                     # the newest builds a rank offers to the joint choice of the builds to keep
+BUILDS_SHARED = 64                     # the most builds a rank offers to the joint choice (the top of TF_DS_SPILL_KEEP_BUILDS)
 
 
 def _encode_builds(names: Sequence[str]) -> list[int]:
@@ -694,8 +696,11 @@ class SpillStore:
                 if name.endswith(".partial"):
                     os.remove(path)
                 elif name.endswith(".safetensors"):
-                    status = os.stat(path)
-                    finished.append((status.st_mtime, path, status.st_size))
+                    status = os.lstat(path)
+                    if stat.S_ISREG(status.st_mode):
+                        finished.append((status.st_mtime, path, status.st_size))
+                    else:                                     # a link or a FIFO: removed itself, never followed
+                        os.remove(path)
             except FileNotFoundError:
                 pass
             except OSError as exc:
@@ -720,7 +725,8 @@ class SpillStore:
         try:
             if os.path.islink(mine):
                 return False
-            return any(name.endswith(".safetensors") for name in os.listdir(mine))
+            with os.scandir(mine) as found:                   # (a link or a FIFO named like a file is none)
+                return any(e.name.endswith(".safetensors") and e.is_file(follow_symlinks=False) for e in found)
         except OSError:
             return True                                       # (unknown: it keeps its slot and is looked at later)
 
@@ -826,26 +832,30 @@ class SpillStore:
         shared = self.world > 1 and self.gather is not None
         builds = self._agreed(self._survey_builds) if shared else self._survey_builds()
         retain = self._retained_builds([name for name, _ in builds])
-        gone = 0
-        for name, d in builds:
-            mine = os.path.join(d, f"rank{self.rank}")
-            if name in retain:                                # a kept build: its unfinished writes go, and its oldest
-                self._trim_kept_build(mine)                   # files until it fits the current cap
-                continue
-            if os.path.islink(mine):                          # the link goes, never what it points to
+
+        def prune() -> int:
+            gone = 0
+            for name, d in builds:
+                mine = os.path.join(d, f"rank{self.rank}")
+                if name in retain:                            # a kept build: its unfinished writes go, and its
+                    self._trim_kept_build(mine)               # oldest files until it fits the current cap
+                    continue
+                if os.path.islink(mine):                      # the link goes, never what it points to
+                    try:
+                        os.remove(mine)
+                    except FileNotFoundError:
+                        pass
+                    except OSError as exc:
+                        self._unlink_failed(mine, exc)
+                elif self._is_dir(mine) and self._remove_tree(mine):
+                    gone += 1
                 try:
-                    os.remove(mine)
-                except FileNotFoundError:
+                    os.rmdir(d)                                # empty once every rank pruned its own
+                except OSError:
                     pass
-                except OSError as exc:
-                    self._unlink_failed(mine, exc)
-            elif self._is_dir(mine) and self._remove_tree(mine):
-                gone += 1
-            try:
-                os.rmdir(d)                                    # empty once every rank pruned its own
-            except OSError:
-                pass
-        return gone
+            return gone
+
+        return self._agreed(prune) if shared else prune()
 
     def _total(self) -> int:
         with self.lock:
