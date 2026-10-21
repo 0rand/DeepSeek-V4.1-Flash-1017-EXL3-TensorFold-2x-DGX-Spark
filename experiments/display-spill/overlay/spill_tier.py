@@ -748,8 +748,8 @@ class SpillStore:
             total -= size
 
     @staticmethod
-    def _holds_entries(mine: str) -> bool:
-        """Whether a rank folder of an older build has a finished file."""
+    def _holds_entries(mine: str) -> bool | None:
+        """Whether a rank folder of an older build has a finished file (None: it cannot be read)."""
 
         try:
             if os.path.islink(mine):
@@ -759,7 +759,7 @@ class SpillStore:
         except (FileNotFoundError, NotADirectoryError):
             return False                                      # no rank folder: nothing to keep
         except OSError:
-            return True                                       # (unknown: it keeps its slot and is looked at later)
+            return None
 
     def _is_dir(self, path: str) -> bool:
         """Whether ``path`` is a folder. A path that cannot be read is counted and logged (and is not a folder)."""
@@ -838,7 +838,11 @@ class SpillStore:
         builds = []
         for _, name, d in sorted(dated, reverse=True):
             mine = os.path.join(d, f"rank{self.rank}")
-            if self._holds_entries(mine):
+            holds = self._holds_entries(mine)
+            if holds is None:                                 # unreadable: the survey is not complete, the build stays
+                complete = False
+                builds.append((name, d))
+            elif holds:
                 builds.append((name, d))
             elif not os.path.islink(mine) and (not self._is_dir(mine) or self._remove_tree(mine)):
                 try:
@@ -992,8 +996,12 @@ class SpillStore:
                     os.remove(path)
                 except FileNotFoundError:
                     pass
-                except OSError as exc:
+                except OSError as exc:                         # its bytes stay: they hold capacity
                     self._unlink_failed(path, exc)
+                    try:
+                        self.stuck[path] = os.lstat(path).st_size
+                    except OSError:
+                        pass
 
     def _agreed(self, step: Callable[[], Any]) -> Any:
         """Run a local step of the index agreement. A failure on one rank is shared first, so that no rank waits in a
@@ -1368,6 +1376,7 @@ class SpillStore:
                 current = self.index.get(job.key) is job.entry       # by the cap or a failed read, leaves none)
                 if current:
                     os.replace(path, job.path)
+                    self.stuck.pop(job.path, None)          # (the file that stayed is replaced: no longer stuck)
             if not current:
                 os.remove(path)
                 return False
@@ -1449,7 +1458,8 @@ class SpillStore:
     def save(self, ids: Sequence[int], obj: Any = None, rows: Sequence[tuple[str, torch.Tensor]] = (), *,
              skip: Sequence[str] = (), materialize: Callable[[Any], None] | None = None, head: bool = False,
              meta: dict | None = None,
-             tokens: Sequence[int] | None = None, keep: frozenset = frozenset()) -> Job | None:
+             tokens: Sequence[int] | None = None, keep: frozenset = frozenset(),
+             prepare_failure: BaseException | None = None) -> Job | None:
         """Every rank, in the same order: queue prompt ``ids``'s state (``obj``'s fields, see ``encode``) and the
         named ``rows`` (read back into caller views) for writing; one all-gather agrees the size and the free-disk
         floor. Returns the job, or None when skipped (stored or on its way, too short, no room, no disk)."""
@@ -1461,6 +1471,8 @@ class SpillStore:
         stuck = 0
         failure, key, stored = None, None, 0
         try:
+            if prepare_failure is not None:            # the caller could not make obj or rows: shared below
+                raise prepare_failure
             stuck = self._retry_stuck()                # evicted files that stayed still hold capacity
             key = ids_key(ids)                         # (this allocates too: it is inside the shared failure path)
             with self.lock:

@@ -862,9 +862,13 @@ class SpillTierTests(unittest.TestCase):
                 f.write(b"x")
             real_scandir = os.scandir
 
+            seen = []
+
             def scandir(path="."):
                 if path == old:
-                    raise PermissionError("denied")
+                    seen.append(path)
+                    if len(seen) > 1:                                     # the survey can read it, the walk cannot
+                        raise PermissionError("denied")
                 return real_scandir(path)
 
             cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
@@ -1513,6 +1517,69 @@ class SpillTierTests(unittest.TestCase):
             with mock.patch.object(store, "_retry_stuck", side_effect=MemoryError("stuck")):
                 self.assertIsNone(store.save(ids, snap, skip=("ids",)))
             self.assertEqual(rounds[-1][2], 1)                             # the failure flag of the size exchange
+
+    def test_a_failure_to_prepare_the_arguments_of_a_save_is_shared(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            store.gather, store.world = gather, 2
+            ids, snap = self.new_state()
+            self.assertIsNone(store.save(ids, snap, skip=("ids",), prepare_failure=MemoryError("rows")))
+            self.assertEqual(rounds[-1][2], 1)                             # the failure of the caller joins the exchange
+
+    def test_a_replaced_stuck_file_is_not_stuck_any_more(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            other_ids, other = self.new_state(900)
+            job = store.save(other_ids, other, skip=("ids",))
+            store.stuck[job.path] = 1                                      # an old record for the path of this write
+            self.assertTrue(store.drain(10))
+            self.assertNotIn(job.path, store.stuck)
+
+    def test_a_rejected_start_file_that_stays_holds_capacity(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            broken = os.path.join(store.dir, "bad.safetensors")
+            with open(broken, "wb") as f:
+                f.write(b"junk" * 10)
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target == broken:
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
+                again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            self.assertEqual(again.stuck, {broken: 40})
+
+    def test_an_unreadable_rank_folder_makes_the_survey_incomplete(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-00000000000000aa", "rank0")
+            os.makedirs(old)
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            os.makedirs(old, exist_ok=True)
+            with mock.patch.object(self.sp.os, "scandir", side_effect=PermissionError("denied")), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                builds, complete = store._survey_builds()
+            self.assertFalse(complete)
+            self.assertEqual([name for name, _ in builds], ["spill-00000000000000aa"])
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
