@@ -309,6 +309,20 @@ class ToolOutputTests(unittest.TestCase):
         with self.assertRaises(self.module.ModelOutputError):
             self.guard().parse(text)
 
+    def test_a_call_with_a_fence_line_in_its_body_is_never_literal(self):
+        body = '<function=unoffered><parameter=secret>PRIVATE' + chr(10) + '```' + chr(10) + 'more</parameter></function>'
+        for mark in ("```", "~~~"):
+            call = '<tool_call>' + body.replace("```", mark) + '</tool_call>'
+            with self.subTest(mark=mark):
+                text = mark + chr(10) + call + chr(10) + mark + chr(10)
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+        # The same call with no fence line in its body stays literal text inside a closed fence.
+        plain = '<tool_call><function=unoffered><parameter=secret>PRIVATE</parameter></function></tool_call>'
+        content, calls = self.guard().parse("```" + chr(10) + plain + chr(10) + "```" + chr(10))
+        self.assertIsNone(calls)
+        self.assertIn(plain, content)
+
     def test_a_backtick_in_a_call_after_a_fence_mark_keeps_the_opener_invalid(self):
         unoffered = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
         offered = '<tool_call>{"name":"task","arguments":{"v":"`"}}</tool_call>'

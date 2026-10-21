@@ -180,8 +180,10 @@ class ToolOutputGuard:
         fences = self._fenced_blocks(masked)
         envelopes = []
         for start, stop, names, kind in chosen:
-            # A call is literal text only inside a closed code fence that began before it and ends after it.
-            is_literal = any(opened <= start and closed is not None and closed >= stop for opened, closed in fences)
+            # A call is literal text only inside a closed code fence that began before it and ends after it. A line of
+            # fence marks inside the call may close that fence, so such a call is never taken as literal (fail closed).
+            is_literal = (not re.search(r"\n {0,3}(?:`{3,}|~{3,})", text[start:stop])
+                          and any(opened <= start and closed is not None and closed >= stop for opened, closed in fences))
             envelopes.append((start, stop, is_literal))
             if is_literal:
                 continue
