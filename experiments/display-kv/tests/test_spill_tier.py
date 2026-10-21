@@ -47,7 +47,8 @@ class SpillTierTests(unittest.TestCase):
         self.sp = load()
 
     def test_module_is_self_contained(self):
-        tree = ast.parse(open(MODULE, encoding="utf-8").read())
+        with open(MODULE, encoding="utf-8") as source:
+            tree = ast.parse(source.read())
         imports = set()
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
@@ -69,6 +70,15 @@ class SpillTierTests(unittest.TestCase):
         cfg = self.sp.SpillConfig(root="/tmp", gib=1)
         self.assertEqual(cfg.writers, 2)
         self.assertTrue(cfg.direct)
+
+    def test_missing_root_takes_the_nearest_existing_owner(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = os.path.join(tmp, "new", "spill")
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0)
+            self.sp.SpillStore(cfg, rank=0, world=1, device="cpu")
+            self.assertTrue(os.path.isdir(root))
+            self.assertEqual(os.stat(root).st_uid, os.stat(tmp).st_uid)
+            self.assertEqual(os.stat(root).st_gid, os.stat(tmp).st_gid)
 
     def test_ids_key_and_name(self):
         key = self.sp.ids_key([1, 2, 3])
