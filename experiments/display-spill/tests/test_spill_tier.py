@@ -947,7 +947,7 @@ class SpillTierTests(unittest.TestCase):
             store, ids, classes = self.stored(root)
             path = self.entry_path(store)
             job = self.sp.Job.__new__(self.sp.Job)
-            job.key, job.path, job.entry = (1, 2), path, None
+            job.key, job.path, job.entry, job.nbytes = (1, 2), path, None, 4496
             real_remove = os.remove
 
             def remove(target, *args, **kwargs):
@@ -958,6 +958,7 @@ class SpillTierTests(unittest.TestCase):
             with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
                 store._entry_done(job, True)                          # the key is not in the index: the file goes
             self.assertEqual(store.stats.unlink_failed, 1)
+            self.assertIn(path, store.stuck)                              # and its bytes hold capacity
 
     def test_a_missing_spill_root_is_made_for_the_owner_of_its_nearest_folder(self):
         from unittest import mock
@@ -1184,11 +1185,13 @@ class SpillTierTests(unittest.TestCase):
                 os.utime(os.path.join(root, name), (when, when))
             peer = self.sp._encode_builds(["spill-00000000000000aa"])      # the peer lacks the newer build
 
+            flags = iter([0, 0, 1, 0, 0, 0, 0])                           # start, survey, complete, merge, prune...
+
             def gather(values):
                 if len(values) == 8:                                      # the compatibility words
                     return [list(values), list(values)]
-                if len(values) == 1:                                      # a failure flag
-                    return [list(values), [0]]
+                if len(values) == 1:                                      # a failure flag or "my survey is complete"
+                    return [list(values), [next(flags)]]
                 return [list(values), peer]                               # the builds each rank offers
 
             cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
@@ -1441,6 +1444,27 @@ class SpillTierTests(unittest.TestCase):
                 self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
             self.assertTrue(os.path.exists(os.path.join(old, "0.safetensors")))      # the build with entries stays
             self.assertTrue(os.path.exists(os.path.join(other, "0.safetensors")))    # another rank's folder is not touched
+
+    def test_no_rank_prunes_builds_when_one_rank_cannot_survey_them(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-00000000000000aa", "rank0")
+            os.makedirs(old)
+            with open(os.path.join(old, "0.safetensors"), "wb") as f:
+                f.write(b"x")
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertFalse(os.path.exists(old))                         # alone, keep_builds=0 removes the build
+            os.makedirs(old)
+            with open(os.path.join(old, "0.safetensors"), "wb") as f:
+                f.write(b"x")
+            answers = iter([[[0], [0]], [[1], [0]]])                      # nobody failed; the peer's survey is not complete
+            store.gather, store.world = lambda values: next(answers), 2
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(store._prune_builds(), 0)
+            self.assertTrue(os.path.exists(old))                          # nothing was pruned on a guess
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib

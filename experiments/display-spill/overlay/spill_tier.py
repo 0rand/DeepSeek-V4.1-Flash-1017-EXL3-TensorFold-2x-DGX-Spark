@@ -807,18 +807,20 @@ class SpillStore:
             self.stats.unlink_failed += 1
         print(f"[tensorfold] spill rank {self.rank}: could not {what} {path}: {exc!r}", flush=True)
 
-    def _survey_builds(self) -> list[tuple[str, str]]:
-        """The other builds that have a finished file on this rank, newest first, as (name, path). A build without
-        one (for example from a start that failed here) takes no retention slot: it is removed."""
+    def _survey_builds(self) -> tuple[list[tuple[str, str]], bool]:
+        """The other builds that have a finished file on this rank, newest first, as (name, path), and whether the
+        survey is complete. A build without a finished file (for example from a start that failed here) takes no
+        retention slot: it is removed."""
 
+        complete = True
         try:
             names = [d for d in os.listdir(self.cfg.root)
                      if d.startswith("spill-") and os.path.join(self.cfg.root, d) != self.top]
         except FileNotFoundError:
-            return []
+            return [], True
         except OSError as exc:                                # (older builds may stay: counted and logged)
             self._unlink_failed(self.cfg.root, exc, "list")
-            return []
+            return [], False
         dated = []
         for name in names:
             d = os.path.join(self.cfg.root, name)
@@ -828,6 +830,7 @@ class SpillStore:
                 continue
             except OSError as exc:                            # (the build stays: counted and logged)
                 self._unlink_failed(d, exc, "read")
+                complete = False
                 continue
             if stat.S_ISDIR(status.st_mode):
                 dated.append((status.st_mtime, name, d))
@@ -841,7 +844,7 @@ class SpillStore:
                     os.rmdir(d)
                 except OSError:
                     pass
-        return builds
+        return builds, complete
 
     def _retained_builds(self, names: list[str]) -> set[str]:
         """The builds that stay: the newest ``keep_builds`` that every rank has, in rank 0's order. One rank must not
@@ -874,7 +877,11 @@ class SpillStore:
         ranks have stay (trimmed to the cap), the others go."""
 
         shared = self.world > 1 and self.gather is not None
-        builds = self._agreed(self._survey_builds) if shared else self._survey_builds()
+        builds, complete = self._agreed(self._survey_builds) if shared else self._survey_builds()
+        if shared:
+            complete = all(row[0] for row in self.gather([int(complete)]))
+        if not complete:                                      # a rank that cannot see its builds: nobody prunes on a guess
+            return 0
         retain = self._retained_builds([name for name, _ in builds])
 
         def prune() -> int:
@@ -1606,8 +1613,9 @@ class SpillStore:
                         os.remove(job.path)
                     except FileNotFoundError:
                         pass
-                    except OSError as exc:
+                    except OSError as exc:                 # its bytes stay: they hold capacity until a later try
                         self._unlink_failed(job.path, exc)
+                        self.stuck[job.path] = job.nbytes
             elif self.index.get(job.key) is job.entry:
                 job.entry.bad = True                       # stays indexed (every rank alike); a read fails here
 
