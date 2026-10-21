@@ -683,7 +683,10 @@ class SpillStore:
         try:
             others = [os.path.join(self.cfg.root, d) for d in os.listdir(self.cfg.root)
                       if d.startswith("spill-") and os.path.join(self.cfg.root, d) != self.top]
-        except OSError:
+        except FileNotFoundError:
+            return 0
+        except OSError as exc:                                # (older builds may stay: counted and logged)
+            self._unlink_failed(self.cfg.root, exc, "list")
             return 0
         others = [d for d in others if os.path.isdir(d)]
         others.sort(key=lambda d: os.stat(d).st_mtime, reverse=True)
@@ -734,8 +737,10 @@ class SpillStore:
             if name.endswith(".partial"):                      # a write cut short: never read
                 try:
                     os.remove(path)
-                except OSError:
+                except FileNotFoundError:
                     pass
+                except OSError as exc:
+                    self._unlink_failed(path, exc)
                 continue
             if name.endswith(".safetensors"):
                 try:
@@ -766,8 +771,10 @@ class SpillStore:
             except Exception:                                  # noqa: BLE001  (unreadable, cut or another format: gone)
                 try:
                     os.remove(path)
-                except OSError:
+                except FileNotFoundError:
                     pass
+                except OSError as exc:
+                    self._unlink_failed(path, exc)
 
     def _reconcile(self) -> int:
         """Every rank: keep the entries every rank holds, in rank 0's recency order, at the largest rank's size.

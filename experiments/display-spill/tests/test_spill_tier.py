@@ -874,6 +874,48 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(store.stats.unlink_failed, 1)
             self.assertNotIn("pruned 1 older builds", out.getvalue())
 
+    def test_a_current_build_file_that_cannot_be_removed_at_start_is_counted(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            folder = store.dir
+            partial, broken = os.path.join(folder, "x.partial"), os.path.join(folder, "y.safetensors")
+            for path in (partial, broken):
+                with open(path, "wb") as f:
+                    f.write(b"junk")
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target in (partial, broken):
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
+                again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            self.assertEqual(again.stats.unlink_failed, 2)
+
+    def test_a_root_that_cannot_be_listed_is_counted(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            real_listdir = os.listdir
+
+            def listdir(path="."):
+                if path == root:
+                    raise PermissionError("execute only")
+                return real_listdir(path)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.os, "listdir", listdir), contextlib.redirect_stdout(io.StringIO()):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertEqual(store.stats.unlink_failed, 1)
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io
