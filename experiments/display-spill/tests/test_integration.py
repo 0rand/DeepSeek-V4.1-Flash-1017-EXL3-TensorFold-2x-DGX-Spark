@@ -64,6 +64,12 @@ class SpillIntegrationTests(unittest.TestCase):
         for needle in ("self._spill_obj(k)", "self._spill_rows(k)", "k.host.view()"):
             self.assertIn(needle, guarded)                                # a failure joins the save agreement
         self.assertNotIn("k.host.view()", text[call:text.index(chr(10), text.index("tokens=", call))])
+        # Every view of the ids is inside the guard too: a rank that fails there still reaches the exchange of save().
+        start = text.rindex("write-through: its rows and snapshots to disk", 0, call)
+        first_try = text.index("try:", start)
+        for position in [i for i in range(start, call) if text.startswith("k.host.view()", i)]:
+            self.assertGreater(position, first_try)
+        self.assertIn("range(len(k.host))", text[start:call])      # (a placeholder with the right length, not a view)
 
     def test_the_composed_engine_accepts_a_nonzero_spill_size(self):
         guard = "display-only KV requires TF_DS_SPILL_GIB=0"

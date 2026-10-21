@@ -1430,6 +1430,62 @@ class SpillTierTests(unittest.TestCase):
                 self.assertIsNone(store.save(second_ids, second, skip=("ids",)))
             self.assertEqual(rounds[-1][0], 3)                            # the failure is in the exchange
 
+    def test_an_eviction_that_fails_on_a_rank_is_followed_by_an_index_agreement(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=((1 << 20) + 1000) / (1 << 30), min_free_gib=0, min_tokens=1)
+            classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            first_ids, first = self.new_state(500)
+            self.assertIsNotNone(store.save(first_ids, first, skip=("ids",)))
+            self.assertTrue(store.drain(10))
+            for mine, theirs in ((3, 0), (0, 3)):                    # the failure is here, or on the peer
+                with self.subTest(failing="here" if mine else "peer"):
+                    def gather(values, theirs=theirs):
+                        if len(values) == 5:                      # the row of the save: the peer is well
+                            return [list(values), list(values)]
+                        return [list(values), [theirs, 0]]        # the row of the eviction phase
+
+                    store.gather, store.world = gather, 2
+                    second_ids, second = self.new_state(900)
+                    reconciled = []
+                    rooms = mock.patch.object(store, "_make_room", side_effect=MemoryError("victims")) if mine else \
+                        mock.patch.object(store, "_make_room", return_value=True)
+                    with rooms, mock.patch.object(store, "_reconcile", side_effect=lambda: reconciled.append(1) or 0):
+                        store.save(second_ids, second, skip=("ids",))
+                    self.assertEqual(reconciled, [1])             # every rank agrees the index before it goes on
+
+    def test_an_entry_swapped_for_a_fifo_or_a_link_after_the_scan_is_never_opened(self):
+        import threading
+
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("no FIFOs here")
+        for how in ("fifo", "link to a fifo"):
+            with self.subTest(how=how), tempfile.TemporaryDirectory() as root:
+                store, ids, classes = self.stored(root)
+                path = self.entry_path(store)
+                os.remove(path)
+                if how == "fifo":
+                    os.mkfifo(path)
+                else:
+                    target = os.path.join(root, "pipe")
+                    os.mkfifo(target)
+                    os.symlink(target, path)
+                outcome = []
+
+                def attempt():
+                    try:
+                        store.load_async(self.sp.ids_key(ids), lambda *a: None)
+                    except Exception as exc:                      # noqa: BLE001
+                        outcome.append(exc)
+
+                worker = threading.Thread(target=attempt, daemon=True)
+                worker.start()
+                worker.join(15)
+                self.assertFalse(worker.is_alive())               # a blocking open would wait for ever
+                self.assertEqual(len(outcome), 1)
+
     def test_a_build_without_a_rank_folder_here_takes_no_retention_slot(self):
         import contextlib
         import io

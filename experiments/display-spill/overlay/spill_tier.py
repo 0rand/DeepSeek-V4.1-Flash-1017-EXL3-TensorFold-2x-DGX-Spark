@@ -520,6 +520,26 @@ def _check_header_crc(raw: bytes) -> None:
         raise ValueError("the header does not match its CRC-32")
 
 
+def _open_file(path: str, flags: int = os.O_RDONLY) -> int:
+    """Open a stored file for reading, never blocking and never following a link, and check that it is a regular file.
+    (A writable host cache could swap the file for a FIFO or a link after the start-up scan.)"""
+
+    fd = os.open(path, flags | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise OSError(errno.ESPIPE, "not a regular file", path)
+    except BaseException:
+        os.close(fd)
+        raise
+    return fd
+
+
+def _open_read(path: str):
+    """A binary file object on a regular file (see ``_open_file``)."""
+
+    return os.fdopen(_open_file(path), "rb")
+
+
 def _read_header_file(f) -> tuple[dict, int]:
     prefix = f.read(8)
     if len(prefix) != 8:
@@ -1572,6 +1592,12 @@ class SpillStore:
             reports = self.gather(report) if self.world > 1 and self.gather is not None else [report]
             if any(r[0] == 3 for r in reports):
                 self._log(failed if failed is not None else RuntimeError("another rank could not make room"))
+                # Some victims may have gone on one rank and not on another. Every rank is here: agree the index again,
+                # so that no later lookup finds an entry on one rank only (that rank would wait alone in a restore).
+                try:
+                    self._reconcile()
+                except Exception as exc:               # noqa: BLE001  (shared by the agreement: every rank sees it)
+                    self._log(exc)
                 return None
             code = max(r[0] for r in reports)
             if code == 1:
@@ -1665,7 +1691,7 @@ class SpillStore:
         if writing is not None:                        # its header is at hand; its CRCs come with the file (``_read``)
             header, data_at = _parse_header(writing.header)
         else:
-            with open(path, "rb") as f:
+            with _open_read(path) as f:
                 header, data_at = _read_header_file(f)
         meta = header.get("__metadata__") or {}
         if meta.get("format") != FORMAT or meta.get("compat") != self.compat:
@@ -1726,7 +1752,7 @@ class SpillStore:
         if w is not None:                               # the entry's write first; the file's header has its CRCs
             if not w.done.wait(WAIT_S) or not w.ok:
                 raise OSError(f"{lj.path}: its write failed or did not end in time")
-            with open(lj.path, "rb") as f:
+            with _open_read(lj.path) as f:
                 header, data_at = _read_header_file(f)
             table = {k: v for k, v in header.items() if k != "__metadata__"}
             if data_at != lj.data_at or table != {k: v for k, v in lj.header.items() if k != "__metadata__"}:
@@ -1737,13 +1763,13 @@ class SpillStore:
         fd = -1
         if direct:
             try:
-                fd = os.open(lj.path, flags | os.O_DIRECT)
+                fd = _open_file(lj.path, flags | os.O_DIRECT)
             except OSError as exc:
                 if exc.errno != errno.EINVAL:
                     raise
                 direct = False
         if fd < 0:
-            fd = os.open(lj.path, flags)
+            fd = _open_file(lj.path, flags)
         try:
             if stream is not None and lj.after is not None:
                 stream.wait_event(lj.after)
