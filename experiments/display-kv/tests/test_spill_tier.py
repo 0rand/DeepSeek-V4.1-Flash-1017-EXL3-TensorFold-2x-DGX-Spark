@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import zlib
 from dataclasses import dataclass
+from unittest import mock
 
 import numpy as np
 import torch
@@ -79,6 +80,28 @@ class SpillTierTests(unittest.TestCase):
             self.assertTrue(os.path.isdir(root))
             self.assertEqual(os.stat(root).st_uid, os.stat(tmp).st_uid)
             self.assertEqual(os.stat(root).st_gid, os.stat(tmp).st_gid)
+
+    def test_driver_id_falls_back_to_nvml(self):
+        class Nvml:
+            def nvmlInit_v2(self):
+                return 0
+
+            def nvmlSystemGetDriverVersion(self, buf, size):
+                buf.value = b"999.1"
+                return 0
+
+            def nvmlShutdown(self):
+                return 0
+
+        with mock.patch("builtins.open", side_effect=OSError), \
+                mock.patch("ctypes.CDLL", return_value=Nvml()):
+            self.assertEqual(self.sp._driver_id(), "nvml 999.1")
+
+    def test_driver_id_raises_when_no_source_answers(self):
+        with mock.patch("builtins.open", side_effect=OSError), \
+                mock.patch("ctypes.CDLL", side_effect=OSError):
+            with self.assertRaises(RuntimeError):
+                self.sp._driver_id()
 
     def test_ids_key_and_name(self):
         key = self.sp.ids_key([1, 2, 3])
