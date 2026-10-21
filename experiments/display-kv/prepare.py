@@ -25,12 +25,6 @@ def prepare(destination: Path, image: str = IMAGE) -> None:
         raise ValueError("start.sh configuration anchor changed; review the experiment")
     # This guard is unconditional, even if PREFLIGHT=0 was inherited by mistake.
     guard = '''
-head_running=$(docker inspect --format '{{.State.Running}}' tfv41-r0 2>/dev/null || true)
-worker_running=$(wssh "docker inspect --format '{{.State.Running}}' tfv41-r1 2>/dev/null || true") || exit 1
-if [ "$head_running" = true ] || [ "$worker_running" = true ]; then
-  log "REFUSING experimental startup: stop both existing ranks after the benchmark finishes"
-  exit 1
-fi
 case "${MEM_ALLOCATOR_CAP:-1}" in
   0|1) ;;
   *) log "MEM_ALLOCATOR_CAP must be 0 or 1"; exit 1 ;;
@@ -39,6 +33,12 @@ case "${TOOL_OUTPUT_STREAMING:-1}" in
   0|1) ;;
   *) log "TOOL_OUTPUT_STREAMING must be 0 or 1"; exit 1 ;;
 esac
+head_running=$(docker inspect --format '{{.State.Running}}' tfv41-r0 2>/dev/null || true)
+worker_running=$(wssh "docker inspect --format '{{.State.Running}}' tfv41-r1 2>/dev/null || true") || exit 1
+if [ "$head_running" = true ] || [ "$worker_running" = true ]; then
+  log "REFUSING experimental startup: stop both existing ranks after the benchmark finishes"
+  exit 1
+fi
 '''
     start = start.replace(anchor, anchor + guard)
     # Non-forced removal cannot kill a rank started concurrently by another launcher.

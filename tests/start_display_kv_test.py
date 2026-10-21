@@ -260,6 +260,14 @@ class StartDisplayKvTest(unittest.TestCase):
             self.assertNotIn(forbidden, commands)
         self.assertIn(f"using saved image {VARIANT}", commands)
 
+    def test_build_only_refuses_missing_display_base(self):
+        result = self.invoke("--build-only", BASE_IMAGE_MISSING=1)
+        commands = "\n".join(self.commands())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("build the 1.0.0 base first", commands)
+        self.assertFalse(any(line.startswith("docker build ") for line in self.commands()))
+        self.assertNotIn("drm:", commands)
+
     def test_default_refuses_missing_or_mismatched_worker_image_without_copying(self):
         for settings in ({"WORKER_FORCE_ABSENT": 1}, {"WORKER_IMAGE_ID": OTHER_ID}):
             with self.subTest(settings=settings):
