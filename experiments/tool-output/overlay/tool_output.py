@@ -163,7 +163,7 @@ class ToolOutputGuard:
                                  start, stop, "dsml" if wrapper == "dsml" else kind)
         try:
             return reply_text.parse_tool_calls(text, self.tools, max_calls=max_calls)
-        except RecursionError:                         # nested arguments that the parser cannot decode
+        except (ValueError, RecursionError):           # arguments that the parser cannot decode
             raise reject("", "undecodable_call", 0, len(text), "json") from None
 
     def _call_names(self, reply_text: Any, block: str, complete: bool = False) -> list[tuple[str, str]]:

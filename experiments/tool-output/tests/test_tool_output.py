@@ -395,6 +395,13 @@ class ToolOutputTests(unittest.TestCase):
                         guard.parse(text)
                     self.assertEqual(caught.exception.diagnostic["reason"], "undecodable_call")
 
+    def test_a_value_that_only_the_final_parser_refuses_is_a_safe_rejection(self):
+        # No usable name: the guard does not decode the arguments, and the parser's own decoder refuses the number.
+        text = '<tool_call>{"arguments":"' + "9" * 6000 + '"}</tool_call>'
+        with self.assertRaises(self.module.ModelOutputError) as caught:
+            self.guard().parse(text)
+        self.assertEqual(caught.exception.diagnostic["reason"], "undecodable_call")
+
     def test_json_arguments_are_checked_as_the_parser_checks_them(self):
         from tensorfold.cuda import reply_text
 
