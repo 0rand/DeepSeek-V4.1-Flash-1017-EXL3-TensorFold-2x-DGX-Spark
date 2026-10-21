@@ -173,7 +173,7 @@ class ToolOutputGuard:
         # Text of a call is data, not Markdown: replace it by a filler (newlines stay) before the code fences are read.
         # The filler is not white space, so a line with a call after a fence mark is still not a closing line.
         masked = text
-        for start, stop, _, _ in reversed(chosen):
+        for start, stop, _, _ in sorted(chosen + crossing, reverse=True):   # a crossing call is data, too
             head, newline, rest = masked[start:stop].partition("\n")
             # The first line keeps its backticks: after a fence mark they make an invalid info string.
             masked = masked[:start] + re.sub(r"[^`]", "x", head) + newline + re.sub(r"[^\n]", "x", rest) + masked[stop:]
