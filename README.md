@@ -151,7 +151,7 @@ The fast engine for this model was written by [bertholomus](https://github.com/b
 5. **Faster long prefills.** The server now drops the page cache of the Engram tables after each prompt chunk. Before, the page cache filled the memory, and some chunks stalled for 1 to 4 s in reclaim and compaction.
 6. **Steady long prefills.** The server writes its spill files with O_DIRECT, so they skip the page cache, and the host setup turns transparent huge pages off. Page compaction stalls the GPU on these computers; these two changes remove the last compaction stalls, and prefill speed now changes by less than 2% from run to run.
 
-[Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2), [#3](https://github.com/Elevatormusic/TensorFold/pull/3), [#4](https://github.com/Elevatormusic/TensorFold/pull/4) and [#6](https://github.com/Elevatormusic/TensorFold/pull/6).
+[Read the full story](docs/WHAT-I-CHANGED.md), with the reason for each change. The engine code is in [my fork](https://github.com/Elevatormusic/TensorFold), in pull requests [#1](https://github.com/Elevatormusic/TensorFold/pull/1), [#2](https://github.com/Elevatormusic/TensorFold/pull/2), [#3](https://github.com/Elevatormusic/TensorFold/pull/3), [#4](https://github.com/Elevatormusic/TensorFold/pull/4) and [#6](https://github.com/Elevatormusic/TensorFold/pull/6), and in [release dsv41-1.1.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.1.0) (more pull requests; see [What I changed](docs/WHAT-I-CHANGED.md#7-engine-release-110)).
 
 ---
 
@@ -237,6 +237,8 @@ Aggregate throughput is all completion tokens of all requests divided by the wal
 - **Prefix cache.** A second question about the same 24K-token document: TTFT **12.8 s cold, 1.1 s warm** (22,528 of 24,210 prompt tokens cached).
 - **After a restart** (`SPILL_GIB=64`, on by default, keeps cached prompts on disk): TTFT for an 18K-token prompt **2.7 s** instead of 16.8 s.
 
+The table above is for the image of 17 October. The gate run of release 1.1.0 (`730d41abd8f4`) has 4 streams at 99.3 tok/s aggregate for prose and 145.7 tok/s for code, 3.3% and 3.0% above the previous image in the same session ([runs/2026-10-21](runs/2026-10-21/INDEX.md)). It is one pass.
+
 Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 
 </details>
@@ -248,7 +250,7 @@ Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 |---|---|
 | Model weights | `LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-2.9bpw` @ `afc7aa0a` (43 files) |
 | Engram tables | `deepseek-ai/DeepSeek-V4.1-Flash-1017` @ `1bae0e10`, files 47 and 48 |
-| Engine | [Elevatormusic/TensorFold](https://github.com/Elevatormusic/TensorFold) @ `07aa02585f64` (TensorFold 0.6.6 + bertholomus's V4.1 engine + PRs #1-#4 and #6) |
+| Engine | [Elevatormusic/TensorFold](https://github.com/Elevatormusic/TensorFold) @ `730d41abd8f4`, [release dsv41-1.1.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.1.0) (TensorFold 0.6.6 + bertholomus's V4.1 engine + the fork pull requests listed in [What I changed](docs/WHAT-I-CHANGED.md)) |
 | Base image | `nvcr.io/nvidia/pytorch:26.07-py3` |
 | Chat template | MiaAI kit `files/chat_template.jinja` @ `6f7d1590` + [our patch](runs/2026-10-17/template-patch.diff) |
 | vLLM comparison | MiaAI kit @ `6f7d1590`, image `sha256:2f0cf3ad...` |
@@ -269,6 +271,7 @@ Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROV
 | `tests/` | the 32 agent tests, the format check, the benchmark, the prompt tests, the Hermes test ([guide](tests/README.md)) |
 | `experiments/memory-topk/` | opt-in image with bounded top-k scratch and an opt-in allocator policy ([guide](docs/MEMORY-TOPK.md)) |
 | `experiments/display-spill/` | opt-in display KV image with SSD spill ([guide](docs/SPILL.md)) |
+| `experiments/tool-output/` | opt-in image that rejects unoffered model tool calls ([guide](docs/TOOL-OUTPUT.md)) |
 | `.github/` | CI (offline tests, ruff, shellcheck, link check), the pull request and issue templates |
 | `runs/2026-10-17/` | every log and result behind this page |
 | `docs/` | how to connect your app, the full story, benchmarks, network, operations, known limits |

@@ -21,9 +21,11 @@ PROTECTED = {
     "MTP_DRAFTS": "5",
     "SPILL_GIB": "64",
     "THINKING": "0",
+    # On since engine 1.1.0: a call to a tool that the request did not offer is dropped.
+    "DROP_UNOFFERED_TOOL_CALLS": "1",
     # The engine build. A change here must come with new gate results (see CONTRIBUTING.md).
-    "TF_COMMIT": "07aa02585f64",
-    "IMAGE": "tensorfold-dsv41:07aa02585f64",
+    "TF_COMMIT": "730d41abd8f4",
+    "IMAGE": "tensorfold-dsv41:730d41abd8f4",
 }
 PREFILL_CHUNK = "2048"
 # Where start.sh gives each protected value to the server. Every use of the option must take the variable, so a
@@ -35,6 +37,7 @@ FORWARDED = {
     "MTP_DRAFTS": "--mtp-drafts",
     "IMAGE": "--entrypoint tensorfold",
     "SPILL_GIB": "TF_DS_SPILL_GIB=",
+    "DROP_UNOFFERED_TOOL_CALLS": "TF_DROP_UNOFFERED_TOOL_CALLS=",
     "REASONING_EFFORT": "--reasoning-effort",
 }
 

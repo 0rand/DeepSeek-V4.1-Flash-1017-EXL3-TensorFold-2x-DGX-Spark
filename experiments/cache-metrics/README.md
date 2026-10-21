@@ -6,7 +6,12 @@ It needs no display allocation or spill module.
 
 ## Build and select
 
-Build the ordinary pinned image first. See [the main recipe](../../README.md).
+The experiment overlay needs the pristine release 1.0.0 engine `07aa02585f64`, not the engine that `docker/build.sh` builds now (`730d41abd8f4`). Build the 1.0.0 base first. Run this command from the recipe root; it does not use `.env`:
+
+```bash
+docker build --build-arg TF_COMMIT=07aa02585f64 -t tensorfold-dsv41:07aa02585f64 docker
+```
+
 Then run this command from the recipe root:
 
 ```bash

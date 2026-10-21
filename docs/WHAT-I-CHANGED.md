@@ -9,7 +9,9 @@ All engine changes are in the public fork [Elevatormusic/TensorFold](https://git
 - [#4](https://github.com/Elevatormusic/TensorFold/pull/4): faster long prefills (the Engram page drop).
 - [#6](https://github.com/Elevatormusic/TensorFold/pull/6): steady prefill with the prefix-cache spill on (spill files written with `O_DIRECT`, past the page cache).
 
-The image in this repo is built from the commit at the head of #6, `07aa02585f64`, which contains all five and their review fixes. The serving results of 17 October were measured on `fd2365042f56` (the head of #3); #4 and the review fixes do not change decoding.
+Release 1.0.0 of the engine was built from the commit at the head of #6, `07aa02585f64`, which contains all five and their review fixes. The serving results of 17 October were measured on `fd2365042f56` (the head of #3); #4 and the review fixes do not change decoding.
+
+The image in this repo is now built from the commit of [release dsv41-1.1.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.1.0), `730d41abd8f4`. It adds more fork pull requests ([section 7](#7-engine-release-110)).
 
 ## Test score at each step
 
@@ -94,6 +96,7 @@ The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are
 | `TRITON_CACHE_DIR`, `CUDA_CACHE_PATH` | under `/cache` | compiled kernels survive a restart: short prompts take 0.1 s on first use instead of 2.6-6.1 s |
 | `TF_DS_SPILL_GIB=64` | 64 | kept prompts are also written to disk, so a prompt survives a restart (PR #6 writes them with `O_DIRECT`, so the writes do not start page compaction) |
 | `TF_DS_ENGRAM_DONTNEED=1` | on | PR #4: drops the Engram tables' cached pages after each prompt chunk, so long prefills do not push the node into reclaim and compaction stalls |
+| `TF_DROP_UNOFFERED_TOOL_CALLS` | 1 (`DROP_UNOFFERED_TOOL_CALLS` in `.env`) | release 1.1.0 (fork PR #15): a call to a tool that the request did not offer is dropped (or kept as text), also while the reply streams. The engine has this off; the recipe turns it on. `0` in `.env` turns it off. See [OPERATIONS.md](OPERATIONS.md) |
 | `TF_DS_MEM_FLOOR_GIB=1.5` | 1.5 | after the warm-up, the engine grows only while 1.5 GiB of host memory stays free. The default (2.0) left 1.2-1.4 GiB of headroom on some starts, and the second chunk of an 8K prompt then failed with CUDA out of memory. 1.5 stays above earlyoom's 1 GiB limit |
 | `--oom-score-adj 1000` | docker flag | if a node runs out of memory, the kernel and earlyoom stop the engine first, not sshd or the systemd manager |
 | `--cgroup-parent tensorfold.slice` | docker flag | the slice from `scripts/host_tuning.sh`, where the engine cannot swap |
@@ -109,3 +112,16 @@ The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are
   - a math task and a multi-call tool task;
   - 3 session titles with strict json_schema.
 - **Result.** 35/35.
+
+## 7. Engine release 1.1.0
+
+The engine is now [release dsv41-1.1.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.1.0) (`730d41abd8f4`). The release notes give every change, the results and the known issues. This list gives only what changes for a user of this recipe:
+
+- **No decode graph is captured while serving** (fork PR #19). Users with long parallel sessions saw `cudaErrorStreamCaptureInvalidated` or a CUDA allocation failure during graph capture. The warm-up now captures every graph that the window can use.
+- **Lower host-memory peak on the head** (fork PRs #21 and #24), for long prompts and images. Recipe issue [#21](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/21) stays open: the head still has a small margin under 4 long streams ([OPERATIONS.md](OPERATIONS.md)).
+- **Draft ranking across streams** (fork PR #20): the engine ranks the drafts of all streams in one round. In the gate run, decode with 4 streams is 3.0 to 7.0% faster than on the previous image. One stream is not faster. See [runs/2026-10-21](../runs/2026-10-21/INDEX.md).
+- **Opt-in `TF_DROP_UNOFFERED_TOOL_CALLS`** (fork PR #15), on in this recipe (see the table in section 5).
+- Smaller fixes: the RDMA path MTU follows the port (PR #9), overlapping image requests no longer crash the lane (PR #13), and `--vision-max-images` applies to V4.1 image input (PR #14). The prompt indexer top-k change (PR #18) is now in the pinned branch.
+- Not used by the recipe: dense BF16 overrides (PR #8).
+
+The settings of the new engine switches are in [OPERATIONS.md](OPERATIONS.md#engine-switches-of-release-110).
