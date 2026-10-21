@@ -570,7 +570,7 @@ class SpillStore:
                 self._own(d)
             pruned_builds = self._prune_builds()
             self._scan()
-        except OSError as exc:
+        except Exception as exc:                              # noqa: BLE001  (any failure is shared before the ranks go on)
             problem = repr(exc)
         flags = gather([int(bool(problem))]) if self.world > 1 and gather is not None else [[int(bool(problem))]]
         bad = [r for r, row in enumerate(flags) if row[0]]
@@ -611,7 +611,10 @@ class SpillStore:
 
         try:
             names = os.listdir(mine)
-        except OSError:
+        except (FileNotFoundError, NotADirectoryError):
+            return
+        except OSError as exc:
+            self._unlink_failed(mine, exc, "list")
             return
         finished = []
         for name in names:
@@ -644,7 +647,14 @@ class SpillStore:
         and the result says whether the folder is gone."""
 
         done = True
-        for base, dirs, files in os.walk(top, topdown=False):
+
+        def walk_failed(exc: OSError) -> None:             # (a folder that cannot be read holds paths that stay)
+            nonlocal done
+            if not isinstance(exc, FileNotFoundError):
+                self._unlink_failed(str(exc.filename or top), exc, "list")
+                done = False
+
+        for base, dirs, files in os.walk(top, topdown=False, onerror=walk_failed):
             for name in files + [d for d in dirs if os.path.islink(os.path.join(base, d))]:
                 try:
                     os.remove(os.path.join(base, name))
@@ -661,11 +671,11 @@ class SpillStore:
                 if done:                                   # (a folder that still holds a stuck file is no new failure)
                     self._unlink_failed(base, exc)
                 done = False
-        return done
+        return done and not os.path.lexists(top)
 
-    def _unlink_failed(self, path: str, exc: OSError) -> None:
+    def _unlink_failed(self, path: str, exc: OSError, what: str = "remove") -> None:
         self.stats.unlink_failed += 1
-        print(f"[tensorfold] spill rank {self.rank}: could not remove {path}: {exc!r}", flush=True)
+        print(f"[tensorfold] spill rank {self.rank}: could not {what} {path}: {exc!r}", flush=True)
 
     def _prune_builds(self) -> int:
         """Folders of other compatibility hashes (other builds, models, layouts): the newest ``keep_builds`` stay."""

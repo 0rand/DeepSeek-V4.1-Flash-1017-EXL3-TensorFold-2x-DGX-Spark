@@ -811,6 +811,69 @@ class SpillTierTests(unittest.TestCase):
             self.assertTrue(torch.equal(obj.ring, ring))
             self.assertEqual(store.info()["load_failed"], 0)
 
+    def test_a_setup_failure_that_is_not_an_os_error_is_shared_with_the_other_rank(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            calls = []
+
+            def gather(values):
+                calls.append(list(values))
+                return [list(values), list(values)]                  # (the peer reports what this rank reports)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.SpillStore, "_scan", side_effect=MemoryError("index")):
+                with self.assertRaises(RuntimeError) as caught:
+                    self.sp.SpillStore(cfg, rank=0, world=2, device="cpu", gather=gather, classes=[])
+            self.assertEqual(calls[-1], [1])                          # the failure is in the agreement
+            self.assertIn("MemoryError", str(caught.exception))
+
+    def test_a_kept_build_that_cannot_be_listed_is_counted(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-0000000000000000", "rank0")
+            os.makedirs(old)
+            real_listdir = os.listdir
+
+            def listdir(path="."):
+                if path == old:
+                    raise PermissionError("denied")
+                return real_listdir(path)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            with mock.patch.object(self.sp.os, "listdir", listdir), contextlib.redirect_stdout(io.StringIO()):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertEqual(store.stats.unlink_failed, 1)
+
+    def test_an_old_build_that_cannot_be_walked_is_not_counted_as_pruned(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-0000000000000000", "rank0")
+            os.makedirs(old)
+            with open(os.path.join(old, "0.safetensors"), "wb") as f:
+                f.write(b"x")
+            real_scandir = os.scandir
+
+            def scandir(path="."):
+                if path == old:
+                    raise PermissionError("denied")
+                return real_scandir(path)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
+            out = io.StringIO()
+            with mock.patch.object(self.sp.os, "scandir", scandir), contextlib.redirect_stdout(out):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[])
+                store.announce()
+            self.assertTrue(os.path.exists(os.path.join(old, "0.safetensors")))
+            self.assertEqual(store.stats.unlink_failed, 1)
+            self.assertNotIn("pruned 1 older builds", out.getvalue())
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io
