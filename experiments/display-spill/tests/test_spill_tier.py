@@ -1073,11 +1073,41 @@ class SpillTierTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as root:
             cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
-            with mock.patch.object(self.sp, "_stage", side_effect=MemoryError("stage")):
-                with self.assertRaises(RuntimeError) as caught:
-                    self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True,
-                                       spanned=["comp.0.0"])
-            self.assertIn("could not start", str(caught.exception))
+            for failing in (0, 1):                                        # the reader's buffer, then the writer's
+                with self.subTest(failing=failing):
+                    answers = [torch.empty(8, dtype=torch.uint8), torch.empty(8, dtype=torch.uint8)]
+                    answers[failing] = MemoryError("stage")
+                    with mock.patch.object(self.sp, "_stage", side_effect=answers):
+                        with self.assertRaises((RuntimeError, MemoryError)):
+                            self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True,
+                                               spanned=["comp.0.0"])
+
+    def test_a_linked_current_namespace_is_refused_and_not_followed(self):
+        with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as outside:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            first = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            top, rank_dir = first.top, first.dir
+            for link, target in ((rank_dir, outside), (top, outside)):
+                with self.subTest(link=os.path.basename(link)):
+                    victim = os.path.join(outside, "x.partial")
+                    with open(victim, "wb") as f:
+                        f.write(b"x")
+                    if link == top:
+                        import shutil
+
+                        shutil.rmtree(top)
+                    else:
+                        os.rmdir(rank_dir)
+                    try:
+                        os.symlink(target, link)
+                    except (OSError, NotImplementedError):
+                        self.skipTest("no symbolic links here")
+                    with self.assertRaises(RuntimeError):
+                        self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+                    self.assertTrue(os.path.exists(victim))               # nothing behind the link was touched
+                    os.remove(link)
+                    os.remove(victim)
+                    os.makedirs(rank_dir)
 
     def test_a_failure_while_one_rank_prepares_the_index_agreement_is_shared(self):
         with tempfile.TemporaryDirectory() as root:

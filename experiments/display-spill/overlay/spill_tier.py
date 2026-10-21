@@ -600,6 +600,7 @@ class SpillStore:
         self.reads: queue.Queue = queue.Queue()
         self._threads: list[threading.Thread] = []
         self._reader: threading.Thread | None = None
+        self._read_stage: torch.Tensor | None = None   # the reader's staging buffer, kept from the start
         self._dirty = False
         self._last_dir_sync = 0.0
         self._dir_lock = threading.Lock()
@@ -613,6 +614,8 @@ class SpillStore:
             for d in reversed(missing):
                 self._own(d)
             for d in (self.top, self.dir):                    # prompts' token ids: this user's only
+                if os.path.islink(d):                         # (a link is never followed: the start would change
+                    raise OSError(f"{d} is a symbolic link")  # and scan what it points to)
                 os.makedirs(d, mode=0o700, exist_ok=True)
                 os.chmod(d, 0o700)
                 self._own(d)
@@ -1042,6 +1045,8 @@ class SpillStore:
 
         if self._threads:
             return
+        if self.spanned and self._read_stage is None:      # the reader's buffer too is taken now: a restore must not
+            self._read_stage = _stage(self.device, None)   # meet an allocation that fails after the tier is announced
         bufs = _PINNED.get("write") or _pinned(2 * self.cfg.writers)
         if any(not _aligned(b) for b in bufs):
             self.direct = False
@@ -1562,7 +1567,7 @@ class SpillStore:
                 raise EOFError(f"{lj.path}: the file is shorter or longer than its header says")
             views = [(v["data_offsets"][0], v["data_offsets"][1], lj.dests[k].reshape(-1).view(torch.uint8),
                       k in self.spanned) for k, v in table]
-            stage = next((_stage(v.device, stream) for _, _, v, spanned in views if spanned), None)
+            stage = self._read_stage if self._read_stage is not None else                 next((_stage(v.device, stream) for _, _, v, spanned in views if spanned), None)
             ev = [None, None]
             hashing: list = [[], []]                    # a pin's block hashes in flight (they read the pin)
             sums: list = []
