@@ -716,6 +716,46 @@ class SpillTierTests(unittest.TestCase):
             self.assertFalse(os.path.exists(partial))                     # the abandoned write is gone
             self.assertTrue(os.path.exists(done))                         # the kept build keeps its finished files
 
+    def test_a_kept_build_is_trimmed_to_the_current_cap_at_start(self):
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-0000000000000000", "rank0")
+            os.makedirs(old)
+            paths = []
+            for number in range(3):
+                path = os.path.join(old, f"{number}.safetensors")
+                with open(path, "wb") as f:
+                    f.write(b"x" * (1 << 20))
+                os.utime(path, (1000 + number, 1000 + number))
+                paths.append(path)
+            cfg = self.sp.SpillConfig(root=root, gib=2.5 / 1024, min_free_gib=0, min_tokens=1, keep_builds=1)
+            self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertEqual([os.path.exists(path) for path in paths], [False, True, True])   # the oldest file went
+
+    def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            path = self.entry_path(store)
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target == path:
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1e-9, min_free_gib=0, min_tokens=1)
+            out = io.StringIO()
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(out):
+                again = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+                again.announce()
+            self.assertEqual(len(again.index), 0)                         # the index is what the ranks agree on
+            self.assertEqual(again.stats.unlink_failed, 1)
+            self.assertIn("1 files could not be removed", out.getvalue())
+            self.assertTrue(os.path.exists(path))                         # the next start retries (reconcile drops it)
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)

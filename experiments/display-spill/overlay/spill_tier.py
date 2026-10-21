@@ -589,7 +589,8 @@ class SpillStore:
                         f"from {cfg.min_tokens} tokens, {cfg.writers} writers"
                         f"{', O_DIRECT' if self.direct else ''}, floor {cfg.min_free_gib:g} GiB free): "
                         f"{found - dropped} stored prompts from before this start, {self._total() / (1 << 30):.1f} GiB"
-                        f"{f'; pruned {pruned_builds} older builds' if pruned_builds else ''}")
+                        f"{f'; pruned {pruned_builds} older builds' if pruned_builds else ''}"
+                        f"{f'; {self.stats.unlink_failed} files could not be removed' if self.stats.unlink_failed else ''}")
 
     def announce(self) -> None:
         """Rank 0 prints the start line. The caller does this after every rank agreed that the tier is on."""
@@ -616,12 +617,23 @@ class SpillStore:
         others = [d for d in others if os.path.isdir(d)]
         others.sort(key=lambda d: os.stat(d).st_mtime, reverse=True)
         gone = 0
-        for d in others[:max(0, self.cfg.keep_builds)]:       # a kept build: only its unfinished writes go
-            mine = os.path.join(d, f"rank{self.rank}")
+        for d in others[:max(0, self.cfg.keep_builds)]:       # a kept build: its unfinished writes go, and its oldest
+            mine = os.path.join(d, f"rank{self.rank}")        # files until it fits the current cap
             try:
+                finished = []
                 for name in os.listdir(mine):
+                    path = os.path.join(mine, name)
                     if name.endswith(".partial"):
-                        os.remove(os.path.join(mine, name))
+                        os.remove(path)
+                    elif name.endswith(".safetensors"):
+                        status = os.stat(path)
+                        finished.append((status.st_mtime, path, status.st_size))
+                total = sum(size for _, _, size in finished)
+                for _, path, size in sorted(finished):
+                    if total <= self.cap:
+                        break
+                    os.remove(path)
+                    total -= size
             except OSError:
                 pass
         for d in others[max(0, self.cfg.keep_builds):]:
