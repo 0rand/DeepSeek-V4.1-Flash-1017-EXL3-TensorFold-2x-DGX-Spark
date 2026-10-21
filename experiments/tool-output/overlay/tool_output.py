@@ -41,6 +41,8 @@ class ToolOutputGuard:
     _glm_args_re = re.compile(r"<arg_key>.*?</arg_key>\s*<arg_value>.*?</arg_value>", re.DOTALL)
     _name_re = re.compile(r"[\w.:-]+\Z")
     _close_re = re.compile(r"\s*</tool_call>", re.IGNORECASE)
+    _MAX_OPEN = 256               # unclosed openers a closing tag may pair with
+    _start_re = re.compile(r"\s*(?:\{|<function=|[\w.:-])", re.IGNORECASE)
     _pair_re = re.compile(r"(<tool_call>)|(</tool_call>)|(<｜DSML｜ calls>)|(</｜DSML｜ calls>)", re.IGNORECASE)
     _opener_re = re.compile(r"<tool_call>|<｜DSML｜ calls>", re.IGNORECASE)
 
@@ -106,24 +108,31 @@ class ToolOutputGuard:
             kind = "json" if body.startswith("{") else "qwen_xml" if body.lower().startswith("<function=") else "glm"
             candidates.append((start, stop, [name] if name else [], kind))
 
-        for block in reply_text._DSML_BLOCK_RE.finditer(text):
-            dsml(block.start(), block.end(), block.group(1))
-        for block in self._call_re.finditer(text):
-            tool_call(block.start(), block.end(), block.group(1))
-        # An opener inside an earlier malformed envelope is not scanned by the matches above (they do not overlap).
-        # Pair each closing tag with the nearest opener before it, so a complete inner envelope is a candidate too.
-        open_call = open_dsml = None
+        # One pass over the opening and closing tags. A closing tag ends every opener before it that has no closer
+        # yet: the first of them gives the envelope that the CUDA parser reads (first opener to first closer), and
+        # each other one is a candidate too, so a complete inner envelope is checked whatever stands before it.
+        # (A regular expression that tries each opener against the rest of the answer is slow for many openers.)
+        waiting: dict[int, list] = {1: [], 3: []}
         for tag in self._pair_re.finditer(text):
-            if tag.lastindex == 1:
-                open_call = tag
-            elif tag.lastindex == 3:
-                open_dsml = tag
-            elif tag.lastindex == 2 and open_call is not None:
-                tool_call(open_call.start(), tag.end(), text[open_call.end():tag.start()].strip())
-                open_call = None
-            elif tag.lastindex == 4 and open_dsml is not None:
-                dsml(open_dsml.start(), tag.end(), text[open_dsml.end():tag.start()].strip())
-                open_dsml = None
+            slot = tag.lastindex
+            if slot in (1, 3):
+                waiting[slot].append(tag)
+                continue
+            openers = waiting[slot - 1]
+            if len(openers) > self._MAX_OPEN:
+                # A looping model: too many unclosed openers to pair one by one. Fail closed.
+                raise ModelOutputError(tag.group(0), diagnostic={
+                    "reason": "too_many_open_tags", "wrapper": "json" if slot == 2 else "dsml",
+                    "span_start": tag.start(), "span_end": tag.end(),
+                    "answer_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                    "tools_field": self.tools_field, "tool_choice": self.tool_choice})
+            for number, opener in enumerate(openers):
+                body = text[opener.end():tag.start()].strip()
+                if slot == 4:
+                    dsml(opener.start(), tag.end(), body)
+                elif number == 0 or self._start_re.match(text, opener.end()):    # (a call starts with a name or {)
+                    tool_call(opener.start(), tag.end(), body)
+            openers.clear()
         # A closing tag inside a JSON string is data, not the envelope's end.
         for opening in re.finditer(r"<tool_call>\s*", text, re.IGNORECASE):
             try:

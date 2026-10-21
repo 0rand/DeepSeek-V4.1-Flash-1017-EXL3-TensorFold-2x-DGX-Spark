@@ -324,6 +324,23 @@ class ToolOutputTests(unittest.TestCase):
                     with self.assertRaises(self.module.ModelOutputError):
                         self.guard().parse(outer + inner)
 
+    def test_every_unclosed_opener_before_a_closer_is_a_candidate(self):
+        # Two openers before the complete call: the middle one is the real call, and the last one is only data.
+        call = '<tool_call><function=unoffered><parameter=secret>PRIVATE <tool_call> x</parameter></function></tool_call>'
+        with self.assertRaises(self.module.ModelOutputError):
+            self.guard().parse("<tool_call> junk " + call)
+
+    def test_a_looping_model_with_many_unclosed_openers_fails_closed_only_when_a_closer_comes(self):
+        import time
+
+        text = "<tool_call>{" * 20000
+        self.assertEqual(self.guard().parse(text), (text, None))                  # no closer: nothing to pair
+        start = time.perf_counter()
+        with self.assertRaises(self.module.ModelOutputError) as caught:
+            self.guard().parse(text + "</tool_call>")
+        self.assertEqual(caught.exception.diagnostic["reason"], "too_many_open_tags")
+        self.assertLess(time.perf_counter() - start, 5.0)
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 

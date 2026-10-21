@@ -39,7 +39,7 @@ No performance claim is made.
 - A possible opening tag at the end of a chunk waits for more text. Prose before it is released.
 - A real call envelope is held until the whole answer is validated.
 - The guard fails closed and reads no Markdown. Every complete call envelope counts as a call, wherever it is: in prose, in quotes, in inline code, in a quote line, or in a code fence. An unoffered call gives the safe error. An offered call runs as a call.
-- A complete call that stands inside the data of another call, or after a malformed opener, or that crosses another candidate, is checked too. The guard pairs each closing tag with the nearest opener before it, so a complete inner call is found. Only the outer envelopes run as calls.
+- A complete call that stands inside the data of another call, or after a malformed opener, or that crosses another candidate, is checked too. The guard pairs each closing tag with every opener before it that has no closer yet, so a complete inner call is found. If more than 256 openers wait for one closing tag (a looping model), the guard rejects the reply. Only the outer envelopes run as calls.
 - While streaming, every call opener waits until the answer is complete, like a real call. The final result then decides.
 - Known limit of a guard that fails closed: an example of a tool call in a code fence is a call. If the tool is not offered, the reply is rejected. If the tool is offered, the example runs as a call. A model that explains tool-call syntax to a user can trigger this. The limit is the price of a guard that a Markdown trick cannot get around.
 - The guard reads the answer in one pass. It does not copy the answer once for each envelope.
