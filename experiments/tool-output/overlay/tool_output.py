@@ -41,8 +41,17 @@ class ToolOutputGuard:
     _RUNAWAY = 64
 
     _white = re.compile(r"\s+")
-    _SCAN_BUDGET = 200_000_000    # about 0.3 s of the parser expressions, measured on the pinned engine
+    _SCAN_BUDGET = 200_000_000    # a fixed limit on the estimated scan steps (see _stalls), not a performance claim
     _qwen_head = re.compile(r"^\s*<function=([^>\s]+)>", re.IGNORECASE)
+    _qwen_close = re.compile(r"</function>\s*\Z", re.IGNORECASE)
+    # The characters that the parser's case-insensitive expressions match with an ASCII letter (see the ``re`` docs).
+    _fold_table = {0x130: "i", 0x131: "i", 0x17f: "s", 0x212a: "k"}
+
+    @classmethod
+    def _fold(cls, text: str) -> str:
+        """Lower case as the parser's ``re.IGNORECASE`` sees it, with the same length as ``text``."""
+
+        return text.translate(cls._fold_table).lower()
 
     @staticmethod
     def _open_tail(text: str, opener: str, closer: str) -> int:
@@ -159,7 +168,7 @@ class ToolOutputGuard:
             converted = reply_text.dsml_to_tool_calls(head) + tail
         except (ValueError, RecursionError):           # a value that the JSON decoder refuses (for example 5000 digits)
             raise reject("", "undecodable_call", 0, len(text), "dsml") from None
-        lowered = converted.lower()
+        lowered = self._fold(converted)
         if reply_text._CALL_CLOSE not in lowered:
             # No call block can exist. (The parser would try every opener against the rest of the answer.)
             return (converted.strip(), None) if self.tools else (text, None)
@@ -196,7 +205,7 @@ class ToolOutputGuard:
         for block in blocks:
             start, stop, made = source_span(block.start(), block.end())
             wrapper = "dsml" if made else "json"
-            inner = block.group(1).lower()                # (the Qwen and GLM tags inside one call block)
+            inner = self._fold(block.group(1))                # (the Qwen and GLM tags inside one call block)
             if any(self._stalls(inner, opener, closer) for opener, closer in (
                     ("<function=", "</function>"), ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"),
                     ("<arg_key>", "<arg_value>"))):           # (a key needs a value after it to make a pair)
@@ -260,10 +269,10 @@ class ToolOutputGuard:
 
         if not complete:
             # The Qwen name and the closing tag, read linearly. (The parser expression has white space on both sides of
-            # a lazy part: on a body without its closing tag it backtracks for long.)
+            # a lazy part: on a body without its closing tag it backtracks for long. The closer is matched with the
+            # same case rules as the parser.)
             head = self._qwen_head.match(block)
-            tail = block.rstrip()
-            if head and tail.lower().endswith("</function>") and len(tail) - len("</function>") >= head.end():
+            if head and self._qwen_close.search(block, head.end()):
                 return [(head.group(1).strip(), "qwen_xml")]
         else:
             xml = reply_text._TOOL_FUNCTION_BLOCK_RE.match(block)

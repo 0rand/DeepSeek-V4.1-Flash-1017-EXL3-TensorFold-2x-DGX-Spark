@@ -522,6 +522,21 @@ class ToolOutputTests(unittest.TestCase):
         guard = self.module.ToolOutputGuard(None)
         guard.parse(text)
 
+    def test_tags_are_read_with_the_case_rules_of_the_parser(self):
+        # re.IGNORECASE also matches the dotless i (U+0131) and the long s (U+017F) with an ASCII letter.
+        body = '{"x": 1}'
+        for closer in ("</functıon>", "</FUNCTİON>", "</function>"):
+            text = "<tool_call><function=secret>" + body + closer + "</tool_call>"
+            for guard in (self.guard(), self.module.ToolOutputGuard(None)):
+                with self.subTest(closer=closer, tools=bool(guard.tools)):
+                    with self.assertRaises(self.module.ModelOutputError) as caught:
+                        guard.parse(text)
+                    self.assertEqual(caught.exception.diagnostic["reason"], "unavailable_tool")
+        looping = "<tool_call>" + "<functıon=a>" * 100 + "</tool_call>"
+        with self.assertRaises(self.module.ModelOutputError) as caught:
+            self.guard().parse(looping)
+        self.assertEqual(caught.exception.diagnostic["reason"], "runaway_markup")
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"
