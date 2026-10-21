@@ -32,6 +32,10 @@ class ModelOutputError(Exception):
         return f"[tensorfold] model output rejected: {self.code} " + json.dumps(self.diagnostic, ensure_ascii=True)
 
 
+class _RunawayMarkup(Exception):
+    """A call block whose Qwen or GLM form the parser would scan for long (looping output)."""
+
+
 class ToolOutputGuard:
     """Validate complete call envelopes before the CUDA parser can execute any call."""
 
@@ -205,16 +209,10 @@ class ToolOutputGuard:
         for block in blocks:
             start, stop, made = source_span(block.start(), block.end())
             wrapper = "dsml" if made else "json"
-            inner = self._fold(block.group(1))                # (the Qwen and GLM tags inside one call block)
-            if any(self._stalls(inner, opener, closer) for opener, closer in (
-                    ("<function=", "</function>"), ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"),
-                    ("<arg_key>", "<arg_value>"))):           # (a key needs a value after it to make a pair)
-                raise reject("", "runaway_markup", start, stop, wrapper)
-            # A value without its closer sends the pairing expression back over every key before it.
-            if self._open_tail(inner, "<arg_value>", "</arg_value>") and inner.count("<arg_key>") > self._RUNAWAY:
-                raise reject("", "runaway_markup", start, stop, wrapper)
             try:
                 names = self._call_names(reply_text, block.group(1).strip(), complete=single)
+            except _RunawayMarkup:                     # (only where the parser would try the Qwen and GLM forms)
+                raise reject("", "runaway_markup", start, stop, wrapper) from None
             except (ValueError, RecursionError):       # a value that the JSON decoder refuses
                 raise reject("", "undecodable_call", start, stop, wrapper) from None
             for name, kind in names:
@@ -264,9 +262,25 @@ class ToolOutputGuard:
                 return []
         return [(str(name), "json")]
 
+    def _fallback_stalls(self, block: str) -> bool:
+        """Whether the Qwen or GLM expressions of the parser would scan this call block for long. The parser reads these
+        forms only when the block is not a JSON call, so this is checked only then (a JSON argument may hold any text)."""
+
+        qwen = self._fold(block)                       # (the Qwen expressions ignore case; the GLM tags are literal)
+        return (any(self._stalls(qwen, opener, closer)
+                    for opener, closer in (("<function=", "</function>"), ("<parameter=", "</parameter>")))
+                or any(self._stalls(block, opener, closer)
+                       for opener, closer in (("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"),
+                                              ("<arg_key>", "<arg_value>")))   # (a key needs a value to make a pair)
+                # A value without its closer sends the pairing expression back over every key before it.
+                or (self._open_tail(block, "<arg_value>", "</arg_value>") > 0
+                    and block.count("<arg_key>") > self._RUNAWAY))
+
     def _text_names(self, reply_text: Any, block: str, complete: bool) -> list[tuple[str, str]]:
         """The (tool name, wrapper) of a Qwen XML or GLM call block."""
 
+        if self._fallback_stalls(block):
+            raise _RunawayMarkup
         if not complete:
             # The Qwen name and the closing tag, read linearly. (The parser expression has white space on both sides of
             # a lazy part: on a body without its closing tag it backtracks for long. The closer is matched with the

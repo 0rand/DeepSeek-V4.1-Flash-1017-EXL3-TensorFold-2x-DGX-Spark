@@ -537,6 +537,27 @@ class ToolOutputTests(unittest.TestCase):
             self.guard().parse(looping)
         self.assertEqual(caught.exception.diagnostic["reason"], "runaway_markup")
 
+    def test_markup_inside_a_json_argument_is_not_looping_output(self):
+        # The parser reads the Qwen and GLM forms only when a block is not a JSON call, so markup in a JSON argument
+        # (for example a generated document) is an ordinary argument.
+        for noise in ("<arg_key>" * 100, "<parameter=a>" * 100, "<function=a>" * 100, "<arg_value>" * 100):
+            payload = json.dumps({"name": "task", "arguments": {"text": noise}})
+            as_string = json.dumps({"name": "task", "arguments": json.dumps({"text": noise})})
+            for body in (payload, as_string):
+                with self.subTest(noise=noise[:12], string=body is as_string):
+                    content, calls = self.guard().parse("<tool_call>" + body + "</tool_call>")
+                    self.assertEqual([call["function"]["name"] for call in calls], ["task"])
+
+    def test_upper_case_glm_tags_are_not_glm_markup(self):
+        # The GLM tags of the parser are literal and case sensitive: other spellings are text, not a looping call.
+        text = "<tool_call>task" + "<ARG_KEY>k</ARG_KEY><ARG_VALUE>v" * 100 + "</tool_call>"
+        for guard in (self.guard(), self.module.ToolOutputGuard(None)):
+            with self.subTest(tools=bool(guard.tools)):
+                try:
+                    guard.parse(text)
+                except self.module.ModelOutputError as error:
+                    self.assertNotEqual(error.diagnostic["reason"], "runaway_markup")
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"
