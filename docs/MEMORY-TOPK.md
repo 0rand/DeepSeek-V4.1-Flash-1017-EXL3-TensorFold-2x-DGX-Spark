@@ -6,8 +6,13 @@ the installer contract and offline tests.
 
 ## Select the image
 
-Build the ordinary image with `docker/build.sh` first. From the repository root,
-build the separate feature image:
+The experiment overlay needs the pristine release 1.0.0 engine `07aa02585f64`, not the engine that `docker/build.sh` builds now (`730d41abd8f4`). Build the 1.0.0 base first. Run this command from the recipe root; it does not use `.env`:
+
+```bash
+docker build --build-arg TF_COMMIT=07aa02585f64 -t tensorfold-dsv41:07aa02585f64 docker
+```
+
+From the repository root, build the separate feature image:
 
 ```bash
 docker build -f experiments/memory-topk/Dockerfile \

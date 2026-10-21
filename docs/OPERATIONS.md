@@ -34,6 +34,35 @@ preflight, extension builds or container commands. Restart the server after a ch
 This setting does not change the other serving defaults. No performance result is
 claimed for a different chunk size.
 
+## Engine switches of release 1.1.0
+
+The engine release [dsv41-1.1.0](https://github.com/Elevatormusic/TensorFold/releases/tag/dsv41-1.1.0) adds the settings below. The release notes explain each change.
+`start.sh` sets only `DROP_UNOFFERED_TOOL_CALLS`, from `.env`. The other settings keep the engine default, which is the tested value.
+To change one, add `-e NAME=value` to `run_args` in `start.sh`. This function builds the arguments of both ranks, so one line gives both ranks the same value. Then restart the server.
+
+**Tool calls to tools that the request did not offer.** `DROP_UNOFFERED_TOOL_CALLS=1` (the default in `.env.example`) makes the engine drop a call to a tool that the request did not offer. It does this also while the reply streams. Set `DROP_UNOFFERED_TOOL_CALLS=0` in `.env` to turn it off, then restart. The engine itself has this off by default. The recipe turns it on. Only `0` and `1` are valid.
+
+**Decode graphs (fork PR #19).** The engine no longer captures a decode graph while it serves. The warm-up captures every graph that the context window can use. If a graph is still captured late, the log shows a `WARNING` line with `captured while serving`. The gate run has none ([runs/2026-10-21/INDEX.md](../runs/2026-10-21/INDEX.md)).
+
+| Setting | Default | Effect |
+|---|---|---|
+| `TF_DS_ROUND_ROWS` | `1,2,3,4,6,8,12,16` | Row sizes of the round graphs for contexts up to `TF_DS_FINE_CONTEXT`. A round runs in the graph of the next size up. `0`: a graph for every row count (more graph memory). |
+| `TF_DS_ROUND_ROWS_LONG` | `1,2,4,8,16` | The same, for longer contexts. |
+| `TF_DS_FINE_CONTEXT` | `32768` | The context length (tokens) where the two lists change. |
+| `TF_DS_CAPTURE_MODE` | `thread_local` | `global` selects the capture mode of release 1.0.0. |
+
+**Host memory (fork PRs #21 and #24).** These settings lower the host-memory peak of the head. See [#21](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/21).
+
+| Setting | Default | Effect |
+|---|---|---|
+| `TF_DS_ENGRAM_BLOCK` | `512` | The cross-rank sum of an Engram layer runs this many rows at a time. `0`: the whole chunk (a higher peak, same tokens). |
+| `TF_DS_TRIM_MIB` | `256` | When no stream is filling, free torch blocks over this size go back to the node. `-1`: off. |
+| `TF_DS_ADMIT_GIB` | `1` | With streams live, a new request waits while free memory is under `MEM_FLOOR_GIB` plus this value. The log shows `admission waits` when it first waits. `0`: off. |
+
+Draft ranking (fork PR #20): `TF_DS_DEPTH_POLICY=rank` is the default. The engine ranks the drafts of all streams in one round by how likely each draft token is to survive. A different value (for example `conf`) chooses the draft depth of each stream alone. Output tokens do not change.
+
+**Little free memory on the head.** The 1.1.0 release notes give a known issue: with 4 long streams, the lowest `MemAvailable` on the head was 1.45 GiB in the gate run, against the 1 GiB earlyoom limit. If the head has less free memory at idle (for example because other processes use it), set `PREFILL_CHUNK=1024` or `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. No run in this repo measures these two values on 1.1.0.
+
 ## When the lane breaks
 
 The engine keeps serving when one request fails:
@@ -60,7 +89,7 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
   . ./.env; watch -n 1 "grep MemAvailable /proc/meminfo; ssh -o BatchMode=yes $WORKER_SSH grep MemAvailable /proc/meminfo"
   ```
 
-  In the traces in [runs/2026-10-20/INDEX.md](../runs/2026-10-20/INDEX.md), image requests made the head run out first. These traces ran on a validation image (`deepseek-v41-tp2` at 434301e with fork PRs #13, #14 and #15), not on the shipped `07aa02585f64`. Fork PR #13 changes how overlapping image requests are tracked, so the values on the shipped image can differ. The head runs the vision tower and decodes the images. The worker went down to about 2.0 GiB.
+  In the traces in [runs/2026-10-20/INDEX.md](../runs/2026-10-20/INDEX.md), image requests made the head run out first. These traces ran on a validation image (`deepseek-v41-tp2` at 434301e with fork PRs #13, #14 and #15), before fork PRs #21 and #24, which the shipped `730d41abd8f4` has. The values on the shipped image can differ. The head runs the vision tower and decodes the images. The worker went down to about 2.0 GiB.
 
   | Load | `PARALLEL` | Head lowest `MemAvailable` | Result |
   |---|---|---|---|
@@ -73,10 +102,11 @@ A broken lane ends both rank processes with **exit code 75** after 5 s (`TF_DS_E
 
   If `MemAvailable` on either node goes near 1 GiB (1,048,576 kB):
   1. Set `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. Each request still gets the full context. This is measured only on the validation image above.
-  2. Send fewer images at the same time. Keep the images in each request low (the server accepts at most 8), and do not send many image requests at the same time. For an agent, send screenshots one at a time, not as a batch.
-  3. If you do not need image input, set `VISION=0` in `.env`, then run `./stop.sh && ./start.sh`. The vision tower then does not load on the head. The engine log gives its size as 0.95 GiB on rank 0 ([runs/2026-10-20/oom/run2-engine-vision.txt](../runs/2026-10-20/oom/run2-engine-vision.txt)). A run with `VISION=0` is not measured yet.
-  4. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
-  5. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
+  2. Or set `PREFILL_CHUNK=1024` in `.env` and restart (the 1.1.0 release notes advise this for a head with little free memory). It is not measured for memory in this repo.
+  3. Send fewer images at the same time. Keep the images in each request low (the server accepts at most 8), and do not send many image requests at the same time. For an agent, send screenshots one at a time, not as a batch.
+  4. If you do not need image input, set `VISION=0` in `.env`, then run `./stop.sh && ./start.sh`. The vision tower then does not load on the head. The engine log gives its size as 0.95 GiB on rank 0 ([runs/2026-10-20/oom/run2-engine-vision.txt](../runs/2026-10-20/oom/run2-engine-vision.txt)). A run with `VISION=0` is not measured yet.
+  5. Do not raise `MEM_FLOOR_GIB`. With 2.0, an 8K prompt failed with CUDA out of memory, which breaks the lane ([runs/2026-10-18/INDEX.md](../runs/2026-10-18/INDEX.md)).
+  6. Do not turn off earlyoom or lower its limit. Without it, a node that runs out of memory can stop answering ssh until a power cycle.
 
   Issue #21 tracks the engine fix.
 - **The whole node stops (no ssh, no ping above the link).** One report ([#24](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/24)) shows this kernel log on the head just before the hang:

@@ -26,7 +26,17 @@ client is active. The launcher refuses active ranks and incompatible clients.
 ## Opt-in use
 
 First complete the ordinary recipe setup, including network and host tuning.
-Use the head node and the repository root. Inspect state without a cutover:
+The launcher builds from `IMAGE` in `.env`. It checks the pristine source of the 1.0.0 engine `07aa02585f64`, not the engine that `docker/build.sh` builds now (`730d41abd8f4`). For this experiment, build the 1.0.0 base on the head, copy it to the worker, and set `IMAGE=tensorfold-dsv41:07aa02585f64` in `.env`. Run these commands from the repository root:
+
+```bash
+docker build --build-arg TF_COMMIT=07aa02585f64 -t tensorfold-dsv41:07aa02585f64 docker
+```
+
+```bash
+. ./.env; docker save tensorfold-dsv41:07aa02585f64 | ssh -o BatchMode=yes "$WORKER_SSH" docker load
+```
+
+The 1.0.0 engine ignores `DROP_UNOFFERED_TOOL_CALLS`. Use the head node and the repository root. Inspect state without a cutover:
 
 ```bash
 ./start-display-kv.sh --check
