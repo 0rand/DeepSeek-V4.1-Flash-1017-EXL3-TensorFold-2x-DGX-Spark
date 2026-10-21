@@ -482,6 +482,21 @@ class ToolOutputTests(unittest.TestCase):
                     self.assertEqual(caught.exception.diagnostic["reason"], "unavailable_tool")
                     self.assertLess(time.perf_counter() - start, 5.0)
 
+    def test_an_unterminated_opener_with_a_long_white_space_run_is_not_scanned_for_long(self):
+        import time
+
+        invoke = '<｜DSML｜ calls><｜DSML｜ invoke name="a">' + " " * 3000 + "X</｜DSML｜ calls>"
+        qwen = "<tool_call><function=task>" + " " * 3000 + "X</tool_call>"
+        for text in (invoke, qwen):
+            for guard in (self.guard(), self.module.ToolOutputGuard(None)):
+                with self.subTest(text=text[:30], tools=bool(guard.tools)):
+                    start = time.perf_counter()
+                    try:
+                        guard.parse(text)
+                    except self.module.ModelOutputError:
+                        pass
+                    self.assertLess(time.perf_counter() - start, 2.0)
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"

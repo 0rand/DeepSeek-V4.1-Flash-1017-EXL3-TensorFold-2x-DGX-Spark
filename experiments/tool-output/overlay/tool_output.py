@@ -40,12 +40,24 @@ class ToolOutputGuard:
     # looping output, not a call: the guard rejects it before the parser has to scan it (and so does not stall).
     _RUNAWAY = 64
 
+    _long_space = re.compile(r"\s{257,}")
+    _qwen_head = re.compile(r"^\s*<function=([^>\s]+)>", re.IGNORECASE)
+
     @staticmethod
     def _open_tail(text: str, opener: str, closer: str) -> int:
-        """How many ``opener`` have no ``closer`` after them. The parser's lazy expressions scan the rest of the text
-        for each of them, so this count is the exact driver of a quadratic scan."""
+        """How many ``opener`` have no ``closer`` after them."""
 
         return text.count(opener, text.rfind(closer) + 1)
+
+    @classmethod
+    def _stalls(cls, text: str, opener: str, closer: str) -> bool:
+        """Whether the parser expressions could scan this text for long. An ``opener`` that no ``closer`` follows sends
+        a lazy expression to the end of the text. With many of them, or with one and a long run of white space (the
+        expressions try the white space at each position), the scan is quadratic."""
+
+        rest = text[text.rfind(closer) + 1:]
+        count = rest.count(opener)
+        return count > cls._RUNAWAY or (count > 0 and cls._long_space.search(rest) is not None)
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self._stream_cut: int | None = None
@@ -129,11 +141,10 @@ class ToolOutputGuard:
         head, tail = (text[:end], text[end:]) if close >= 0 else ("", text)
         dsml_tag = reply_text._DSML
         for dsml in reply_text._DSML_BLOCK_RE.finditer(head):          # (inside each block, then each invoke)
-            if self._open_tail(dsml.group(1), f'<{dsml_tag} invoke name="', f"</{dsml_tag} invoke>") > self._RUNAWAY:
+            if self._stalls(dsml.group(1), f'<{dsml_tag} invoke name="', f"</{dsml_tag} invoke>"):
                 raise reject("", "runaway_markup", dsml.start(), dsml.end(), "dsml")
             for invoke in reply_text._DSML_INVOKE_RE.finditer(dsml.group(1)):
-                if self._open_tail(invoke.group(2), f'<{dsml_tag} parameter name="',
-                                   f"</{dsml_tag} parameter>") > self._RUNAWAY:
+                if self._stalls(invoke.group(2), f'<{dsml_tag} parameter name="', f"</{dsml_tag} parameter>"):
                     raise reject("", "runaway_markup", dsml.start(), dsml.end(), "dsml")
         try:
             converted = reply_text.dsml_to_tool_calls(head) + tail
@@ -143,7 +154,7 @@ class ToolOutputGuard:
         if reply_text._CALL_CLOSE not in lowered:
             # No call block can exist. (The parser would try every opener against the rest of the answer.)
             return (converted.strip(), None) if self.tools else (text, None)
-        if self._open_tail(lowered, reply_text._CALL_OPEN, reply_text._CALL_CLOSE) > self._RUNAWAY:
+        if self._stalls(lowered, reply_text._CALL_OPEN, reply_text._CALL_CLOSE):
             raise reject("", "runaway_markup", 0, len(text), "json")
         # Each rewritten block: its span in the converted text and its DSML span in the answer (for the diagnostic).
         segments: list[tuple[int, int, int, int]] = []
@@ -177,8 +188,8 @@ class ToolOutputGuard:
             start, stop, made = source_span(block.start(), block.end())
             wrapper = "dsml" if made else "json"
             inner = block.group(1).lower()                # (the Qwen and GLM tags inside one call block)
-            if any(self._open_tail(inner, opener, closer) > self._RUNAWAY for opener, closer in (
-                    ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"),
+            if any(self._stalls(inner, opener, closer) for opener, closer in (
+                    ("<function=", "</function>"), ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"),
                     ("<arg_key>", "<arg_value>"))):           # (a key needs a value after it to make a pair)
                 raise reject("", "runaway_markup", start, stop, wrapper)
             # A value without its closer sends the pairing expression back over every key before it.
@@ -238,11 +249,19 @@ class ToolOutputGuard:
     def _text_names(self, reply_text: Any, block: str, complete: bool) -> list[tuple[str, str]]:
         """The (tool name, wrapper) of a Qwen XML or GLM call block."""
 
-        xml = reply_text._TOOL_FUNCTION_BLOCK_RE.match(block)
-        if xml:
-            if complete and reply_text._TOOL_PARAMETER_BLOCK_RE.sub("", xml.group(2)).strip():
-                return []
-            return [(xml.group(1).strip(), "qwen_xml")]
+        if not complete:
+            # The Qwen name and the closing tag, read linearly. (The parser expression has white space on both sides of
+            # a lazy part: on a body without its closing tag it backtracks for long.)
+            head = self._qwen_head.match(block)
+            tail = block.rstrip()
+            if head and tail.lower().endswith("</function>") and len(tail) - len("</function>") >= head.end():
+                return [(head.group(1).strip(), "qwen_xml")]
+        else:
+            xml = reply_text._TOOL_FUNCTION_BLOCK_RE.match(block)
+            if xml:
+                if reply_text._TOOL_PARAMETER_BLOCK_RE.sub("", xml.group(2)).strip():
+                    return []
+                return [(xml.group(1).strip(), "qwen_xml")]
         if not complete:
             # The name of a GLM call is the text before its first key. The parser's pairing expression for the keys
             # and values is not needed for the name, and it can be quadratic on malformed output.
