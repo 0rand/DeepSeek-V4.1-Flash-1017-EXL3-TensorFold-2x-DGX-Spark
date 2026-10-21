@@ -4,11 +4,23 @@ The display-KV recipe's existing source installer validates the complete
 DeepSeek-V4.1 **answer** before returning executable calls. Inert prose before
 the first possible protocol marker can stream early. This is a
 protocol/schema hardening change, not evidence of actual-model tool reliability
-or a GPU performance improvement. The deployed image
+or a GPU performance improvement. The earlier image
 `tensorfold-dsv41:display-kv-58e319cb2866` passed `./verify.sh` 5/5 and the
-opt-in parser probe with 12 PASS, 2 INCONCLUSIVE and 0 FAIL; the two
+opt-in parser probe with 12 PASS, 2 INCONCLUSIVE and 0 FAIL. The two
 inconclusive cases are fixture-induction limits, not parser passes. See the
 [run record](../runs/2026-10-21/parser-guardrails/README.md).
+The later [proxy audit](../runs/2026-10-21/parser-proxy-audit/README.md)
+recorded image `tensorfold-dsv41:display-kv-0dc9c3fefb06` with the same guard
+hash. These records describe past observations, not a permanent deployment.
+Inspect the current local rank without entering its container:
+
+```bash
+docker inspect --format '{{.Config.Image}} {{.Image}} {{.State.StartedAt}}' tfv41-r0
+```
+
+Use the same command for `tfv41-r1` on the worker. The
+[proxy mitigation staging record](../runs/2026-10-21/proxy-mitigation-staging/README.md)
+separates source validation from production approval.
 
 ## Contract and compatibility changes
 

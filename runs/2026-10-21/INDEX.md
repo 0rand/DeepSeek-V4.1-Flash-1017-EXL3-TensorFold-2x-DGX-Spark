@@ -80,3 +80,17 @@ negative control, and the streaming default was restored and re-validated.
 - Differential, bench and Hermes were skipped (`ENCODING_DIR`, `BENCH`,
   `HERMES` not set).
 - The suite log's repository path is sanitized to `<repo>`.
+
+## Proxy mitigation source staging
+
+[Proxy mitigation staging record](proxy-mitigation-staging/README.md): work
+packages 0, 2, 3, 4A, 4C and the stage-only part of 4B. Proxy commit
+`13b8561` passed 308/308 unit tests, 25/25 control tests in normal and optimized
+Python, 36/36 synthetic route cases and `./verify.sh` 5/5. Proxy A now runs that
+DLL with wedge and corrective retry enabled. Live direct/proxy checks had 12
+PASS, 2 model-induction INCONCLUSIVE and 0 FAIL. The retry case preserved the
+typed rejection after one retry. A controlled NUDGE exercised the wedge and
+produced a banner, one finish and one DONE. The engine and rank image did not
+change. The safe profile remains a rollback fallback. SDK/original-agent, STT,
+recovery-policy and rollback-drill acceptance remain open. No generated tool was
+executed.
