@@ -1,5 +1,6 @@
 """CPU-only checks for the reused GLM spill tier (real CPU torch, no GPU)."""
 import ast
+import errno
 import importlib.util
 import os
 import sys
@@ -102,6 +103,24 @@ class SpillTierTests(unittest.TestCase):
                 mock.patch("ctypes.CDLL", side_effect=OSError):
             with self.assertRaises(RuntimeError):
                 self.sp._driver_id()
+
+    def test_prune_skips_an_unreadable_old_build(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = os.path.join(tmp, "spill")
+            os.makedirs(root)
+            old = os.path.join(root, "spill-old")
+            os.makedirs(old)
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0)
+            real_stat = os.stat
+
+            def fake_stat(path, *args, **kwargs):
+                if os.path.abspath(path) == os.path.abspath(old):
+                    raise PermissionError(errno.EACCES, "denied", path)
+                return real_stat(path, *args, **kwargs)
+
+            with mock.patch("os.stat", side_effect=fake_stat):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu")
+            self.assertEqual(store.stats.prune_unreadable, 1)
 
     def test_ids_key_and_name(self):
         key = self.sp.ids_key([1, 2, 3])
