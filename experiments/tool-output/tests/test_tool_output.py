@@ -282,6 +282,15 @@ class ToolOutputTests(unittest.TestCase):
         with self.assertRaises(self.module.ModelOutputError):
             self.guard().parse(offered + "\n" + real + "\n" + closing)
 
+    def test_a_call_after_a_fence_mark_does_not_turn_the_line_into_a_closing_line(self):
+        unoffered = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        offered = '<tool_call>{"name":"task","arguments":{}}</tool_call>'
+        for text in (f"```\n{unoffered}\n``` {offered}", f"```\n{unoffered}\n```{offered}\n",
+                     f"~~~\n{unoffered}\n~~~ {offered}"):
+            with self.subTest(text=text):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
+
     def test_stream_holds_every_opener_and_parse_decides(self):
         call = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
         for text in (f"```\n{call}\n```\n", f'"{call}"', f"`{call}`", f"> {call}", f"    {call}"):

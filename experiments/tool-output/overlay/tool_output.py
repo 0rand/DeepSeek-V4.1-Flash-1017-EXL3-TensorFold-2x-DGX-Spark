@@ -149,10 +149,11 @@ class ToolOutputGuard:
                 continue
             end = stop
             chosen.append((start, stop, names, kind))
-        # Text of a call is data, not Markdown: blank it (newlines stay) before the code fences are read.
+        # Text of a call is data, not Markdown: replace it by a filler (newlines stay) before the code fences are read.
+        # The filler is not white space, so a line with a call after a fence mark is still not a closing line.
         masked = text
         for start, stop, _, _ in reversed(chosen):
-            masked = masked[:start] + re.sub(r"[^\n]", " ", masked[start:stop]) + masked[stop:]
+            masked = masked[:start] + re.sub(r"[^\n]", "x", masked[start:stop]) + masked[stop:]
         fences = self._fenced_blocks(masked)
         envelopes = []
         for start, stop, names, kind in chosen:
