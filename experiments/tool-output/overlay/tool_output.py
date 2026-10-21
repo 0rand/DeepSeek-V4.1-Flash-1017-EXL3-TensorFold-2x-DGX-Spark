@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import json
+import bisect
 import hashlib
+import json
 import re
 import uuid
 from typing import Any
@@ -114,7 +115,8 @@ class ToolOutputGuard:
         # A DSML block ends at an exact closer, so text after the last closer holds no block. The rewrite reads only
         # the text up to that closer: the regex would try every unclosed opener against the rest of the answer.
         close = text.rfind(reply_text._DSML_CLOSE)
-        head, tail = (text[:close + len(reply_text._DSML_CLOSE)], text[close + len(reply_text._DSML_CLOSE):])             if close >= 0 else ("", text)
+        end = close + len(reply_text._DSML_CLOSE)
+        head, tail = (text[:end], text[end:]) if close >= 0 else ("", text)
         try:
             converted = reply_text.dsml_to_tool_calls(head) + tail
         except (ValueError, RecursionError):           # a value that the JSON decoder refuses (for example 5000 digits)
@@ -122,17 +124,34 @@ class ToolOutputGuard:
         if reply_text._CALL_CLOSE not in converted.lower():
             # No call block can exist. (The parser would try every opener against the rest of the answer.)
             return (converted.strip(), None) if self.tools else (text, None)
-        # The blocks that the DSML rewrite makes, with the span of their DSML block in the answer.
-        rewritten: dict[str, tuple[int, int]] = {}
+        # Each rewritten block: its span in the converted text and its DSML span in the answer (for the diagnostic).
+        segments: list[tuple[int, int, int, int]] = []
+        shift = 0
         for dsml in reply_text._DSML_BLOCK_RE.finditer(head):
-            for made in reply_text._TOOL_CALL_BLOCK_RE.finditer(reply_text.dsml_to_tool_calls(dsml.group(0))):
-                rewritten.setdefault(made.group(0), (dsml.start(), dsml.end()))
+            made = reply_text.dsml_to_tool_calls(dsml.group(0))
+            segments.append((dsml.start() + shift, dsml.start() + shift + len(made), dsml.start(), dsml.end()))
+            shift += len(made) - (dsml.end() - dsml.start())
+        starts = [segment[0] for segment in segments]
+        stops = [segment[1] for segment in segments]
+
+        def source_span(first: int, last: int) -> tuple[int, int, bool]:
+            """The span of a block of the converted text in the answer, and whether a DSML rewrite made it."""
+
+            inside = bisect.bisect_right(starts, first) - 1
+            if inside >= 0 and first < segments[inside][1]:
+                return segments[inside][2], segments[inside][3], True
+            def moved(position: int) -> int:             # the answer is longer or shorter than the converted text
+                before = bisect.bisect_right(stops, position) - 1
+                return position + (segments[before][3] - segments[before][1] if before >= 0 else 0)
+            end = bisect.bisect_right(starts, last - 1) - 1
+            return moved(first), (segments[end][3] if end >= 0 and last - 1 < segments[end][1] else moved(last)), False
+
         blocks = list(reply_text._TOOL_CALL_BLOCK_RE.finditer(converted))
         if not blocks:                                 # (the parser's result for an answer without a call block)
             return (converted.strip(), None) if self.tools else (text, None)
         for block in blocks:
-            start, stop = rewritten.get(block.group(0), (block.start(), block.end()))
-            wrapper = "dsml" if block.group(0) in rewritten else "json"
+            start, stop, made = source_span(block.start(), block.end())
+            wrapper = "dsml" if made else "json"
             try:
                 names = self._call_names(reply_text, block.group(1).strip(), complete=max_calls is not None)
             except (ValueError, RecursionError):       # a value that the JSON decoder refuses

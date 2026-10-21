@@ -417,6 +417,21 @@ class ToolOutputTests(unittest.TestCase):
                 guard.parse(text)
                 self.assertLess(time.perf_counter() - start, 5.0)
 
+    def test_the_rejected_span_points_into_the_answer_after_a_dsml_rewrite(self):
+        offered = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"><｜DSML｜ parameter name="n" string="false">1'
+                   '</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>')
+        plain = '<tool_call>{"name":"unoffered","arguments":{}}</tool_call>'
+        dsml = '<｜DSML｜ calls><｜DSML｜ invoke name="unoffered"></｜DSML｜ invoke></｜DSML｜ calls>'
+        for text, wrapper, wanted in ((offered + " middle " + plain, "json", plain),
+                                      (plain.replace("unoffered", "task") + offered + dsml, "dsml", dsml),
+                                      (offered + offered + "x" + plain + offered, "json", plain)):
+            with self.subTest(wrapper=wrapper, text=text[-40:]):
+                with self.assertRaises(self.module.ModelOutputError) as caught:
+                    self.guard().parse(text)
+                diagnostic = caught.exception.diagnostic
+                self.assertEqual(text[diagnostic["span_start"]:diagnostic["span_end"]], wanted)
+                self.assertEqual(diagnostic["wrapper"], wrapper)
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"
