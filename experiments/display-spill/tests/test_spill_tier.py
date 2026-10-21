@@ -57,7 +57,7 @@ class SpillTierTests(unittest.TestCase):
                 imports.update(alias.name.split(".")[0] for alias in node.names)
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imports.add(node.module.split(".")[0])
-        allowed = {"__future__", "base64", "contextlib", "dataclasses", "errno", "hashlib", "importlib", "json",
+        allowed = {"__future__", "base64", "contextlib", "ctypes", "dataclasses", "errno", "hashlib", "importlib", "json",
                    "os", "queue", "re", "shutil", "struct", "threading", "time", "zlib", "collections",
                    "concurrent", "typing", "pathlib", "numpy", "torch", "tensorfold"}
         self.assertEqual(imports - allowed, set())
@@ -956,6 +956,45 @@ class SpillTierTests(unittest.TestCase):
             with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
                 store._entry_done(job, True)                          # the key is not in the index: the file goes
             self.assertEqual(store.stats.unlink_failed, 1)
+
+    def test_a_missing_spill_root_is_made_for_the_owner_of_its_nearest_folder(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as base:
+            root = os.path.join(base, "a", "b")
+            owned = []
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp.os, "chown", lambda path, uid, gid: owned.append(path)):
+                self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            for path in (os.path.join(base, "a"), root):
+                self.assertIn(path, owned)                                # the folders this start made
+
+    def test_the_driver_comes_from_a_second_source_when_the_proc_file_is_missing(self):
+        import ctypes
+        from unittest import mock
+
+        class Driver:
+            def cuDriverGetVersion(self, ref):                           # noqa: N802
+                ref._obj.value = 13000
+                return 0
+
+        def library(name):
+            if name == "libcuda.so.1":
+                return Driver()
+            raise OSError(name)
+
+        real_open = open
+
+        def no_proc(path, *args, **kwargs):
+            if str(path).startswith("/proc/driver"):
+                raise FileNotFoundError(path)
+            return real_open(path, *args, **kwargs)
+
+        with mock.patch("builtins.open", no_proc), mock.patch.object(ctypes, "CDLL", library):
+            self.assertEqual(self.sp._driver_id(), "cuda-driver-api 13000")
+        with mock.patch("builtins.open", no_proc), mock.patch.object(ctypes, "CDLL", side_effect=OSError("none")):
+            with self.assertRaises(RuntimeError):                        # no source: not an empty key
+                self.sp._driver_id()
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib

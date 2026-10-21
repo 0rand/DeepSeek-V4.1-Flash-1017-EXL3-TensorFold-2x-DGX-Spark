@@ -70,7 +70,7 @@ from `.partial`. Token ids are stored as base64 int64. The header holds a CRC-32
 flipped bit in a count, a name or a flag is refused when the file is scanned or read. The declared header length is
 checked first (at most 64 MiB, aligned, inside the file), so a flipped bit cannot make a rank read a huge block. A corrupt or short file is dropped. The
 table of tensor descriptors is checked before any memory is allocated: gaps, overlaps, negative numbers and
-unknown dtypes are refused. The compatibility key holds the cache planes, the fingerprint of the model files and of the Engram files (`TF_DS_ENGRAM`), the draft rings (so a change of `MTP_DRAFTS` starts a new folder) and the
+unknown dtypes are refused. The compatibility key holds the NVIDIA driver (read from the proc file, NVML or the CUDA driver API; if none answers, the tier stays off), the cache planes, the fingerprint of the model files and of the Engram files (`TF_DS_ENGRAM`), the draft rings (so a change of `MTP_DRAFTS` starts a new folder) and the
 settings that change a cached row. At start, every rank first tells the others if it could prepare the tier (settings, pinned buffers, key); if one rank
 failed, the tier is off on every rank, and the same holds if the store fails to start on one rank. Every rank agrees on the index and on each read. A read is used only when it
 worked on every rank. If a write failed on one rank only, `find()` keeps the entry, so the read fails on all

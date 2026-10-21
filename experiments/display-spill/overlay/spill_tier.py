@@ -157,6 +157,39 @@ def preallocate(cfg: SpillConfig | None) -> None:
     _PINNED["read"] = _pinned(2)
 
 
+def _driver_id() -> str:
+    """The NVIDIA driver, from the first source that answers: the proc file, NVML, or the CUDA driver API (a coarser
+    version, but present wherever CUDA runs). Raises ``RuntimeError`` when none answers."""
+
+    import ctypes
+
+    try:
+        with open("/proc/driver/nvidia/version") as f:
+            line = f.readline().strip()
+        if line:
+            return line
+    except OSError:
+        pass
+    try:
+        nvml = ctypes.CDLL("libnvidia-ml.so.1")
+        if nvml.nvmlInit_v2() == 0:
+            try:
+                buf = ctypes.create_string_buffer(96)
+                if nvml.nvmlSystemGetDriverVersion(buf, 96) == 0 and buf.value:
+                    return "nvml " + buf.value.decode()
+            finally:
+                nvml.nvmlShutdown()
+    except (OSError, AttributeError):
+        pass
+    try:
+        version = ctypes.c_int(0)
+        if ctypes.CDLL("libcuda.so.1").cuDriverGetVersion(ctypes.byref(version)) == 0 and version.value:
+            return f"cuda-driver-api {version.value}"
+    except (OSError, AttributeError):
+        pass
+    raise RuntimeError("the NVIDIA driver version cannot be read")
+
+
 def build_id(model_dir, drafter_dir=None) -> str:
     """What stored states depend on beyond the cache layout, as MLX's prefix-snapshot key names it: the weights' (and
     drafter's) paths, the TensorFold version, the sources and kernels of the model's family and of tensorfold.cuda
@@ -179,10 +212,10 @@ def build_id(model_dir, drafter_dir=None) -> str:
         p = torch.cuda.get_device_properties(torch.cuda.current_device())
         run += f"|gpu={p.name}:{p.major}.{p.minor}"
     try:
-        with open("/proc/driver/nvidia/version") as f:
-            run += f"|driver={f.readline().strip()}"
-    except OSError:
-        pass
+        run += f"|driver={_driver_id()}"
+    except RuntimeError:
+        if torch.cuda.is_available():                 # a driverless key could reuse rows made under the old driver
+            raise
     drafter = f"|drafter={Path(drafter_dir).resolve()}" if drafter_dir is not None else ""
     return f"{Path(model_dir).resolve()}{drafter}|tensorfold={__version__}|sources={digest.hexdigest()[:16]}|{run}"
 
@@ -541,11 +574,18 @@ class SpillStore:
         self.compat = hashlib.sha256(np.asarray(words, dtype=np.int32).tobytes()).hexdigest()[:16]
         self.top = os.path.join(cfg.root, f"spill-{self.compat}")
         self.dir = os.path.join(self.top, f"rank{self.rank}")
-        try:                                                  # files belong to --snapshot-dir's owner: a server run as
-            st = os.stat(cfg.root)                            # root in a container writes them as you
-            self.uid, self.gid = st.st_uid, st.st_gid
-        except OSError:
-            self.uid = self.gid = -1
+        self.uid = self.gid = -1
+        probe = os.path.abspath(cfg.root)
+        while True:                                           # files belong to --snapshot-dir's owner (or, when it is
+            try:                                              # not made yet, the owner of its nearest folder): a
+                st = os.stat(probe)                           # server run as root in a container writes them as you
+                self.uid, self.gid = st.st_uid, st.st_gid
+                break
+            except OSError:
+                parent = os.path.dirname(probe)
+                if parent == probe:
+                    break
+                probe = parent
         self.lock = threading.RLock()
         self.index: dict[tuple, Entry] = {}
         self.pending: dict[tuple, Job] = {}      # the newest job of each prompt
@@ -564,6 +604,13 @@ class SpillStore:
         self._dir_lock = threading.Lock()
         problem, pruned_builds = "", 0
         try:
+            missing, probe = [], os.path.abspath(cfg.root)
+            while not os.path.isdir(probe) and os.path.dirname(probe) != probe:
+                missing.append(probe)                         # folders this start makes: they are the user's too
+                probe = os.path.dirname(probe)
+            os.makedirs(cfg.root, exist_ok=True)
+            for d in reversed(missing):
+                self._own(d)
             for d in (self.top, self.dir):                    # prompts' token ids: this user's only
                 os.makedirs(d, mode=0o700, exist_ok=True)
                 os.chmod(d, 0o700)
