@@ -360,7 +360,7 @@ class SpillTierTests(unittest.TestCase):
     def test_a_failure_while_one_rank_prepares_a_save_is_shared_before_the_gather(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 0])
+            sent = self.gathered(store, [0, 1, 0, 0])
             new = list(range(500, 600))
             snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
             bad = torch.zeros(4, 4, dtype=torch.uint8).t()                # not contiguous
@@ -373,14 +373,14 @@ class SpillTierTests(unittest.TestCase):
     def test_a_peer_that_failed_to_prepare_a_save_makes_every_rank_skip_it(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 1])
+            sent = self.gathered(store, [0, 1, 1, 0])
             new = list(range(500, 600))
             snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
             self.assertEqual(sent[0][2], 0)
             self.assertFalse(store.has(new))
             # With the peer well, the same save goes through.
-            self.gathered(store, [0, 1, 0])
+            self.gathered(store, [0, 1, 0, 0])
             self.assertIsNotNone(store.save(new, snap, skip=("ids",)))
             self.assertTrue(store.drain(10))
             self.assertTrue(store.has(new))
@@ -458,7 +458,7 @@ class SpillTierTests(unittest.TestCase):
             store._make_room = lambda *a, **k: rooms.append(a) or real(*a, **k)
             store.drain = lambda timeout=None: False                      # a write is still queued after the wait
             store.disk_free = lambda: 0
-            sent = self.gathered(store, [0, 1, 0])
+            sent = self.gathered(store, [0, 1, 0, 0])
             self.assertEqual(sent, [])
             new, snap = self.new_state()
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
@@ -468,7 +468,7 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(sent[-1][1], 0)                              # this rank told the others it did not drain
             # The peer reports a drain that did not finish; this rank's own drain did.
             store.drain = lambda timeout=None: True
-            store.world, store.gather = 2, lambda row: [list(row), [0, 0]] if len(row) == 2 else [list(row), [0, 1, 0]]
+            store.world, store.gather = 2, lambda row: [list(row), [0, 0]] if len(row) == 2 else [list(row), [0, 1, 0, 0]]
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
             self.assertEqual(rooms, [])
 
@@ -563,7 +563,7 @@ class SpillTierTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
-            sent = self.gathered(store, [0, 1, 0])
+            sent = self.gathered(store, [0, 1, 0, 0])
             new, snap = self.new_state()
             with mock.patch.object(self.sp, "Entry", side_effect=MemoryError("entry")):
                 self.assertIsNone(store.save(new, snap, skip=("ids",)))
@@ -584,7 +584,7 @@ class SpillTierTests(unittest.TestCase):
 
             store.disk_free = broken
             self.assertEqual(store.info()["disk_free_bytes"], 0)          # the metrics still answer
-            sent = self.gathered(store, [0, 1, 0])
+            sent = self.gathered(store, [0, 1, 0, 0])
             new, snap = self.new_state()
             self.assertIsNone(store.save(new, snap, skip=("ids",)))       # skipped on every rank
             self.assertEqual(sent[0][2], 1)
@@ -602,7 +602,7 @@ class SpillTierTests(unittest.TestCase):
                 return 0
 
             store.disk_free = once
-            sent = self.gathered(store, [0, 1, 0])
+            sent = self.gathered(store, [0, 1, 0, 0])
             self.assertIsNone(store.save(new, snap, skip=("ids",)))
             self.assertEqual(rooms, [])
             self.assertEqual(len(store.index), 1)
@@ -667,6 +667,41 @@ class SpillTierTests(unittest.TestCase):
                     self.assertEqual(store.stats.unlink_failed, 1)
                     self.assertEqual(store.stats.no_space, 1)
                     self.assertEqual(store.info()["unlink_failed"], 1)
+
+    def test_the_prompt_key_is_made_inside_the_shared_failure_path(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            sent = self.gathered(store, [0, 1, 0, 0])
+            new, snap = self.new_state()
+            with mock.patch.object(self.sp, "ids_key", side_effect=MemoryError("key")):
+                self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(len(sent), 1)                                # it still joined the one agreement
+            self.assertEqual(sent[0][2], 1)                               # and shared its failure
+            self.assertEqual(len(store.index), 1)
+
+    def test_a_stored_prompt_is_skipped_by_every_rank_through_the_same_agreement(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            sent = self.gathered(store, [0, 1, 0, 1])
+            snap = Snap(ids=ids, ring=torch.arange(len(ids) * 4, dtype=torch.uint8).reshape(len(ids), 4))
+            skipped = store.stats.skipped
+            self.assertIsNone(store.save(ids, snap, skip=("ids",)))
+            self.assertEqual(len(sent), 1)
+            self.assertEqual(sent[0][3], 1)
+            self.assertEqual(store.stats.skipped, skipped + 1)
+            # A peer that says "stored" alone also stops this rank, so no rank is left in a later collective.
+            sent = self.gathered(store, [0, 1, 0, 1])
+            new, snap = self.new_state()
+            self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(len(store.index), 1)
+
+    def test_a_negative_free_space_floor_is_refused(self):
+        for value in (-1.0, float("nan")):
+            with self.assertRaises(ValueError):
+                self.sp.SpillConfig(root="/tmp", gib=1, min_free_gib=value)
+        self.sp.SpillConfig(root="/tmp", gib=1, min_free_gib=0)
 
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:

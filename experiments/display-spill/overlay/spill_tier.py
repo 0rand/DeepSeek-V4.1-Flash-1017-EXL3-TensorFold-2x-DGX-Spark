@@ -96,8 +96,10 @@ class SpillConfig:
     def __post_init__(self) -> None:
         if not 0.0 < self.highwater <= 1.0:
             raise ValueError(f"--spill-highwater: a fraction in (0, 1], not {self.highwater}")
-        if self.gib <= 0:
+        if not self.gib > 0:
             raise ValueError("--spill-gib must be above 0 to turn the tier on")
+        if not self.min_free_gib >= 0:
+            raise ValueError(f"TF_DS_SPILL_MIN_FREE_GIB: zero or more (0 keeps no reserve), not {self.min_free_gib}")
         if self.writers < 1:
             raise ValueError("TF_SPILL_WRITERS: at least 1")
 
@@ -355,6 +357,10 @@ class Entry:
     head: bool = False
     fields: dict = field(default_factory=dict)       # the stored object's plain fields: a family's test before a read
     bad: bool = False                  # this rank failed to write it (a read fails here; every rank then forgets it)
+
+
+class _Stored(Exception):
+    """The prompt is stored already: skip the save (raised inside the shared preparation step)."""
 
 
 @dataclass
@@ -1094,15 +1100,14 @@ class SpillStore:
         n = len(ids)
         if n < self.cfg.min_tokens:
             return None
-        key = ids_key(ids)
-        with self.lock:
-            e = self.index.get(key)
-            if e is not None and e.n == n:             # stored or on its way (every rank alike)
-                self.touch(e)
-                self.stats.skipped += 1
-                return None
-        failure = None
+        failure, key, stored = None, None, 0
         try:
+            key = ids_key(ids)                         # (this allocates too: it is inside the shared failure path)
+            with self.lock:
+                e = self.index.get(key)
+                stored = int(e is not None and e.n == n)   # stored or on its way (every rank alike)
+            if stored:
+                raise _Stored
             items, layer = encode(obj, skip=skip, materialize=materialize) if obj is not None else ([], None)
             items = [(k, t if t.is_contiguous() else t.contiguous()) for k, t in items]
             for name, t in rows:
@@ -1131,17 +1136,27 @@ class SpillStore:
                 self.seq += 1
                 seq = self.seq
             job = Job(entry, os.path.join(self.dir, name + ".safetensors"), header, items, src, seq)
+        except _Stored:
+            size = short = 0
         except Exception as exc:                     # noqa: BLE001  (a rank-local failure: share it, never skip the gather)
             if self.world < 2 or self.gather is None:
                 raise
             failure, size, short = exc, 0, 0
         if self.world > 1 and self.gather is not None:
-            got = self.gather([-(-short >> 20), (size >> 20) + 1, int(failure is not None)])
+            got = self.gather([-(-short >> 20), (size >> 20) + 1, int(failure is not None), stored])
             if any(r[2] for r in got):             # one rank could not prepare it: every rank skips this save
                 self._log(failure if failure is not None else RuntimeError("another rank could not prepare the save"))
                 return None
+            stored = max(r[3] for r in got)
             short = max(r[0] for r in got) << 20
             size = max(r[1] for r in got) << 20
+        if stored:
+            with self.lock:
+                e = self.index.get(key) if key is not None else None
+                if e is not None:
+                    self.touch(e)
+            self.stats.skipped += 1
+            return None
         entry.size = job.nbytes = size
         if size > self.cap:                        # (larger than the cap: it can never fit, so nothing is evicted)
             self.stats.full += 1
