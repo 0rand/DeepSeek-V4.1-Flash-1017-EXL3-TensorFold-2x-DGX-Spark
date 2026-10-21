@@ -142,26 +142,7 @@ class ToolOutputGuard:
                 name = self._call_name(text[opening.end():size])
                 candidates.append((opening.start(), size + closing.end(), [name] if name else [], "json"))
 
-        end = -1
-        chosen = []
-        for start, stop, names, kind in sorted(candidates, key=lambda item: (item[0], -item[1])):
-            if start < end:
-                continue
-            end = stop
-            chosen.append((start, stop, names, kind))
-        # Text of a call is data, not Markdown: replace it by a filler (newlines stay) before the code fences are read.
-        # The filler is not white space, so a line with a call after a fence mark is still not a closing line.
-        masked = text
-        for start, stop, _, _ in reversed(chosen):
-            masked = masked[:start] + re.sub(r"[^\n]", "x", masked[start:stop]) + masked[stop:]
-        fences = self._fenced_blocks(masked)
-        envelopes = []
-        for start, stop, names, kind in chosen:
-            # A call is literal text only inside a closed code fence that began before it and ends after it.
-            is_literal = any(opened <= start and closed is not None and closed >= stop for opened, closed in fences)
-            envelopes.append((start, stop, is_literal))
-            if is_literal:
-                continue
+        def check(start: int, stop: int, names: list[str], kind: str) -> None:
             for name in names:
                 if name.lower() not in known:
                     effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})
@@ -177,6 +158,34 @@ class ToolOutputGuard:
                         "declared_tool_count": len(declared),
                         "tools_field": self.tools_field, "tool_choice": self.tool_choice,
                     })
+
+        end = -1
+        chosen, crossing = [], []
+        for start, stop, names, kind in sorted(candidates, key=lambda item: (item[0], -item[1])):
+            if start < end:
+                if stop > end:                       # it starts inside a span and ends after it: not data, so check it
+                    crossing.append((start, stop, names, kind))
+                continue
+            end = stop
+            chosen.append((start, stop, names, kind))
+        for start, stop, names, kind in crossing:
+            check(start, stop, names, kind)
+        # Text of a call is data, not Markdown: replace it by a filler (newlines stay) before the code fences are read.
+        # The filler is not white space, so a line with a call after a fence mark is still not a closing line.
+        masked = text
+        for start, stop, _, _ in reversed(chosen):
+            head, newline, rest = masked[start:stop].partition("\n")
+            # The first line keeps its backticks: after a fence mark they make an invalid info string.
+            masked = masked[:start] + re.sub(r"[^`]", "x", head) + newline + re.sub(r"[^\n]", "x", rest) + masked[stop:]
+        fences = self._fenced_blocks(masked)
+        envelopes = []
+        for start, stop, names, kind in chosen:
+            # A call is literal text only inside a closed code fence that began before it and ends after it.
+            is_literal = any(opened <= start and closed is not None and closed >= stop for opened, closed in fences)
+            envelopes.append((start, stop, is_literal))
+            if is_literal:
+                continue
+            check(start, stop, names, kind)
 
         # Parse real top-level envelopes without masking or rewriting argument values.
         content, calls, cursor = [], [], 0
