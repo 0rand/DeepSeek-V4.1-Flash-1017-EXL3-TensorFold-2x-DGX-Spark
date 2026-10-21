@@ -516,7 +516,7 @@ class SpillTierTests(unittest.TestCase):
             store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[f"{Snap.__module__}:{Snap.__qualname__}"],
                                        quiet=True)
             gate = threading.Event()
-            store._write = lambda job, bufs, stream, hasher: (gate.wait(10), False)[1]   # a write that does not end
+            store._write = lambda job, bufs, stream, hasher, staging=None: (gate.wait(10), False)[1]   # a write that does not end
             ids, snap = self.new_state()
             first = store.save(ids, snap, skip=("ids",))
             store._delete(store.index[first.key])                                     # evicted while queued
@@ -1004,7 +1004,7 @@ class SpillTierTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             old = os.path.join(root, "spill-0000000000000000")
             os.makedirs(os.path.join(old, "rank0"))
-            real_stat = os.stat
+            real_stat = os.lstat
 
             def stat(target, *args, **kwargs):
                 if target == old:
@@ -1012,7 +1012,7 @@ class SpillTierTests(unittest.TestCase):
                 return real_stat(target, *args, **kwargs)
 
             cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
-            with mock.patch.object(self.sp.os, "stat", stat), contextlib.redirect_stdout(io.StringIO()):
+            with mock.patch.object(self.sp.os, "lstat", stat), contextlib.redirect_stdout(io.StringIO()):
                 store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
             self.assertEqual(store.stats.unlink_failed, 1)
 
@@ -1028,6 +1028,78 @@ class SpillTierTests(unittest.TestCase):
                     self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
             self.assertIn("MemoryError", str(caught.exception))
             self.assertTrue(os.path.exists(path))                         # a healthy file is not deleted
+
+    def test_a_linked_rank_folder_of_an_old_build_is_never_followed(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as outside:
+            victim = os.path.join(outside, "keep.safetensors")
+            with open(victim, "wb") as f:
+                f.write(b"x")
+            for name in ("spill-0000000000000001", "spill-0000000000000002"):
+                os.makedirs(os.path.join(root, name))
+            try:
+                os.symlink(outside, os.path.join(root, "spill-0000000000000001", "rank0"))      # an old build to remove
+                os.symlink(outside, os.path.join(root, "spill-0000000000000002", "rank0"))      # an old build to keep
+            except (OSError, NotImplementedError):
+                self.skipTest("no symbolic links here")
+            cfg = self.sp.SpillConfig(root=root, gib=1e-9, min_free_gib=0, min_tokens=1, keep_builds=1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertTrue(os.path.exists(victim))                       # nothing behind a link was touched
+
+    def test_an_empty_build_of_a_failed_start_takes_no_retention_slot(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root:
+            working = os.path.join(root, "spill-0000000000000001", "rank0")
+            orphan = os.path.join(root, "spill-0000000000000002", "rank0")
+            for folder in (working, orphan):
+                os.makedirs(folder)
+            kept = os.path.join(working, "0.safetensors")
+            with open(kept, "wb") as f:
+                f.write(b"x")
+            os.utime(os.path.dirname(working), (1000, 1000))              # older than the orphan
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertTrue(os.path.exists(kept))                         # the build with entries stays
+            self.assertFalse(os.path.exists(orphan))                      # the empty one is gone
+
+    def test_a_staging_buffer_that_cannot_be_allocated_fails_the_constructor(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp, "_stage", side_effect=MemoryError("stage")):
+                with self.assertRaises(RuntimeError) as caught:
+                    self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True,
+                                       spanned=["comp.0.0"])
+            self.assertIn("could not start", str(caught.exception))
+
+    def test_a_failure_while_one_rank_prepares_the_index_agreement_is_shared(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            store.gather, store.share = gather, lambda values: values or []
+            store.world = 2
+
+            class Boom(dict):
+                def values(self):
+                    raise MemoryError("sort")
+
+            store.index = Boom()
+            with self.assertRaises(MemoryError):
+                store._reconcile()
+            self.assertEqual(rounds, [[1]])                                # the failure is in the agreement
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib

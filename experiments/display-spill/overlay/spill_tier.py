@@ -657,6 +657,8 @@ class SpillStore:
         """Remove the unfinished writes of a kept build and its oldest files until it fits the cap. A file that cannot
         be removed is counted and logged, and the next victim goes."""
 
+        if os.path.islink(mine):                              # (never followed: its target is not this tier's)
+            return
         try:
             names = os.listdir(mine)
         except (FileNotFoundError, NotADirectoryError):
@@ -690,11 +692,22 @@ class SpillStore:
                 continue
             total -= size
 
+    @staticmethod
+    def _holds_entries(mine: str) -> bool:
+        """Whether a rank folder of an older build has a finished file."""
+
+        try:
+            if os.path.islink(mine):
+                return False
+            return any(name.endswith(".safetensors") for name in os.listdir(mine))
+        except OSError:
+            return True                                       # (unknown: it keeps its slot and is looked at later)
+
     def _is_dir(self, path: str) -> bool:
         """Whether ``path`` is a folder. A path that cannot be read is counted and logged (and is not a folder)."""
 
         try:
-            return stat.S_ISDIR(os.stat(path).st_mode)
+            return stat.S_ISDIR(os.lstat(path).st_mode)       # (a link is not a folder: it is never followed)
         except FileNotFoundError:
             return False
         except OSError as exc:
@@ -751,7 +764,7 @@ class SpillStore:
         dated = []
         for d in others:
             try:
-                status = os.stat(d)
+                status = os.lstat(d)
             except FileNotFoundError:
                 continue
             except OSError as exc:                            # (the build stays: counted and logged)
@@ -759,14 +772,33 @@ class SpillStore:
                 continue
             if stat.S_ISDIR(status.st_mode):
                 dated.append((status.st_mtime, d))
-        others = [d for _, d in sorted(dated, reverse=True)]
+        others = []
+        for _, d in sorted(dated, reverse=True):
+            mine = os.path.join(d, f"rank{self.rank}")
+            if not self._holds_entries(mine):                 # an orphan (a start that failed here): no retention slot
+                if os.path.islink(mine):
+                    continue
+                if not self._is_dir(mine) or self._remove_tree(mine):
+                    try:
+                        os.rmdir(d)
+                    except OSError:
+                        pass
+                continue
+            others.append(d)
         gone = 0
         for d in others[:max(0, self.cfg.keep_builds)]:       # a kept build: its unfinished writes go, and its oldest
             mine = os.path.join(d, f"rank{self.rank}")        # files until it fits the current cap
             self._trim_kept_build(mine)
         for d in others[max(0, self.cfg.keep_builds):]:
             mine = os.path.join(d, f"rank{self.rank}")
-            if self._is_dir(mine) and self._remove_tree(mine):
+            if os.path.islink(mine):                          # the link goes, never what it points to
+                try:
+                    os.remove(mine)
+                except FileNotFoundError:
+                    pass
+                except OSError as exc:
+                    self._unlink_failed(mine, exc)
+            elif self._is_dir(mine) and self._remove_tree(mine):
                 gone += 1
             try:
                 os.rmdir(d)                                    # empty once every rank pruned its own
@@ -850,22 +882,41 @@ class SpillStore:
                 except OSError as exc:
                     self._unlink_failed(path, exc)
 
+    def _agreed(self, step: Callable[[], Any]) -> Any:
+        """Run a local step of the index agreement. A failure on one rank is shared first, so that no rank waits in a
+        collective that another rank never enters: every rank raises."""
+
+        failure, result = None, None
+        try:
+            result = step()
+        except Exception as exc:                                  # noqa: BLE001
+            failure = exc
+        rows = self.gather([int(failure is not None)])
+        if failure is not None:
+            raise failure
+        if any(row[0] for row in rows):
+            raise RuntimeError("another rank could not prepare the index agreement")
+        return result
+
     def _reconcile(self) -> int:
         """Every rank: keep the entries every rank holds, in rank 0's recency order, at the largest rank's size.
         Returns how many this rank dropped."""
 
         if self.share is None or self.gather is None:
             return 0
-        mine = sorted(self.index.values(), key=lambda e: e.last)
-        flat = [v for e in mine for v in (e.key[0], e.key[1], e.n)] if self.rank == 0 else None
-        theirs = self.share(flat)
+
+        def prepare() -> list[int] | None:
+            mine = sorted(self.index.values(), key=lambda e: e.last)
+            return [v for e in mine for v in (e.key[0], e.key[1], e.n)] if self.rank == 0 else None
+
+        theirs = self.share(self._agreed(prepare))
         keys = [(theirs[i], theirs[i + 1], theirs[i + 2]) for i in range(0, len(theirs), 3)]
         keep = []
         if keys:
-            held = [int((hi, lo) in self.index and self.index[(hi, lo)].n == n) for hi, lo, n in keys]
-            every = self.gather(held)
-            keep = [k for i, k in enumerate(keys) if all(r[i] for r in every)]
-        sizes = self.gather([self.index[(hi, lo)].size >> 20 for hi, lo, _ in keep]) if keep else []
+            every = self.gather(self._agreed(lambda: [int((hi, lo) in self.index and self.index[(hi, lo)].n == n)
+                                                      for hi, lo, n in keys]))
+            keep = self._agreed(lambda: [k for i, k in enumerate(keys) if all(r[i] for r in every)])
+        sizes = self.gather(self._agreed(lambda: [self.index[(hi, lo)].size >> 20 for hi, lo, _ in keep])) if keep else []
         want = {(hi, lo) for hi, lo, _ in keep}
         dropped = 0
         for e in list(self.index.values()):
@@ -1076,7 +1127,8 @@ class SpillStore:
             k = os.pwrite(fd, mv, at)
             mv, at = mv[k:], at + k
 
-    def _write(self, job: Job, bufs: list[torch.Tensor], stream, hasher: ThreadPoolExecutor) -> bool:
+    def _write(self, job: Job, bufs: list[torch.Tensor], stream, hasher: ThreadPoolExecutor,
+               staging: torch.Tensor | None = None) -> bool:
         """One entry: header, then every tensor's bytes packed into the two staging buffers in turn (a buffer's copy
         off the device overlaps the other's write), full aligned buffers written, the tail padded then truncated."""
 
@@ -1106,7 +1158,7 @@ class SpillStore:
                 hashed.result()
                 total += n
 
-            stage = None
+            stage = staging
             for name, t in job.items:
                 v = t.reshape(-1).view(torch.uint8)
                 if name in self.spanned and stage is None:
@@ -1213,6 +1265,9 @@ class SpillStore:
             stream = torch.cuda.Stream(device=self.device) if torch.cuda.is_available() else None
             hasher = ThreadPoolExecutor(1, thread_name_prefix=f"spill-crc-w{self.rank}")
             hasher.submit(lambda: None).result()       # (the pool starts its thread on the first task: start it now)
+            # The staging buffer of the rows a memcpy may not reach is allocated now, not by the first write: a rank
+            # that cannot get it must say so before the tier is announced.
+            staging = _stage(self.device, stream) if self.spanned else None
         except Exception as exc:                       # noqa: BLE001  (reported to the constructor)
             if ready is not None:
                 ready.put(exc)
@@ -1225,7 +1280,7 @@ class SpillStore:
                 return
             t0 = time.perf_counter()
             try:
-                ok = self._write(job, bufs, stream, hasher)
+                ok = self._write(job, bufs, stream, hasher, staging)
             except Exception as exc:                   # noqa: BLE001  (the writer never dies)
                 self._log(exc)
                 self._settle(stream)
