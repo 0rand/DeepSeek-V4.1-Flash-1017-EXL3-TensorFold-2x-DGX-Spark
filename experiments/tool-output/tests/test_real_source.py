@@ -285,11 +285,9 @@ class ToolOutputHttpTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertFalse(any("content" in choice.get("delta", {}) or "tool_calls" in choice.get("delta", {})
                                  for item in frames(stream) if "choices" in item for choice in item["choices"]))
-            status, _, text = post(port, self.request("G", tools=TOOLS))           # a closed code fence: literal text
-            message = json.loads(text)["choices"][0]["message"]
-            self.assertEqual(status, 200)
-            self.assertIsNone(message.get("tool_calls"))
-            self.assertIn("tool_call", message["content"])
+            status, _, text = post(port, self.request("G", tools=TOOLS))           # in a code fence: still a call
+            self.assertEqual(status, 422)
+            self.assertEqual(json.loads(text)["error"]["code"], "unavailable_tool_call")
             status, _, text = post(port, self.request("H", tools=TOOLS))           # quote marks only: a real call
             message = json.loads(text)["choices"][0]["message"]
             self.assertEqual(status, 200)

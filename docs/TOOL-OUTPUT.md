@@ -38,12 +38,11 @@ No performance claim is made.
 - Ordinary prose streams as before, including when tools are offered.
 - A possible opening tag at the end of a chunk waits for more text. Prose before it is released.
 - A real call envelope is held until the whole answer is validated.
-- The guard fails closed. A complete call envelope is literal text only in one sure case: it stands inside a closed code fence. The opener is a line of three or more backticks or tildes with at most three spaces of indent; for backticks, the info string holds no backtick. The closer is a line of at least as many of the same mark, with at most three spaces of indent and nothing after it, and it comes after the envelope. CRLF line ends are read as line ends.
-- Every other case is a real call: quote marks, quote lines (`>`), inline code, indented code, escapes, a fence that is not closed, and a fence that closes before the call. An unoffered call there gives the safe error. An offered call there runs as a call.
-- Argument text is data, not Markdown. The guard replaces each call by a filler before it reads the code fences, so a fence line inside one call cannot make a later call literal.
-- A complete call that starts inside another candidate and ends after it (crossing spans) is checked too. A call wholly inside another call is data. A crossing call is also replaced by a filler before the guard reads the code fences. A call with a line of fence marks in its body is never taken as literal text, because that line may close the fence (a false positive that costs one rejected reply).
-- While streaming, every call opener waits, like a real call, until the answer is complete. The final result then returns a call inside a closed fence as text.
-- Cost of this rule: a model that writes a tool-call envelope as prose outside a fenced code block (in quotes, in inline code or in a quote line) gets an unoffered envelope rejected, or an offered envelope run. This false positive is rare. Prefer it to a bypass of the guard.
+- The guard fails closed and reads no Markdown. Every complete call envelope counts as a call, wherever it is: in prose, in quotes, in inline code, in a quote line, or in a code fence. An unoffered call gives the safe error. An offered call runs as a call.
+- A complete call that stands inside the data of another call, or that crosses another candidate, is checked too. Only the outer envelopes run as calls.
+- While streaming, every call opener waits until the answer is complete, like a real call. The final result then decides.
+- Known limit of a guard that fails closed: an example of a tool call in a code fence is a call. If the tool is not offered, the reply is rejected. If the tool is offered, the example runs as a call. A model that explains tool-call syntax to a user can trigger this. The limit is the price of a guard that a Markdown trick cannot get around.
+- The guard reads the answer in one pass. It does not copy the answer once for each envelope.
 - Streaming scans each new part of the answer once. It does not scan the whole answer again for each chunk. If a new text does not extend the text of the last call, it scans from the start.
 - The content of a guarded reply passes through the same `ToolCallPolicy.content()` step as before. With `parallel_tool_calls: false`, that step removes tool text that is not a complete call.
 - A flat JSON call with an empty nested `function` object is read by its top-level `name`.

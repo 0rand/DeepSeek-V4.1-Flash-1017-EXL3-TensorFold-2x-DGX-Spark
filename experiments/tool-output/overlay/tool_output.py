@@ -40,6 +40,7 @@ class ToolOutputGuard:
     _glm_re = re.compile(r"\s*([\w.:-]+)(.*)", re.DOTALL)
     _glm_args_re = re.compile(r"<arg_key>.*?</arg_key>\s*<arg_value>.*?</arg_value>", re.DOTALL)
     _name_re = re.compile(r"[\w.:-]+\Z")
+    _close_re = re.compile(r"\s*</tool_call>", re.IGNORECASE)
     _opener_re = re.compile(r"<tool_call>|<｜DSML｜ calls>", re.IGNORECASE)
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
@@ -65,8 +66,8 @@ class ToolOutputGuard:
 
         Only a possible opening tag suffix waits for more characters. Once an
         executable opener occurs, the rest waits for final atomic validation.
-        No call delta can escape before a later unoffered call is checked. An opener that follows a code fence,
-        inline code or a quote line also waits: they can end inside the call, and only parse() sees the whole call.
+        No call delta can escape before a later unoffered call is checked. Every opener waits, wherever it is
+        (the guard reads no Markdown): only parse() sees the whole call.
         """
         if not text.startswith(self._stream_seen):
             # The text does not extend the text of the last call (a reset or a rewrite): trust nothing, scan again.
@@ -78,8 +79,6 @@ class ToolOutputGuard:
         longest = max(len(tag) for tag in self._openers)
         first = min(self._stream_scanned, len(text))
         for opening in self._opener_re.finditer(text, first):
-            # Open code or a quote line can end inside the call (a blank line ends a quote), so only parse() may
-            # call an opener literal, when it sees the whole call.
             self._stream_cut = opening.start()
             return text[:self._stream_cut]
         tail = text[-(longest - 1):].lower()
@@ -87,32 +86,6 @@ class ToolOutputGuard:
                     if tail.endswith(tag[:size].lower())), default=0)
         self._stream_scanned = max(first, len(text) - (longest - 1))
         return text[:-held] if held else text
-
-    @staticmethod
-    def _fenced_blocks(masked: str) -> list[tuple[int, int | None]]:
-        """The code fences of ``masked`` as (offset where the opener line ends, offset of the closer line or None).
-
-        This is the only Markdown the guard reads. An opener is a line of three or more backticks or tildes with at
-        most three spaces of indent; for backticks the info string must hold no backtick. A closer is a line of at
-        least as many of the same character, with at most three spaces of indent and nothing after it. The text may
-        use CRLF line ends. Anything else (quotes, quote lines, inline code, indented code) is not read.
-        """
-        blocks: list[tuple[int, int | None]] = []
-        fence: tuple[str, int, int] | None = None
-        offset = 0
-        for line in masked.split("\n"):
-            base, offset = offset, offset + len(line) + 1
-            line = line.rstrip("\r")
-            if fence is None:
-                match = re.fullmatch(r" {0,3}(`{3,}|~{3,})([^\n]*)", line)
-                if match and not (match.group(1)[0] == "`" and "`" in match.group(2)):
-                    fence = (match.group(1)[0], len(match.group(1)), offset)
-            elif re.fullmatch(r" {0,3}" + re.escape(fence[0]) + "{" + str(fence[1]) + r",}[ \t]*", line):
-                blocks.append((fence[2], base))
-                fence = None
-        if fence is not None:
-            blocks.append((fence[2], None))
-        return blocks
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
         """Return CUDA's parsed result, or fail atomically on an unavailable complete call."""
@@ -137,10 +110,10 @@ class ToolOutputGuard:
                 _, size = json.JSONDecoder().raw_decode(text, opening.end())
             except json.JSONDecodeError:
                 continue
-            closing = re.match(r"\s*</tool_call>", text[size:], re.IGNORECASE)
+            closing = self._close_re.match(text, size)
             if closing:
                 name = self._call_name(text[opening.end():size])
-                candidates.append((opening.start(), size + closing.end(), [name] if name else [], "json"))
+                candidates.append((opening.start(), closing.end(), [name] if name else [], "json"))
 
         def check(start: int, stop: int, names: list[str], kind: str) -> None:
             for name in names:
@@ -159,48 +132,26 @@ class ToolOutputGuard:
                         "tools_field": self.tools_field, "tool_choice": self.tool_choice,
                     })
 
+        # The guard reads no Markdown: every complete envelope counts as a call, in a code fence or not, and a call
+        # inside the data of another call is checked too. Only the top-level envelopes (no overlap) are parsed as calls.
         end = -1
-        chosen, crossing = [], []
+        chosen = []
         for start, stop, names, kind in sorted(candidates, key=lambda item: (item[0], -item[1])):
-            if start < end:
-                if stop > end:                       # it starts inside a span and ends after it: not data, so check it
-                    crossing.append((start, stop, names, kind))
+            check(start, stop, names, kind)
+            if start < end:                          # inside, or crossing, an earlier span: data of that span
+                end = max(end, stop)
                 continue
             end = stop
-            chosen.append((start, stop, names, kind))
-        for start, stop, names, kind in crossing:
-            check(start, stop, names, kind)
-        # Text of a call is data, not Markdown: replace it by a filler (newlines stay) before the code fences are read.
-        # The filler is not white space, so a line with a call after a fence mark is still not a closing line.
-        masked = text
-        for start, stop, _, _ in sorted(chosen + crossing, reverse=True):   # a crossing call is data, too
-            head, newline, rest = masked[start:stop].partition("\n")
-            # The first line keeps its backticks: after a fence mark they make an invalid info string.
-            masked = masked[:start] + re.sub(r"[^`]", "x", head) + newline + re.sub(r"[^\n]", "x", rest) + masked[stop:]
-        fences = self._fenced_blocks(masked)
-        envelopes = []
-        for start, stop, names, kind in chosen:
-            # A call is literal text only inside a closed code fence that began before it and ends after it. A line of
-            # fence marks inside the call may close that fence, so such a call is never taken as literal (fail closed).
-            is_literal = (not re.search(r"\n {0,3}(?:`{3,}|~{3,})", text[start:stop])
-                          and any(opened <= start and closed is not None and closed >= stop for opened, closed in fences))
-            envelopes.append((start, stop, is_literal))
-            if is_literal:
-                continue
-            check(start, stop, names, kind)
+            chosen.append((start, stop))
 
-        # Parse real top-level envelopes without masking or rewriting argument values.
+        # Parse the top-level envelopes without masking or rewriting argument values.
         content, calls, cursor = [], [], 0
-        for start, stop, is_literal in envelopes:
+        for start, stop in chosen:
             content.append(text[cursor:start])
-            block = text[start:stop]
-            if is_literal:
-                content.append(block)
-            else:
-                remaining = None if max_calls is None else max(0, max_calls - len(calls))
-                residue, parsed = reply_text.parse_tool_calls(block, self.tools, max_calls=remaining)
-                content.append(residue)
-                calls.extend(parsed or [])
+            remaining = None if max_calls is None else max(0, max_calls - len(calls))
+            residue, parsed = reply_text.parse_tool_calls(text[start:stop], self.tools, max_calls=remaining)
+            content.append(residue)
+            calls.extend(parsed or [])
             cursor = stop
         content.append(text[cursor:])
         result = "".join(content)

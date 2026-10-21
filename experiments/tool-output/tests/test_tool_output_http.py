@@ -97,8 +97,13 @@ class ToolOutputHttpTests(unittest.TestCase):
         self.assertEqual(json.loads(text)["choices"][0]["message"]["tool_calls"][0]["function"]["name"], "task")
         self.assertEqual(len(self.runs), 2)
 
+    def test_a_fenced_example_of_an_unoffered_call_is_rejected(self):
+        status, text = self.post({"answer": "```\n" + UNKNOWN + "\n```\n", "tools": TOOLS})
+        self.assertEqual(status, 422)
+        self.assertEqual(json.loads(text)["error"]["code"], "unavailable_tool_call")
+
     def test_prose_and_fenced_examples_have_no_calls(self):
-        for answer in ("plain streamed answer", "```\n" + UNKNOWN + "\n```\n"):
+        for answer in ("plain streamed answer", "```\n" + "x = 1" + "\n```\n"):
             status, text = self.post({"answer": answer, "tools": TOOLS, "stream": True})
             self.assertEqual(status, 200)
             frames = [json.loads(line[6:]) for line in text.splitlines() if line.startswith("data: {")]

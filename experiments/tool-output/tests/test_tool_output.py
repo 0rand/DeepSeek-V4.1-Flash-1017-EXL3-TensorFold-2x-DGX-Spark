@@ -175,13 +175,13 @@ class ToolOutputTests(unittest.TestCase):
         content, calls = self.guard().parse('<tool_call>{"name":"task","function":{},"arguments":{}}</tool_call>')
         self.assertEqual(calls[0]["function"]["name"], "task")
 
-    def test_code_example_followed_by_real_call_is_not_executed_twice(self):
+    def test_a_call_example_in_a_code_fence_is_a_call(self):
+        # The guard reads no Markdown: an offered example in a fence is a call, and so is the call after it.
         literal = '<tool_call>{"name":"task","arguments":{"example":true}}</tool_call>'
         real = '<tool_call>{"name":"task","arguments":{"example":false}}</tool_call>'
         content, calls = self.guard().parse('```json\n' + literal + '\n```\n' + real)
-        self.assertIn(literal, content)
-        self.assertEqual(len(calls), 1)
-        self.assertIn('false', calls[0]["function"]["arguments"])
+        self.assertEqual(len(calls), 2)
+        self.assertNotIn("tool_call", content)
 
     def test_streaming_scans_only_new_text(self):
         positions = []
@@ -238,13 +238,15 @@ class ToolOutputTests(unittest.TestCase):
                 self.assertIsNone(calls)
                 self.assertIn(text.replace("</tool_call>", "") if text.endswith("{}") else text[:10], content)
 
-    def test_only_a_call_inside_a_closed_code_fence_is_literal_text(self):
+    def test_a_call_inside_a_closed_code_fence_is_rejected_like_any_other_call(self):
+        # Known limit of a guard that fails closed: an example of an unoffered call in a code fence is rejected.
         call = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
         for text in (f"```\n{call}\n```\n", f"```json\n{call}\n```", f"~~~\n{call}\n~~~\n", f"````\n{call}\n````\n",
                      f"   ```\n{call}\n   ```\n", f"```\r\n{call}\r\n```\r\n", f"intro\n\n```\n{call}\n```\nafter",
                      f"```\n{call}\n\n{call}\n```\n"):
             with self.subTest(text=text):
-                self.assertEqual(self.guard().parse(text), (text, None))
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.guard().parse(text)
 
     def test_every_other_case_is_a_real_call_and_is_rejected(self):
         # Quotes, quote lines, inline code, indented code, escapes and fences that are not sure all fail closed.
@@ -297,10 +299,30 @@ class ToolOutputTests(unittest.TestCase):
             with self.subTest(text=text[:30]):
                 with self.assertRaises(self.module.ModelOutputError):
                     self.guard().parse(text)
-        # A call that lies wholly inside another span is data: it is not checked on its own.
-        inner = '<tool_call>{"name":"task","arguments":{"text":"<｜DSML｜ calls><｜DSML｜ invoke name=\\"x\\"></｜DSML｜ invoke></｜DSML｜ calls>"}}</tool_call>'
-        content, calls = self.guard().parse(inner)
-        self.assertEqual(len(calls), 1)
+
+    def test_a_call_inside_the_data_of_another_call_is_checked_but_not_run(self):
+        nested = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"><｜DSML｜ parameter name="note" string="true">'
+                  '<tool_call>{"name":"task","arguments":{"deep":1}}</tool_call>'
+                  '</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>')
+        content, calls = self.guard().parse(nested)
+        self.assertFalse(any("deep" in call["function"]["arguments"] for call in calls or []))   # data, not a call
+
+    def test_a_call_inside_a_crossing_candidate_is_not_run(self):
+        # Candidate A ends inside candidate B; C lies inside B. C is data of B and must not run.
+        b = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"> </tool_call> '
+             '<tool_call>{"name":"task","arguments":{"deep":1}}</tool_call> </｜DSML｜ invoke></｜DSML｜ calls>')
+        content, calls = self.guard().parse("<tool_call> " + b)
+        self.assertFalse(any("deep" in call["function"]["arguments"] for call in calls or []))
+
+    def test_many_envelopes_are_read_in_one_pass(self):
+        import time
+
+        call = '<tool_call>{"name":"task","arguments":{"n":1}}</tool_call>'
+        text = ("```\n" + call + "\n```\n") * 20000
+        start = time.perf_counter()
+        content, calls = self.guard().parse(text)
+        self.assertEqual(len(calls), 20000)
+        self.assertLess(time.perf_counter() - start, 20.0)           # a copy of the answer for each call needs minutes
 
     def test_a_fence_inside_the_body_of_a_crossing_call_cannot_make_a_later_call_literal(self):
         unoffered = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
@@ -309,7 +331,7 @@ class ToolOutputTests(unittest.TestCase):
         with self.assertRaises(self.module.ModelOutputError):
             self.guard().parse(text)
 
-    def test_a_call_with_a_fence_line_in_its_body_is_never_literal(self):
+    def test_a_call_with_a_fence_line_in_its_body_is_rejected(self):
         body = '<function=unoffered><parameter=secret>PRIVATE' + chr(10) + '```' + chr(10) + 'more</parameter></function>'
         for mark in ("```", "~~~"):
             call = '<tool_call>' + body.replace("```", mark) + '</tool_call>'
@@ -317,24 +339,20 @@ class ToolOutputTests(unittest.TestCase):
                 text = mark + chr(10) + call + chr(10) + mark + chr(10)
                 with self.assertRaises(self.module.ModelOutputError):
                     self.guard().parse(text)
-        # The same call with no fence line in its body stays literal text inside a closed fence.
-        plain = '<tool_call><function=unoffered><parameter=secret>PRIVATE</parameter></function></tool_call>'
-        content, calls = self.guard().parse("```" + chr(10) + plain + chr(10) + "```" + chr(10))
-        self.assertIsNone(calls)
-        self.assertIn(plain, content)
 
-    def test_a_backtick_in_a_call_after_a_fence_mark_keeps_the_opener_invalid(self):
+    def test_an_offered_call_with_a_fence_line_cannot_hide_a_later_call(self):
+        offered = '<tool_call><function=task><parameter=code>' + chr(10) + '```' + chr(10) + '</parameter></function></tool_call>'
         unoffered = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
-        offered = '<tool_call>{"name":"task","arguments":{"v":"`"}}</tool_call>'
-        text = f"``` {offered}\n{unoffered}\n```\n"                  # the first line is not a fence opener
+        text = '```' + chr(10) + offered + chr(10) + unoffered + chr(10) + '```' + chr(10)
         with self.assertRaises(self.module.ModelOutputError):
             self.guard().parse(text)
-        # With no backtick in the info string, the same shape is a real opener and the closer is after the call.
-        clean = '<tool_call>{"name":"task","arguments":{"v":"1"}}</tool_call>'
-        quiet = f"``` {clean}\n{unoffered}\n```\n"
-        content, calls = self.guard().parse(quiet)
-        self.assertEqual(len(calls), 1)                              # the call on the opener line runs
-        self.assertIn(unoffered, content)                             # the one inside the closed fence stays text
+
+    def test_a_call_after_a_fence_mark_with_a_backtick_is_rejected_too(self):
+        unoffered = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
+        offered = '<tool_call>{"name":"task","arguments":{"v":"`"}}</tool_call>'
+        for text in (f"``` {offered}\n{unoffered}\n```\n", f"``` {offered.replace('`', '1')}\n{unoffered}\n```\n"):
+            with self.assertRaises(self.module.ModelOutputError):
+                self.guard().parse(text)
 
     def test_stream_holds_every_opener_and_parse_decides(self):
         call = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
@@ -351,9 +369,8 @@ class ToolOutputTests(unittest.TestCase):
                 '<｜DSML｜ parameter name="note" string="true">'
                 '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
                 '</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>')
-        content, calls = self.guard().parse(text)
-        self.assertIsNone(calls)
-        self.assertIn("todowrite", content)
+        with self.assertRaises(self.module.ModelOutputError):         # the nested call names a tool that is not offered
+            self.guard().parse(text)
 
 
 if __name__ == "__main__":
