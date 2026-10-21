@@ -354,6 +354,14 @@ class ToolOutputTests(unittest.TestCase):
                 self.assertIsNone(reply_text.parse_tool_calls(text, offered)[1])      # trimmed spec name: never matches
                 self.assertEqual(self.guard().parse(text), reply_text.parse_tool_calls(text, self.tools))
 
+    def test_a_value_the_json_decoder_refuses_is_a_safe_rejection(self):
+        text = '<tool_call>{"name":"task","arguments":{"n":' + "9" * 6000 + "}}</tool_call>"
+        for guard in (self.guard(), self.module.ToolOutputGuard(None), self.module.ToolOutputGuard([])):
+            with self.assertRaises(self.module.ModelOutputError) as caught:
+                guard.parse(text)
+            self.assertEqual(caught.exception.diagnostic["reason"], "undecodable_call")
+            self.assertNotIn("9999", caught.exception.log_line())
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 

@@ -102,24 +102,31 @@ class ToolOutputGuard:
         for dsml in reply_text._DSML_BLOCK_RE.finditer(text):
             for made in reply_text._TOOL_CALL_BLOCK_RE.finditer(reply_text.dsml_to_tool_calls(dsml.group(0))):
                 rewritten.setdefault(made.group(0), (dsml.start(), dsml.end()))
+        def reject(name: str, reason: str, start: int, stop: int, kind: str) -> ModelOutputError:
+            effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})
+            declared = sorted({tool_spec_name(tool) for tool in self.declared_tools if tool_spec_name(tool)})
+            return ModelOutputError(name, diagnostic={
+                "reason": reason, "wrapper": kind, "span_start": start, "span_end": stop,
+                "answer_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                "effective_tools": [value[:96] for value in effective[:64]],
+                "effective_tool_count": len(effective),
+                "declared_tools": [value[:96] for value in declared[:64]],
+                "declared_tool_count": len(declared),
+                "tools_field": self.tools_field, "tool_choice": self.tool_choice,
+            })
+
         for block in reply_text._TOOL_CALL_BLOCK_RE.finditer(converted):
-            for name, kind in self._call_names(reply_text, block.group(1).strip()):
+            start, stop = rewritten.get(block.group(0), (block.start(), block.end()))
+            try:
+                names = self._call_names(reply_text, block.group(1).strip())
+            except ValueError:                         # a value that the JSON decoder refuses (for example 5000 digits)
+                raise reject("", "undecodable_call", start, stop,
+                             "dsml" if block.group(0) in rewritten else "json") from None
+            for name, kind in names:
                 if name.lower() not in known:
-                    start, stop = rewritten.get(block.group(0), (block.start(), block.end()))
-                    effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})
-                    declared = sorted({tool_spec_name(tool) for tool in self.declared_tools if tool_spec_name(tool)})
-                    raise ModelOutputError(name, diagnostic={
-                        "reason": "disallowed_by_tool_choice" if name.lower() in {value.lower() for value in declared}
-                                  else "unavailable_tool",
-                        "wrapper": "dsml" if block.group(0) in rewritten else kind,
-                        "span_start": start, "span_end": stop,
-                        "answer_sha256": hashlib.sha256(text.encode()).hexdigest(),
-                        "effective_tools": [value[:96] for value in effective[:64]],
-                        "effective_tool_count": len(effective),
-                        "declared_tools": [value[:96] for value in declared[:64]],
-                        "declared_tool_count": len(declared),
-                        "tools_field": self.tools_field, "tool_choice": self.tool_choice,
-                    })
+                    declared = {tool_spec_name(tool).lower() for tool in self.declared_tools if tool_spec_name(tool)}
+                    raise reject(name, "disallowed_by_tool_choice" if name.lower() in declared else "unavailable_tool",
+                                 start, stop, "dsml" if block.group(0) in rewritten else kind)
         return reply_text.parse_tool_calls(text, self.tools, max_calls=max_calls)
 
     def _call_names(self, reply_text: Any, block: str) -> list[tuple[str, str]]:
