@@ -1,6 +1,7 @@
 """Check that only the dependent spill bundle keeps SPILL_GIB."""
 import importlib.util
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -83,6 +84,11 @@ class SpillBundleTests(unittest.TestCase):
                 self.assertTrue(path.is_file(), f"{source} is not one file of the repository")
                 copied += 1
         self.assertGreaterEqual(copied, 4)
+        # The launcher runs the probe from the image, so the probe must be one of the copied files.
+        launcher = (repo / "start-display-spill.sh").read_text()
+        copied_to = {f"{target.rstrip('/')}/{source.rsplit('/', 1)[-1]}" for _, *sources, target in lines for source in sources}
+        for path in set(re.findall(r"/opt/display-kv/[\w./-]+", launcher)):
+            self.assertIn(path, copied_to)
 
 
 if __name__ == "__main__":

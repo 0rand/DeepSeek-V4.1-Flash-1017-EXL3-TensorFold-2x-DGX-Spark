@@ -385,6 +385,30 @@ class SpillTierTests(unittest.TestCase):
             self.assertTrue(store.drain(10))
             self.assertTrue(store.has(new))
 
+    def test_a_save_under_disk_pressure_waits_for_queued_writes_before_it_frees_entries(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            order = []
+            store.drain = lambda timeout=None: order.append("drain") or True
+            real = store._make_room
+
+            def room(*args, **kwargs):
+                order.append("room")
+                return real(*args, **kwargs)
+
+            store._make_room = room
+            new = list(range(500, 600))
+            snap = Snap(ids=new, ring=torch.arange(len(new) * 4, dtype=torch.uint8).reshape(len(new), 4))
+            store.disk_free = lambda: 0                                   # below the floor: entries must go
+            store.save(new, snap, skip=("ids",))
+            self.assertEqual(order[:2], ["drain", "room"])
+            order.clear()
+            store.disk_free = lambda: 1 << 40                             # no pressure: no wait
+            third = list(range(700, 800))
+            snap = Snap(ids=third, ring=torch.arange(len(third) * 4, dtype=torch.uint8).reshape(len(third), 4))
+            self.assertIsNotNone(store.save(third, snap, skip=("ids",)))
+            self.assertNotIn("drain", order)
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)

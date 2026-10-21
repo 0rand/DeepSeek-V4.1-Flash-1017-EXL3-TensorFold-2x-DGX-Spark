@@ -61,6 +61,7 @@ MAX_HEADER = 64 << 20                  # the most a header may declare (1M token
 BLOCK = 8 << 20                        # bytes one CRC-32 covers (CHUNK is a multiple of it)
 STAGE = 8 << 20                        # bytes of the device buffer rows a memcpy may not reach pass through
 WAIT_S = 60.0                          # a read of an entry still being written waits this long for it (reader thread)
+FLOOR_DRAIN_S = 120.0                  # most a save waits for queued writes before it frees disk for the free-disk floor
 INFLIGHT = 4 << 30                     # bytes of queued writes past which a new one first waits for the oldest
 
 _DT = {torch.bfloat16: "BF16", torch.float16: "F16", torch.float32: "F32", torch.float64: "F64", torch.int8: "I8",
@@ -1064,6 +1065,10 @@ class SpillStore:
                 return None
             short = max(r[0] for r in got) << 20
             size = max(r[1] for r in got) << 20
+        if short:
+            # A queued write still holds its whole file: removing its entry frees no bytes until the writer ends. Wait
+            # for the queue first, so the entries that go are files on disk. (The index decides who goes, not this wait.)
+            self.drain(FLOOR_DRAIN_S)
         if short and not self._make_room(size, keep, cap=self._total() + size - short):
             self.stats.no_space += 1               # below the floor even with every entry outside ``keep`` gone
             return None

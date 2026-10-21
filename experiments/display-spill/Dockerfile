@@ -4,7 +4,7 @@
 # (it holds a .env file) from the build context into the image.
 ARG BASE_IMAGE=tensorfold-dsv41:07aa02585f64
 FROM ${BASE_IMAGE}
-COPY experiments/display-kv/apply.py /opt/display-kv/apply.py
+COPY experiments/display-kv/apply.py experiments/display-kv/probe.py /opt/display-kv/
 COPY experiments/display-kv/overlay/display_kv.py /opt/display-kv/overlay/display_kv.py
 COPY experiments/display-spill/apply.py experiments/display-spill/compose.py /opt/display-spill/
 COPY experiments/display-spill/overlay/spill_tier.py /opt/display-spill/overlay/spill_tier.py
