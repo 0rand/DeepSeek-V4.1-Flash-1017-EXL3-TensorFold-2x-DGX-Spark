@@ -558,6 +558,69 @@ class SpillTierTests(unittest.TestCase):
             self.assertFalse(worker.is_alive())                           # the read ends with an error, never hangs
             self.assertEqual(len(outcome), 1)
 
+    def test_a_failure_to_set_up_the_entry_is_shared_before_any_index_changes(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            sent = self.gathered(store, [0, 1, 0])
+            new, snap = self.new_state()
+            with mock.patch.object(self.sp, "Entry", side_effect=MemoryError("entry")):
+                self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(sent[0][2], 1)                               # the failure rode in the one agreement
+            self.assertEqual(len(sent), 1)
+            self.assertEqual(len(store.index), 1)
+            self.assertEqual(store.pending_jobs(), 0)
+
+    def test_an_unreadable_free_space_is_not_an_empty_disk(self):
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            rooms = []
+            real = store._make_room
+            store._make_room = lambda *a, **k: rooms.append(a) or real(*a, **k)
+
+            def broken():
+                raise OSError("stale mount")
+
+            store.disk_free = broken
+            self.assertEqual(store.info()["disk_free_bytes"], 0)          # the metrics still answer
+            sent = self.gathered(store, [0, 1, 0])
+            new, snap = self.new_state()
+            self.assertIsNone(store.save(new, snap, skip=("ids",)))       # skipped on every rank
+            self.assertEqual(sent[0][2], 1)
+            self.assertEqual(rooms, [])
+            self.assertEqual(len(store.index), 1)                         # nothing was evicted
+            # After the wait, a probe that fails makes every rank skip the save as well.
+            store.drain = lambda timeout=None: True
+
+            calls = []
+
+            def once():
+                calls.append(1)
+                if len(calls) > 1:
+                    raise OSError("stale mount")
+                return 0
+
+            store.disk_free = once
+            sent = self.gathered(store, [0, 1, 0])
+            self.assertIsNone(store.save(new, snap, skip=("ids",)))
+            self.assertEqual(rooms, [])
+            self.assertEqual(len(store.index), 1)
+
+    def test_the_start_line_is_printed_by_announce_not_by_the_constructor(self):
+        import contextlib
+        import io
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[])
+            self.assertNotIn("stored prompts from before this start", out.getvalue())
+            with contextlib.redirect_stdout(out):
+                store.announce()
+            self.assertIn("stored prompts from before this start", out.getvalue())
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)

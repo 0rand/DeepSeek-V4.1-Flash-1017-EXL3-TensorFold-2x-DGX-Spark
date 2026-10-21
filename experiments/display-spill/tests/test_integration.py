@@ -106,8 +106,13 @@ class SpillIntegrationTests(unittest.TestCase):
                 created.append(kwargs)
                 self.dir = "/x"
 
+            announced = False
+
             def info(self):
                 return {"entries": 0, "stored_bytes": 0}
+
+            def announce(self):
+                self.announced = True
 
         def build_id(model_dir):
             if build_error:
@@ -234,6 +239,18 @@ class SpillIntegrationTests(unittest.TestCase):
         decoder, calls, created = self.run_init([[[1]], [[0]]])          # this rank is fine, another is not
         self.assertEqual(calls, [[1], [1]])
         self.assertIsNone(decoder.spill)
+
+    def test_the_start_line_comes_after_every_rank_agreed_and_a_peer_failure_is_reported(self):
+        import contextlib
+        import io
+
+        decoder, calls, created = self.run_init([[[1]], [[1]]])
+        self.assertTrue(decoder.spill.announced)                         # all ranks agreed: the start line is printed
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            decoder, calls, created = self.run_init([[[1]], [[0]]])      # this rank is fine, another is not
+        self.assertIsNone(decoder.spill)
+        self.assertIn("another rank could not start the tier", out.getvalue())
 
     def test_the_spill_config_has_no_highwater_and_ids_are_not_copied_to_a_list(self):
         changed = self.changed(spill.MULTI)

@@ -577,12 +577,18 @@ class SpillStore:
         self._make_room(0)                                    # a lower cap than the last run's: the oldest entries go
         dropped += before - len(self.index)
         self._start()                                         # (a failure here is agreed by the caller, like any other)
-        if self.rank == 0 and not quiet:
-            print(f"[tensorfold] spill: {self.top} ({cfg.gib:g} GiB a rank, write-through "
-                  f"from {cfg.min_tokens} tokens, {cfg.writers} writers"
-                  f"{', O_DIRECT' if self.direct else ''}, floor {cfg.min_free_gib:g} GiB free): "
-                  f"{found - dropped} stored prompts from before this start, {self._total() / (1 << 30):.1f} GiB"
-                  f"{f'; pruned {pruned_builds} older builds' if pruned_builds else ''}", flush=True)
+        self._quiet = quiet
+        self._banner = (f"[tensorfold] spill: {self.top} ({cfg.gib:g} GiB a rank, write-through "
+                        f"from {cfg.min_tokens} tokens, {cfg.writers} writers"
+                        f"{', O_DIRECT' if self.direct else ''}, floor {cfg.min_free_gib:g} GiB free): "
+                        f"{found - dropped} stored prompts from before this start, {self._total() / (1 << 30):.1f} GiB"
+                        f"{f'; pruned {pruned_builds} older builds' if pruned_builds else ''}")
+
+    def announce(self) -> None:
+        """Rank 0 prints the start line. The caller does this after every rank agreed that the tier is on."""
+
+        if self.rank == 0 and not self._quiet:
+            print(self._banner, flush=True)
 
     # -- housekeeping --------------------------------------------------------------------------------------------------
     def _own(self, path: str) -> None:
@@ -618,6 +624,12 @@ class SpillStore:
         with self.lock:
             return sum(e.size for e in self.index.values())
 
+    def _free_or_zero(self) -> int:
+        try:
+            return self.disk_free()
+        except OSError:
+            return 0
+
     def _short(self, size: int) -> int:
         """Bytes this rank's disk would be below the free-disk floor after a write of ``size`` (queued writes count as
         written)."""
@@ -628,11 +640,10 @@ class SpillStore:
         return max(0, floor + size + queued - self.disk_free())
 
     def disk_free(self) -> int:
-        try:
-            st = os.statvfs(self.dir)
-            return st.f_bavail * st.f_frsize
-        except OSError:
-            return 0
+        """Free bytes on the store's disk. A failed probe raises ``OSError``: unknown space is not empty space."""
+
+        st = os.statvfs(self.dir)
+        return st.f_bavail * st.f_frsize
 
     # -- the index -----------------------------------------------------------------------------------------------------
     def _scan(self) -> None:
@@ -1104,10 +1115,21 @@ class SpillStore:
             header, data = _header(items, info)
             size = len(header) + data
             short = self._short(size)                  # bytes this rank's disk would be below the floor
+            name = key_name(key, n)                    # the rest of the setup fails here too, not after the agreement
+            entry = Entry(key, n, name, size, ids=np.asarray(ids, dtype=np.int64), head=head,
+                          fields=_plain([layer] if layer else []))
+            src = None
+            if torch.cuda.is_available():
+                src = torch.cuda.Event()
+                src.record(torch.cuda.current_stream())
+            with self.lock:
+                self.seq += 1
+                seq = self.seq
+            job = Job(entry, os.path.join(self.dir, name + ".safetensors"), header, items, src, seq)
         except Exception as exc:                     # noqa: BLE001  (a rank-local failure: share it, never skip the gather)
             if self.world < 2 or self.gather is None:
                 raise
-            failure, items, layer, header, size, short = exc, [], None, b"", 0, 0
+            failure, size, short = exc, 0, 0
         if self.world > 1 and self.gather is not None:
             got = self.gather([-(-short >> 20), (size >> 20) + 1, int(failure is not None)])
             if any(r[2] for r in got):             # one rank could not prepare it: every rank skips this save
@@ -1115,6 +1137,7 @@ class SpillStore:
                 return None
             short = max(r[0] for r in got) << 20
             size = max(r[1] for r in got) << 20
+        entry.size = job.nbytes = size
         if size > self.cap:                        # (larger than the cap: it can never fit, so nothing is evicted)
             self.stats.full += 1
             return None
@@ -1123,7 +1146,10 @@ class SpillStore:
             # for the queue first, so the entries that go are files on disk, then measure again and agree on the
             # result. (The index decides who goes, not this wait.) A rank whose queue did not finish stops every rank.
             drained = self.drain(FLOOR_DRAIN_S)
-            short = self._short(size)
+            try:
+                short = self._short(size)
+            except OSError:                        # the space is unknown: skip this save on every rank
+                short, drained = 0, False
             if self.world > 1 and self.gather is not None:
                 got = self.gather([-(-short >> 20), int(drained)])
                 short = max(r[0] for r in got) << 20
@@ -1138,17 +1164,6 @@ class SpillStore:
             self.stats.full += 1
             return None
         self._throttle(size)
-        name = key_name(key, n)
-        entry = Entry(key, n, name, size, ids=np.asarray(ids, dtype=np.int64), head=head,
-                      fields=_plain([layer] if layer else []))
-        src = None
-        if torch.cuda.is_available():
-            src = torch.cuda.Event()
-            src.record(torch.cuda.current_stream())
-        with self.lock:
-            self.seq += 1
-            seq = self.seq
-        job = Job(entry, os.path.join(self.dir, name + ".safetensors"), header, items, src, seq)
         with self.lock:                                    # the index changes here, on every rank alike
             old = self.index.get(key)
             if old is not None:
@@ -1434,5 +1449,5 @@ class SpillStore:
                 "written_gib": round(s.written_bytes / (1 << 30), 2), "written_bytes": s.written_bytes,
                 "loaded_gib": round(s.loaded_bytes / (1 << 30), 2), "loaded_bytes": s.loaded_bytes,
                 "load_s": round(s.load_s, 2), "loaded_tokens": s.loaded_tokens, "restore_ms_p50": p(0.5),
-                "restore_ms_p95": p(0.95), "disk_free_bytes": self.disk_free(),
+                "restore_ms_p95": p(0.95), "disk_free_bytes": self._free_or_zero(),
                 **{f"unwritten_{k}": v for k, v in sorted(s.unwritten.items())}}
