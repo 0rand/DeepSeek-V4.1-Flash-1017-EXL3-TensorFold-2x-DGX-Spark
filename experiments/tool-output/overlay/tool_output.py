@@ -40,7 +40,8 @@ class ToolOutputGuard:
     # looping output, not a call: the guard rejects it before the parser has to scan it (and so does not stall).
     _RUNAWAY = 64
 
-    _long_space = re.compile(r"\s{257,}")
+    _white = re.compile(r"\s+")
+    _SCAN_BUDGET = 200_000_000    # about 0.3 s of the parser expressions, measured on the pinned engine
     _qwen_head = re.compile(r"^\s*<function=([^>\s]+)>", re.IGNORECASE)
 
     @staticmethod
@@ -52,12 +53,18 @@ class ToolOutputGuard:
     @classmethod
     def _stalls(cls, text: str, opener: str, closer: str) -> bool:
         """Whether the parser expressions could scan this text for long. An ``opener`` that no ``closer`` follows sends
-        a lazy expression to the end of the text. With many of them, or with one and a long run of white space (the
-        expressions try the white space at each position), the scan is quadratic."""
+        a lazy expression to the end of the text. With many of them the scan is quadratic. With white space it is worse:
+        the expressions try the white space at each position, so the cost grows with the length of the text and with
+        the square of its longest white-space run. The estimate below bounds that cost; it is far above any real call."""
 
         rest = text[text.rfind(closer) + 1:]
         count = rest.count(opener)
-        return count > cls._RUNAWAY or (count > 0 and cls._long_space.search(rest) is not None)
+        if count == 0:
+            return False
+        if count > cls._RUNAWAY:
+            return True
+        longest = max((len(run.group()) for run in cls._white.finditer(rest)), default=0)
+        return count * len(rest) * longest * longest > cls._SCAN_BUDGET
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self._stream_cut: int | None = None

@@ -497,6 +497,30 @@ class ToolOutputTests(unittest.TestCase):
                         pass
                     self.assertLess(time.perf_counter() - start, 2.0)
 
+    def test_repeated_white_space_runs_after_an_unterminated_opener_are_not_scanned_for_long(self):
+        import time
+
+        unit = " " * 256 + "X"
+        done = "<tool_call>{}</tool_call>"
+        shapes = (done + "<tool_call>" + unit * 64,
+                  done + "<tool_call><function=task>" + unit * 64,
+                  done + "<tool_call><function=task>" + (" " * 100 + "<parameter=a>") * 300,
+                  '<｜DSML｜ calls><｜DSML｜ invoke name="a">' + unit * 64 + "</｜DSML｜ calls>" + "<tool_call>" + unit * 64)
+        for text in shapes:
+            for guard in (self.guard(), self.module.ToolOutputGuard(None), self.module.ToolOutputGuard([], request={"tools": []})):
+                with self.subTest(text=text[:40], tools=bool(guard.tools)):
+                    start = time.perf_counter()
+                    try:
+                        guard.parse(text)
+                    except self.module.ModelOutputError:
+                        pass
+                    self.assertLess(time.perf_counter() - start, 0.8)
+
+    def test_a_short_call_with_indented_text_after_an_unterminated_opener_is_not_rejected(self):
+        text = "<tool_call>{}</tool_call>\nNote: <tool_call> is the tag.\n" + "    indented line\n" * 20
+        guard = self.module.ToolOutputGuard(None)
+        guard.parse(text)
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"
