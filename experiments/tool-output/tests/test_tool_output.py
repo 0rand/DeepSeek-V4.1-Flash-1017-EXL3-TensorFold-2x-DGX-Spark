@@ -383,6 +383,40 @@ class ToolOutputTests(unittest.TestCase):
                 with self.assertRaises(self.module.ModelOutputError):             # the default mode rejects the name
                     self.guard().parse(text)
 
+    def test_nested_arguments_that_exhaust_the_decoder_are_a_safe_rejection(self):
+        deep = "[" * 100000 + "]" * 100000
+        json_call = '<tool_call>{"name":"task","arguments":{"x":' + deep + '}}</tool_call>'
+        dsml_call = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"><｜DSML｜ parameter name="x" string="false">'
+                     + deep + "</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>")
+        for text in (json_call, dsml_call):
+            for guard in (self.guard(), self.module.ToolOutputGuard(None)):
+                with self.subTest(text=text[:40], tools=bool(guard.tools)):
+                    with self.assertRaises(self.module.ModelOutputError) as caught:
+                        guard.parse(text)
+                    self.assertEqual(caught.exception.diagnostic["reason"], "undecodable_call")
+
+    def test_json_arguments_are_checked_as_the_parser_checks_them(self):
+        from tensorfold.cuda import reply_text
+
+        for arguments in ('"{"', "[1]", '"[1]"', '{"a":NaN}', '"{\\"a\\":NaN}"', "5"):
+            text = '<tool_call>{"name":"unoffered","arguments":' + arguments + '}</tool_call>'
+            with self.subTest(arguments=arguments):
+                # Single-call mode: the parser finds no call, so the guard does not reject the name.
+                self.assertEqual(self.guard().parse(text, max_calls=1),
+                                 reply_text.parse_tool_calls(text, self.tools, max_calls=1))
+                self.assertIsNone(self.guard().parse(text, max_calls=1)[1])
+                with self.assertRaises(self.module.ModelOutputError):         # the default mode rejects the name
+                    self.guard().parse(text)
+
+    def test_many_unclosed_dsml_openers_are_read_fast(self):
+        import time
+
+        for text in ("<｜DSML｜ calls> " * 30000, "<｜DSML｜ calls> " * 30000 + "</tool_call>"):
+            for guard in (self.guard(), self.module.ToolOutputGuard(None)):
+                start = time.perf_counter()
+                guard.parse(text)
+                self.assertLess(time.perf_counter() - start, 5.0)
+
     def test_streaming_holds_the_dsml_opener_only_as_written(self):
         guard = self.guard()
         lower = "long answer " * 5 + "<｜dsml｜ calls> and more prose"

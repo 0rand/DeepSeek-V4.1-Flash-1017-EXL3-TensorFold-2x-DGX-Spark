@@ -111,31 +111,41 @@ class ToolOutputGuard:
             })
 
         known = {reply_text._tool_name(tool).lower() for tool in self.tools if reply_text._tool_name(tool)}
+        # A DSML block ends at an exact closer, so text after the last closer holds no block. The rewrite reads only
+        # the text up to that closer: the regex would try every unclosed opener against the rest of the answer.
+        close = text.rfind(reply_text._DSML_CLOSE)
+        head, tail = (text[:close + len(reply_text._DSML_CLOSE)], text[close + len(reply_text._DSML_CLOSE):])             if close >= 0 else ("", text)
         try:
-            converted = reply_text.dsml_to_tool_calls(text)
-        except ValueError:                             # a value that the JSON decoder refuses (for example 5000 digits)
+            converted = reply_text.dsml_to_tool_calls(head) + tail
+        except (ValueError, RecursionError):           # a value that the JSON decoder refuses (for example 5000 digits)
             raise reject("", "undecodable_call", 0, len(text), "dsml") from None
         if reply_text._CALL_CLOSE not in converted.lower():
             # No call block can exist. (The parser would try every opener against the rest of the answer.)
             return (converted.strip(), None) if self.tools else (text, None)
         # The blocks that the DSML rewrite makes, with the span of their DSML block in the answer.
         rewritten: dict[str, tuple[int, int]] = {}
-        for dsml in reply_text._DSML_BLOCK_RE.finditer(text):
+        for dsml in reply_text._DSML_BLOCK_RE.finditer(head):
             for made in reply_text._TOOL_CALL_BLOCK_RE.finditer(reply_text.dsml_to_tool_calls(dsml.group(0))):
                 rewritten.setdefault(made.group(0), (dsml.start(), dsml.end()))
-        for block in reply_text._TOOL_CALL_BLOCK_RE.finditer(converted):
+        blocks = list(reply_text._TOOL_CALL_BLOCK_RE.finditer(converted))
+        if not blocks:                                 # (the parser's result for an answer without a call block)
+            return (converted.strip(), None) if self.tools else (text, None)
+        for block in blocks:
             start, stop = rewritten.get(block.group(0), (block.start(), block.end()))
             wrapper = "dsml" if block.group(0) in rewritten else "json"
             try:
                 names = self._call_names(reply_text, block.group(1).strip(), complete=max_calls is not None)
-            except ValueError:                         # a value that the JSON decoder refuses
+            except (ValueError, RecursionError):       # a value that the JSON decoder refuses
                 raise reject("", "undecodable_call", start, stop, wrapper) from None
             for name, kind in names:
                 if name.lower() not in known:
                     declared = {tool_spec_name(tool).lower() for tool in self.declared_tools if tool_spec_name(tool)}
                     raise reject(name, "disallowed_by_tool_choice" if name.lower() in declared else "unavailable_tool",
                                  start, stop, "dsml" if wrapper == "dsml" else kind)
-        return reply_text.parse_tool_calls(text, self.tools, max_calls=max_calls)
+        try:
+            return reply_text.parse_tool_calls(text, self.tools, max_calls=max_calls)
+        except RecursionError:                         # nested arguments that the parser cannot decode
+            raise reject("", "undecodable_call", 0, len(text), "json") from None
 
     def _call_names(self, reply_text: Any, block: str, complete: bool = False) -> list[tuple[str, str]]:
         """The (tool name, wrapper) that the engine's parser may read from one call block (JSON, Qwen XML or GLM).
@@ -144,18 +154,39 @@ class ToolOutputGuard:
         try:
             payload = json.loads(block)
         except json.JSONDecodeError:
-            pass                                       # not JSON: the parser tries the Qwen and GLM forms
+            return self._text_names(reply_text, block, complete)   # not JSON: the parser tries the Qwen and GLM forms
+        if not isinstance(payload, dict):
+            return []                                  # (valid JSON that is not an object is no call for the parser)
+        function = payload.get("function")
+        for source in (function, payload):             # (an empty nested object falls back to the flat form)
+            name = source.get("name") if isinstance(source, dict) else None
+            if name and str(name).strip():
+                break
         else:
-            if not isinstance(payload, dict):
-                return []                              # (valid JSON that is not an object is no call for the parser)
-            function = payload.get("function")
-            for source in (function, payload):         # (an empty nested object falls back to the flat form)
-                name = source.get("name") if isinstance(source, dict) else None
-                if name and str(name).strip():
-                    # The parser matches the name as written. Offered names are trimmed, so a name with outer white
-                    # space can never match one: it is no call.
-                    return [(str(name), "json")] if str(name) == str(name).strip() else []
             return []
+        # The parser matches the name as written. Offered names are trimmed, so a name with outer white space can
+        # never match one: it is no call.
+        if str(name) != str(name).strip():
+            return []
+        arguments = source.get("arguments", source.get("parameters", {}))
+        try:
+            if isinstance(arguments, str):
+                arguments = json.loads(arguments) if arguments.strip() else {}
+        except json.JSONDecodeError:                   # the parser then tries the Qwen and GLM forms, and keeps the name
+            others = self._text_names(reply_text, block, complete)
+            return others if others else ([] if complete else [(str(name), "json")])
+        if complete:                                   # the single-call mode accepts a finite object only
+            try:
+                if not isinstance(arguments, dict):
+                    return []
+                json.dumps(arguments, allow_nan=False)
+            except (ValueError, TypeError):
+                return []
+        return [(str(name), "json")]
+
+    def _text_names(self, reply_text: Any, block: str, complete: bool) -> list[tuple[str, str]]:
+        """The (tool name, wrapper) of a Qwen XML or GLM call block."""
+
         xml = reply_text._TOOL_FUNCTION_BLOCK_RE.match(block)
         if xml:
             if complete and reply_text._TOOL_PARAMETER_BLOCK_RE.sub("", xml.group(2)).strip():
