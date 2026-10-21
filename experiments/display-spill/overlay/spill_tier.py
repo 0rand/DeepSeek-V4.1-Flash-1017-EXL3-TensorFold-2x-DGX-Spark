@@ -62,6 +62,7 @@ BLOCK = 8 << 20                        # bytes one CRC-32 covers (CHUNK is a mul
 STAGE = 8 << 20                        # bytes of the device buffer rows a memcpy may not reach pass through
 WAIT_S = 60.0                          # a read of an entry still being written waits this long for it (reader thread)
 FLOOR_DRAIN_S = 120.0                  # most a save waits for queued writes before it frees disk for the free-disk floor
+WRITER_START_S = 60.0                  # most the constructor waits for the writer threads to report
 INFLIGHT = 4 << 30                     # bytes of queued writes past which a new one first waits for the oldest
 
 _DT = {torch.bfloat16: "BF16", torch.float16: "F16", torch.float32: "F32", torch.float64: "F64", torch.int8: "I8",
@@ -392,6 +393,7 @@ class Job:
         self.entry = entry
         self.key = entry.key
         self.path = path
+        self.seq = seq
         self.partial = f"{path}.{seq}.partial"      # its own: a later write of the same prompt never shares it
         self.nbytes = entry.size
         self.header = header
@@ -540,7 +542,8 @@ class SpillStore:
             self.uid = self.gid = -1
         self.lock = threading.RLock()
         self.index: dict[tuple, Entry] = {}
-        self.pending: dict[tuple, Job] = {}
+        self.pending: dict[tuple, Job] = {}      # the newest job of each prompt
+        self.active: set[Job] = set()            # every job not yet done, also one whose entry was evicted
         self.clock = 0
         self.seq = 0
         self.generation = 0                     # bumped whenever the index changes
@@ -621,7 +624,7 @@ class SpillStore:
 
         floor = int(self.cfg.min_free_gib * (1 << 30))
         with self.lock:
-            queued = sum(j.nbytes for j in self.pending.values() if not j.done.is_set())
+            queued = sum(j.nbytes for j in self.active if not j.done.is_set())
         return max(0, floor + size + queued - self.disk_free())
 
     def disk_free(self) -> int:
@@ -749,7 +752,7 @@ class SpillStore:
 
     def pending_jobs(self) -> int:
         with self.lock:
-            return len(self.pending)
+            return len(self.active)
 
     def find(self, prompt: Sequence[int], *, grid: int = 0, whole_needs_head: bool = True,
              usable: Callable[[Entry], bool] | None = None) -> Entry | None:
@@ -799,7 +802,7 @@ class SpillStore:
 
         while True:
             with self.lock:
-                jobs = [j for j in self.pending.values() if not j.done.is_set()]
+                jobs = sorted((j for j in self.active if not j.done.is_set()), key=lambda j: j.seq)
             held = sum(j.nbytes for j in jobs)
             if not jobs or held + size <= INFLIGHT:
                 return
@@ -807,17 +810,34 @@ class SpillStore:
 
     # -- writing -------------------------------------------------------------------------------------------------------
     def _start(self) -> None:
+        """Start the writer threads and wait until each reports that it is ready (its stream and checksum thread are
+        made on the thread). A failure is an error here, so the caller's start-up agreement sees it."""
+
         if self._threads:
             return
         bufs = _PINNED.get("write") or _pinned(2 * self.cfg.writers)
         if any(not _aligned(b) for b in bufs):
             self.direct = False
-        for i in range(self.cfg.writers):
-            t = threading.Thread(target=self._writer, args=(bufs[2 * i:2 * i + 2],),
-                                 name=f"spill-writer-{self.rank}-{i}",
-                                 daemon=True)
-            t.start()
-            self._threads.append(t)
+        ready: queue.Queue = queue.Queue()
+        threads: list[threading.Thread] = []
+        try:
+            for i in range(self.cfg.writers):
+                t = threading.Thread(target=self._writer, args=(bufs[2 * i:2 * i + 2], ready),
+                                     name=f"spill-writer-{self.rank}-{i}", daemon=True)
+                t.start()
+                threads.append(t)
+            for _ in threads:
+                try:
+                    outcome = ready.get(timeout=WRITER_START_S)
+                except queue.Empty:
+                    raise RuntimeError("a spill writer thread did not report in time") from None
+                if outcome is not None:
+                    raise RuntimeError(f"a spill writer thread could not start: {outcome!r}") from outcome
+        except BaseException:
+            for _ in threads:
+                self.jobs.put(None)                        # the threads that did start stop
+            raise
+        self._threads = threads
 
     def drain(self, timeout: float | None = None) -> bool:
         """Wait until every queued write is on disk (a shutdown). True when the writes finished in time."""
@@ -825,7 +845,7 @@ class SpillStore:
         end = None if timeout is None else time.monotonic() + timeout
         while True:
             with self.lock:
-                jobs = list(self.pending.values())
+                jobs = [j for j in self.active if not j.done.is_set()]
             if not jobs:
                 break
             left = None if end is None else max(0.0, end - time.monotonic())
@@ -1010,11 +1030,20 @@ class SpillStore:
         except Exception:                                # noqa: BLE001  (a failed stream: nothing more can be done)
             pass
 
-    def _writer(self, bufs: list[torch.Tensor]) -> None:
-        stream = torch.cuda.Stream(device=self.device) if torch.cuda.is_available() else None
-        hasher = ThreadPoolExecutor(1, thread_name_prefix=f"spill-crc-w{self.rank}")
+    def _writer(self, bufs: list[torch.Tensor], ready: queue.Queue | None = None) -> None:
+        try:
+            stream = torch.cuda.Stream(device=self.device) if torch.cuda.is_available() else None
+            hasher = ThreadPoolExecutor(1, thread_name_prefix=f"spill-crc-w{self.rank}")
+        except Exception as exc:                       # noqa: BLE001  (reported to the constructor)
+            if ready is not None:
+                ready.put(exc)
+            return
+        if ready is not None:
+            ready.put(None)
         while True:
             job = self.jobs.get()
+            if job is None:
+                return
             t0 = time.perf_counter()
             try:
                 ok = self._write(job, bufs, stream, hasher)
@@ -1028,6 +1057,7 @@ class SpillStore:
             job.copied.set()
             job.done.set()
             with self.lock:
+                self.active.discard(job)
                 self.stats.write_s += time.perf_counter() - t0
             job = None
 
@@ -1124,6 +1154,7 @@ class SpillStore:
             if old is not None:
                 self.index.pop(key, None)
             self.pending[key] = job
+            self.active.add(job)
             self.clock += 1
             entry.last = self.clock                        # recency is the queue order (every rank alike)
             self.index[key] = entry
@@ -1211,18 +1242,26 @@ class SpillStore:
         else:
             lj.after = None
         if self._reader is None:
-            self._reader = threading.Thread(target=self._read_loop, name=f"spill-reader-{self.rank}", daemon=True)
-            self._reader.start()
+            reader = threading.Thread(target=self._read_loop, name=f"spill-reader-{self.rank}", daemon=True)
+            reader.start()
+            self._reader = reader                          # only a thread that started is kept: the next read tries again
         self.reads.put(lj)
         return lj
 
     def _read_loop(self) -> None:
-        pins = _PINNED.get("read") or _pinned(2)
-        stream = torch.cuda.Stream(device=self.device) if torch.cuda.is_available() else None
-        pool = ThreadPoolExecutor(4, thread_name_prefix=f"spill-crc-r{self.rank}")
+        try:
+            pins = _PINNED.get("read") or _pinned(2)
+            stream = torch.cuda.Stream(device=self.device) if torch.cuda.is_available() else None
+            pool = ThreadPoolExecutor(4, thread_name_prefix=f"spill-crc-r{self.rank}")
+            failed = None
+        except Exception as exc:                           # noqa: BLE001  (every read then fails: the ranks agree on it)
+            pins = stream = pool = None
+            failed = exc
         while True:
             lj = self.reads.get()
             try:
+                if failed is not None:
+                    raise failed
                 self._read(lj, pins, stream, pool)
             except BaseException as exc:                   # noqa: BLE001  (the reader never dies)
                 lj.error = exc
@@ -1378,7 +1417,7 @@ class SpillStore:
     def info(self) -> dict:
         s = self.stats
         with self.lock:
-            entries, pending = len(self.index), len(self.pending)
+            entries, pending = len(self.index), len(self.active)
         lat = sorted(s.restore_ms)
         p = (lambda q: round(lat[min(len(lat) - 1, int(q * len(lat)))], 1)) if lat else (lambda q: 0.0)
         return {"gib": self.cfg.gib, "highwater": self.cfg.highwater, "writers": self.cfg.writers,

@@ -498,6 +498,66 @@ class SpillTierTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
 
+    def test_a_writer_thread_that_cannot_make_its_resources_fails_the_constructor(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            with mock.patch.object(self.sp, "ThreadPoolExecutor", side_effect=RuntimeError("no checksum thread")):
+                with self.assertRaises(RuntimeError) as caught:
+                    self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertIn("could not start", str(caught.exception))
+
+    def test_an_evicted_write_that_is_still_queued_stays_in_the_accounting(self):
+        import threading
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[f"{Snap.__module__}:{Snap.__qualname__}"],
+                                       quiet=True)
+            gate = threading.Event()
+            store._write = lambda job, bufs, stream, hasher: (gate.wait(10), False)[1]   # a write that does not end
+            ids, snap = self.new_state()
+            first = store.save(ids, snap, skip=("ids",))
+            store._delete(store.index[first.key])                                     # evicted while queued
+            second = store.save(ids, snap, skip=("ids",))                             # the same prompt again
+            self.assertIsNotNone(second)
+            self.assertEqual(store.pending_jobs(), 2)                                 # both jobs are counted
+            self.assertFalse(store.drain(0.2))                                        # and a drain waits for both
+            gate.set()
+            self.assertTrue(store.drain(10))
+            self.assertEqual(store.pending_jobs(), 0)
+
+    def test_a_reader_thread_that_did_not_start_is_tried_again_and_a_failed_reader_fails_reads(self):
+        import threading
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            with mock.patch.object(self.sp.threading.Thread, "start", side_effect=RuntimeError("no thread")):
+                with self.assertRaises(RuntimeError):
+                    store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            self.assertIsNone(store._reader)                              # not kept: the next read starts it again
+            lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+            obj, rows, meta = store.finish_load(lj)
+            self.assertIsNotNone(obj)
+        with tempfile.TemporaryDirectory() as root:
+            store, ids, classes = self.stored(root)
+            outcome = []
+
+            def read():
+                with mock.patch.object(self.sp, "ThreadPoolExecutor", side_effect=RuntimeError("no checksum thread")):
+                    try:
+                        store.finish_load(store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None))
+                    except Exception as exc:                                # noqa: BLE001
+                        outcome.append(exc)
+
+            worker = threading.Thread(target=read, daemon=True)
+            worker.start()
+            worker.join(10)
+            self.assertFalse(worker.is_alive())                           # the read ends with an error, never hangs
+            self.assertEqual(len(outcome), 1)
+
     def test_a_single_rank_still_raises_a_preparation_error(self):
         with tempfile.TemporaryDirectory() as root:
             store, ids, classes = self.stored(root)
