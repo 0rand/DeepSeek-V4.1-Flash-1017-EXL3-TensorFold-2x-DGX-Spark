@@ -42,16 +42,10 @@ class ToolOutputGuard:
 
     @staticmethod
     def _open_tail(text: str, opener: str, closer: str) -> int:
-        """How many ``opener`` follow the last ``closer`` (none when the text has no ``closer``)."""
+        """How many ``opener`` have no ``closer`` after them. The parser's lazy expressions scan the rest of the text
+        for each of them, so this count is the exact driver of a quadratic scan."""
 
-        last = text.rfind(closer)
-        return text.count(opener, last + 1) if last >= 0 else 0
-
-    @staticmethod
-    def _open_excess(text: str, opener: str, closer: str) -> int:
-        """How many more ``opener`` than ``closer`` the text has."""
-
-        return text.count(opener) - text.count(closer)
+        return text.count(opener, text.rfind(closer) + 1)
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
         self._stream_cut: int | None = None
@@ -134,9 +128,13 @@ class ToolOutputGuard:
         end = close + len(reply_text._DSML_CLOSE)
         head, tail = (text[:end], text[end:]) if close >= 0 else ("", text)
         dsml_tag = reply_text._DSML
-        if (self._open_excess(head, f'<{dsml_tag} invoke name="', f"</{dsml_tag} invoke>") > self._RUNAWAY
-                or self._open_excess(head, f'<{dsml_tag} parameter name="', f"</{dsml_tag} parameter>") > self._RUNAWAY):
-            raise reject("", "runaway_markup", 0, len(text), "dsml")
+        for dsml in reply_text._DSML_BLOCK_RE.finditer(head):          # (inside each block, then each invoke)
+            if self._open_tail(dsml.group(1), f'<{dsml_tag} invoke name="', f"</{dsml_tag} invoke>") > self._RUNAWAY:
+                raise reject("", "runaway_markup", dsml.start(), dsml.end(), "dsml")
+            for invoke in reply_text._DSML_INVOKE_RE.finditer(dsml.group(1)):
+                if self._open_tail(invoke.group(2), f'<{dsml_tag} parameter name="',
+                                   f"</{dsml_tag} parameter>") > self._RUNAWAY:
+                    raise reject("", "runaway_markup", dsml.start(), dsml.end(), "dsml")
         try:
             converted = reply_text.dsml_to_tool_calls(head) + tail
         except (ValueError, RecursionError):           # a value that the JSON decoder refuses (for example 5000 digits)
@@ -145,10 +143,7 @@ class ToolOutputGuard:
         if reply_text._CALL_CLOSE not in lowered:
             # No call block can exist. (The parser would try every opener against the rest of the answer.)
             return (converted.strip(), None) if self.tools else (text, None)
-        if (self._open_tail(lowered, reply_text._CALL_OPEN, reply_text._CALL_CLOSE) > self._RUNAWAY
-                or self._open_excess(lowered, "<parameter=", "</parameter>") > self._RUNAWAY
-                or self._open_excess(lowered, "<arg_key>", "</arg_key>") > self._RUNAWAY
-                or self._open_excess(lowered, "<arg_value>", "</arg_value>") > self._RUNAWAY):
+        if self._open_tail(lowered, reply_text._CALL_OPEN, reply_text._CALL_CLOSE) > self._RUNAWAY:
             raise reject("", "runaway_markup", 0, len(text), "json")
         # Each rewritten block: its span in the converted text and its DSML span in the answer (for the diagnostic).
         segments: list[tuple[int, int, int, int]] = []
@@ -178,6 +173,10 @@ class ToolOutputGuard:
         for block in blocks:
             start, stop, made = source_span(block.start(), block.end())
             wrapper = "dsml" if made else "json"
+            inner = block.group(1).lower()                # (the Qwen and GLM tags inside one call block)
+            if any(self._open_tail(inner, opener, closer) > self._RUNAWAY for opener, closer in (
+                    ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"))):
+                raise reject("", "runaway_markup", start, stop, wrapper)
             try:
                 names = self._call_names(reply_text, block.group(1).strip(), complete=max_calls is not None)
             except (ValueError, RecursionError):       # a value that the JSON decoder refuses

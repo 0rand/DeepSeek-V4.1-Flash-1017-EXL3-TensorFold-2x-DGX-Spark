@@ -447,7 +447,13 @@ class ToolOutputTests(unittest.TestCase):
         cases = (call + "<tool_call>{" * 30000,                                   # openers after the last closer
                  "<｜DSML｜ calls>" + invoke * 30000 + "</｜DSML｜ calls>" + call,    # open invokes in a DSML block
                  "<tool_call><function=task>" + "<parameter=x>" * 30000 + "</function></tool_call>",
-                 "<tool_call>task" + "<arg_key>k" * 30000 + "</tool_call>")
+                 "<tool_call>task" + "<arg_key>k" * 30000 + "</tool_call>",
+                 # as many closers as openers, but the openers come last: no closer after them
+                 "<｜DSML｜ calls>" + "</｜DSML｜ invoke>" * 30000 + invoke * 30000 + "</｜DSML｜ calls>" + call,
+                 "<tool_call><function=task>" + "</parameter>" * 30000 + "<parameter=x>" * 30000 + "</function></tool_call>",
+                 # one block with open tags, a later block that is balanced
+                 "<｜DSML｜ calls>" + invoke * 30000 + "</｜DSML｜ calls><｜DSML｜ calls>" + invoke + "</｜DSML｜ invoke></｜DSML｜ calls>",
+                 "<tool_call>task" + "<arg_value>k" * 30000 + "</tool_call><tool_call>task<arg_value>k</arg_value></tool_call>")
         for text in cases:
             for guard in (self.guard(), self.module.ToolOutputGuard(None)):
                 with self.subTest(text=text[:40], tools=bool(guard.tools)):
