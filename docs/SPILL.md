@@ -45,7 +45,9 @@ To return to the ordinary engine after all GPU and DRM clients stop:
 ```
 
 Never stop GDM. Never use `docker exec` in a serving rank. Run only one model
-server at a time. Keep `BIND_HOST=127.0.0.1` unless network access and an API key
+server at a time. The lock `.display-kv.lock` serializes only the two display
+launchers. The ordinary `./start.sh` is unchanged and does not take it, so do not
+run `./start.sh` or `./stop.sh` while a display launcher is active. Keep `BIND_HOST=127.0.0.1` unless network access and an API key
 are explicitly configured.
 
 ## Spill settings

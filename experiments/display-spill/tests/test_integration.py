@@ -137,6 +137,7 @@ class SpillIntegrationTests(unittest.TestCase):
         self.assertIn("(128, 64)", signature)                       # the draft rings
         self.assertIn("('TF_DS_PREFILL_CHUNK', '512')", signature)
         self.assertIn("ring128x1", signature)
+        self.assertIn("|driver=1", signature)                       # a new driver starts a new spill namespace
         self.assertIsNotNone(decoder.spill)
         self.assertEqual(calls, [[1], [1]])
         with mock.patch.dict(os.environ, {"TF_DS_PREFILL_CHUNK": "512"}):
