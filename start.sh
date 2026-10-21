@@ -21,6 +21,12 @@ if [ "${MEM_CAP:-0}" = 1 ]; then
   fi
 fi
 
+# Only the separately selected tool-output image uses this switch. Its guard is on unless this is 0.
+case "${STRICT_TOOL_OUTPUT-1}" in
+  0|1) ;;
+  *) echo "STRICT_TOOL_OUTPUT must be 0 or 1" >&2; exit 1 ;;
+esac
+
 if ! [[ "${PREFILL_CHUNK:-2048}" =~ ^[0-9]+$ && "${PREFILL_CHUNK:-2048}" =~ [1-9] ]]; then
   echo "PREFILL_CHUNK must be a positive integer" >&2
   exit 1
@@ -55,6 +61,7 @@ $( [ "${MEM_CAP:-0}" = 1 ] && echo '-e TF_DS_MEM_CAP=1' )
 -e TRITON_CACHE_DIR=/cache/triton -e CUDA_CACHE_PATH=/cache/nv
 -e TF_RDMA_DEVICES=$RDMA_DEVICES -e TF_RDMA_GID_INDEX=$GID_INDEX
 -e NCCL_IB_HCA=$NCCL_IB_HCA -e NCCL_IB_GID_INDEX=$GID_INDEX -e NCCL_SOCKET_IFNAME=$NCCL_SOCKET_IFNAME
+$( [ "${STRICT_TOOL_OUTPUT:-1}" = 0 ] && echo '-e TF_DS_STRICT_TOOL_OUTPUT=0' )
 -e TORCH_EXTENSIONS_DIR=/cache/torch_extensions -e HF_HUB_OFFLINE=1
 --entrypoint tensorfold $IMAGE serve /model --tp 2 --rank $r --master $HEAD_IP
 --host $BIND_HOST --port $PORT --name $SERVED_NAME $( [ -n "${SERVED_ALIAS:-}" ] && echo "--alias $SERVED_ALIAS" )

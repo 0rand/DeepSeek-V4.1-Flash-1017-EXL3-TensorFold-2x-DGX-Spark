@@ -1,6 +1,6 @@
 # Credits
 
-This recipe stands on other people's work. The table lists what each project gives, its licence, and how this repo uses it. This repo copies no file from any project below; it downloads or builds each one at a pinned version.
+This recipe stands on other people's work. The table lists what each project gives, its licence, and how this repo uses it. This repo copies no file from any project below, except one test fixture (see "Tool-output guard experiment" below); it downloads or builds each one at a pinned version.
 
 | Project | What it gives | Licence | How this repo uses it |
 |---|---|---|---|
@@ -22,6 +22,10 @@ The OpenAI Codex review bot reviewed every engine change; its findings and our f
 The optional `experiments/display-kv/overlay/display_kv.py` adapts Gilesco's display-memory mapping technique and credits coolbho3k's display-reserve allocator. See [the display NOTICE](experiments/display-kv/NOTICE.md) for the source references and license notes. This display-only variant does not include the separate SSD spill port or NVFP4 C toolkit.
 
 **0rand** wrote the display-KV variant. **Sora39831** and **hjasond** tested it on their own nodes; the measured runs of Sora39831 are in `runs/2026-10-19/` ([record](runs/2026-10-19/display-kv-tester-ab.md)).
+
+## Tool-output guard experiment
+
+The optional `experiments/tool-output/` holds two test files taken from TensorFold at revision `07aa02585f64` (Apache-2.0): `tests/fixtures/http.py.txt` is an unchanged copy of `src/tensorfold/cuda/http.py` (used by the installer tests), and `tests/fixtures/parser.py` is a reduced copy of the reply-text functions. See [the NOTICE](experiments/tool-output/NOTICE.md).
 
 ## This repo's licence
 

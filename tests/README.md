@@ -35,6 +35,13 @@ The opt-in memory/top-k image has CPU and mock tests in
 `TF_MEMORY_CPU_TESTS=1` and a CPU-only PyTorch install. See
 [Memory and top-k](../docs/MEMORY-TOPK.md#validation-limits).
 
+## Tool-output experiment checks
+
+The opt-in tool-output guard has CPU, loopback HTTP and fake-engine tests in
+`experiments/tool-output/tests/`. Source integration tests run only when
+`TF_TOOL_SOURCE` names an explicit pinned checkout. See
+[Tool output](../docs/TOOL-OUTPUT.md#offline-tests).
+
 ## Script check (no server needed)
 
 `bash tests/host_tuning_test.sh` runs the node part of `scripts/host_tuning.sh` in a temporary folder, with stub `sysctl` and `systemctl` commands. It changes nothing on the node. It checks that the first run keeps the old sysctl values, that `--undo` puts them back, that a missing or stopped earlyoom stops the setup, that a failed setup puts the node back, and that transparent huge pages go off with a systemd unit and come back on with `--undo`.

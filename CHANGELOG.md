@@ -20,6 +20,7 @@ Each release is a git tag. To use a release, run `git checkout vX.Y.Z` before `.
 - `PREFILL_CHUNK` in `.env`: set a positive integer for both ranks. The default stays `2048`.
 - `THINKING` and `REASONING_EFFORT` in `.env`: turn thinking on for requests that do not say, and set their effort. The default stays off. `docs/CONNECT.md` says to set thinking before you compare benchmark scores.
 - Opt-in preflight check: set `PREFLIGHT_NCCL_BOOTSTRAP=1` in `.env` and preflight runs a bounded NCCL socket-bootstrap check in the engine image on each node (20 s, then KILL after 5 s more, with an init process in the container so that signals reach the probe). It is off by default, so `./start.sh` behaves as before. It checks that NCCL can create a unique ID with `NCCL_SOCKET_IFNAME`; it does not test the RDMA data path or allocate GPU memory. A failure names the interface and points to `.env`.
+- Opt-in `experiments/tool-output` image: reject a complete model tool call that the request did not offer. It returns a safe error (HTTP 422) and does not expose tool arguments. Ordinary prose still streams. The guard is on in that image; `STRICT_TOOL_OUTPUT=0` in `.env` turns it off. The ordinary image and defaults do not change. See `docs/TOOL-OUTPUT.md`.
 
 ### Changed
 
