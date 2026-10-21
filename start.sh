@@ -31,6 +31,16 @@ case "${DROP_UNOFFERED_TOOL_CALLS:-1}" in
   *) echo "DROP_UNOFFERED_TOOL_CALLS must be 0 or 1" >&2; exit 1 ;;
 esac
 
+case "${THINKING:-0}" in
+  0|1) ;;
+  *) echo "THINKING must be 0 or 1" >&2; exit 1 ;;
+esac
+
+case "${REASONING_EFFORT:-}" in
+  ""|low|medium|high|xhigh) ;;
+  *) echo "REASONING_EFFORT must be low, medium, high or xhigh" >&2; exit 1 ;;
+esac
+
 if [ "${PREFLIGHT:-1}" = 1 ]; then
   "$ROOT/scripts/preflight.sh" || exit 1
 fi

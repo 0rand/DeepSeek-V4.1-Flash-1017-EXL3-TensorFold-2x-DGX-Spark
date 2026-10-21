@@ -148,7 +148,8 @@ class StartDisplayKvTest(unittest.TestCase):
         (self.root / "experiments" / "display-kv" / "overlay").mkdir(parents=True)
         self.bin.mkdir()
         shutil.copy2(LAUNCHER, self.root / "start-display-kv.sh")
-        (self.root / ".env").write_text("IMAGE=base:latest\nWORKER_SSH=fixture-worker\n")
+        (self.root / ".env").write_text(
+            "IMAGE=base:latest\nDISPLAY_KV_BASE=base:latest\nWORKER_SSH=fixture-worker\n")
         (self.root / "scripts" / "common.sh").write_text(textwrap.dedent("""\
             ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
             set -a

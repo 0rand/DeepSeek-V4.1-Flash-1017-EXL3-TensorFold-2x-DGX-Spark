@@ -27,6 +27,26 @@ TF_DISPLAY_SOURCE=/path/to/pinned/tensorfold python3 -m unittest discover -s exp
 
 This command reads source files but does not modify that checkout. Hermetic installer tests still run without it. Full hardware validation is pending. See [the display guide](../docs/DISPLAY-KV.md).
 
+## Monolithic display-KV checks
+
+Our display lane keeps the full experiment in `experiments/display-kv/` (display KV, spill tier, memory guard, cache metrics, bounded top-k and tool-output guard). The offline runner includes its tests. The CPU-only tool-output runner is:
+
+```bash
+python3 -B experiments/display-kv/tests/run_tool_output_cpu.py --source /path/to/TensorFold
+```
+
+`TF_DISPLAY_SOURCE` can replace `--source`. Use a pristine Git checkout at the installer pin. The runner stages the public overlay as Docker does, executes the real installer into temporary copies, verifies wrong-pin/drift/reapply refusals, and runs parser/schema and fake-engine loopback HTTP regressions in normal and `-O` Python. It does not download dependencies, load native/GPU code or contact model services. The source input remains unchanged. See [the contract and actual-model gates](../docs/TOOL-OUTPUT.md).
+
+After an explicit display-KV image build and restart, capture live parser checks:
+
+```bash
+python3 -B tests/live_tool_streaming.py --base-url http://127.0.0.1:8100 --output /path/to/probes.json
+```
+
+The script executes no tools and retries nothing. It restricts traffic to an HTTP loopback IP and saves raw synthetic transcripts only when `--output` is provided. Exit 1 means at least one failure; exit 2 means no failure but at least one inconclusive case. A model refusal or failure to generate the target fixture cannot prove that a parser guardrail passed. Run `./verify.sh` as well.
+
+When the server was started with `TOOL_OUTPUT_STREAMING=0`, add `--buffered`. It expects exactly one pre-terminal content chunk per prose answer and still requires reasoning to be separate, so a rollback cannot be mistaken for a streaming success (or the reverse).
+
 ## Memory and top-k experiment checks
 
 The opt-in memory/top-k image has CPU and mock tests in

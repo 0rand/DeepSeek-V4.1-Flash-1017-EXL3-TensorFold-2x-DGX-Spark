@@ -11,6 +11,9 @@ Usage: ./start-display-kv.sh [--build|--check|--build-only|--restore-drm]
   --build-only   build/copy the variant without DRM changes, probes, or startup
   --restore-drm  restore runtime DRM defaults on both nodes; do not start a server
 
+The experiment needs the 1.0.0 engine base (TF_COMMIT 07aa02585f64). Set
+DISPLAY_KV_BASE to its image tag; the default is tensorfold-dsv41:07aa02585f64.
+The ordinary ./start.sh keeps using IMAGE (1.1.0).
 Stop both ranks with ./stop.sh before building, preparing, or restoring DRM.
 The head may prompt for sudo; the worker needs passwordless sudo for preparation.
 No display manager is stopped and no boot configuration is changed.
@@ -79,7 +82,11 @@ fi
 
 image_state="$ROOT/.display-kv-image"
 if [ "$action" = --build ] || [ "$action" = --build-only ]; then
-  base_id=$(docker image inspect "$IMAGE" --format '{{.Id}}')
+  base="${DISPLAY_KV_BASE:-tensorfold-dsv41:07aa02585f64}"
+  if ! base_id=$(docker image inspect "$base" --format '{{.Id}}' 2>/dev/null); then
+    log "no image $base; build the 1.0.0 base first: docker build --build-arg TF_COMMIT=07aa02585f64 -t $base docker"
+    exit 1
+  fi
   fingerprint=$({
     printf '%s\n' "$base_id"
     sha256sum "$stage/Dockerfile" "$stage/.dockerignore" "$stage/apply.py" "$stage/probe.py" "$stage/overlay/"*.py
@@ -88,8 +95,8 @@ if [ "$action" = --build ] || [ "$action" = --build-only ]; then
   variant="tensorfold-dsv41:display-kv-${fingerprint:0:12}"
   existing=$(docker image inspect "$variant" --format '{{index .Config.Labels "org.tensorfold.display-kv.source"}}' 2>/dev/null || true)
   if [ "$existing" != "$fingerprint" ]; then
-    log "building $variant from $IMAGE (pinned source is checked inside the build)"
-    docker build --build-arg "BASE_IMAGE=$IMAGE" \
+    log "building $variant from $base (pinned source is checked inside the build)"
+    docker build --build-arg "BASE_IMAGE=$base" \
       --label "org.tensorfold.display-kv.source=$fingerprint" -t "$variant" "$stage"
   fi
   variant_id=$(docker image inspect "$variant" --format '{{.Id}}')

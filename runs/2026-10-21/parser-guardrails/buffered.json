@@ -1,0 +1,2857 @@
+{
+  "schema_version": 1,
+  "base_url": "http://127.0.0.1:8100",
+  "model": "DeepSeek-V4.1-Flash-1017",
+  "expectation": "buffered",
+  "summary": {
+    "PASS": 12,
+    "INCONCLUSIVE": 2
+  },
+  "probes": [
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Do not call tools. Write four short sentences explaining why the sky looks blue, in plain prose."
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 18.018,
+          "raw": "data: {\"id\": \"chatcmpl-695a9acc467f4912b4a93dbe\", \"object\": \"chat.completion.chunk\", \"created\": 1792567285, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-695a9acc467f4912b4a93dbe\", \"object\": \"chat.completion.chunk\", \"created\": 1792567285, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-695a9acc467f4912b4a93dbe",
+            "object": "chat.completion.chunk",
+            "created": 1792567285,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 853.354,
+          "raw": "data: {\"id\": \"chatcmpl-695a9acc467f4912b4a93dbe\", \"object\": \"chat.completion.chunk\", \"created\": 1792567285, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"Sunlight contains all colors mixed together. Air molecules scatter short blue wavelengths more than long red ones. This scattered blue light reaches your eyes from every direction. That is why the sky appears blue.\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-695a9acc467f4912b4a93dbe\", \"object\": \"chat.completion.chunk\", \"created\": 1792567285, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"Sunlight contains all colors mixed together. Air molecules scatter short blue wavelengths more than long red ones. This scattered blue light reaches your eyes from every direction. That is why the sky appears blue.\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-695a9acc467f4912b4a93dbe",
+            "object": "chat.completion.chunk",
+            "created": 1792567285,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "Sunlight contains all colors mixed together. Air molecules scatter short blue wavelengths more than long red ones. This scattered blue light reaches your eyes from every direction. That is why the sky appears blue."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 853.4,
+          "raw": "data: {\"id\": \"chatcmpl-695a9acc467f4912b4a93dbe\", \"object\": \"chat.completion.chunk\", \"created\": 1792567285, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.1332, \"decode_s\": 0.6953, \"rounds\": 19, \"drafts\": true, \"cached\": 0, \"min_rows\": 2, \"drafted\": 41, \"accepted\": 20, \"token_sha\": \"e81318450b70\"}, \"usage\": {\"prompt_tokens\": 24, \"completion_tokens\": 40, \"total_tokens\": 64, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-695a9acc467f4912b4a93dbe\", \"object\": \"chat.completion.chunk\", \"created\": 1792567285, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.1332, \"decode_s\": 0.6953, \"rounds\": 19, \"drafts\": true, \"cached\": 0, \"min_rows\": 2, \"drafted\": 41, \"accepted\": 20, \"token_sha\": \"e81318450b70\"}, \"usage\": {\"prompt_tokens\": 24, \"completion_tokens\": 40, \"total_tokens\": 64, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-695a9acc467f4912b4a93dbe",
+            "object": "chat.completion.chunk",
+            "created": 1792567285,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.1332,
+              "decode_s": 0.6953,
+              "rounds": 19,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 2,
+              "drafted": 41,
+              "accepted": 20,
+              "token_sha": "e81318450b70"
+            },
+            "usage": {
+              "prompt_tokens": 24,
+              "completion_tokens": 40,
+              "total_tokens": 64,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 853.419,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 853.354,
+          "kind": "content",
+          "value": "Sunlight contains all colors mixed together. Air molecules scatter short blue wavelengths more than long red ones. This scattered blue light reaches your eyes from every direction. That is why the sky appears blue."
+        },
+        {
+          "frame": 2,
+          "at_ms": 853.4,
+          "kind": "finish",
+          "value": "stop"
+        },
+        {
+          "frame": 3,
+          "at_ms": 853.419,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:25 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 853.482,
+      "metrics": {
+        "frame_count": 4,
+        "event_counts": {
+          "content": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 853.354,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 853.354,
+        "elapsed_ms": 853.482
+      },
+      "name": "prose_no_tools",
+      "status": "PASS",
+      "reason": "Single buffered answer chunk before terminal"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Do not call tools. Write four short sentences explaining why the sky looks blue, in plain prose."
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 16.748,
+          "raw": "data: {\"id\": \"chatcmpl-0097f490ad834b2aa54d5273\", \"object\": \"chat.completion.chunk\", \"created\": 1792567286, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-0097f490ad834b2aa54d5273\", \"object\": \"chat.completion.chunk\", \"created\": 1792567286, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-0097f490ad834b2aa54d5273",
+            "object": "chat.completion.chunk",
+            "created": 1792567286,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 1666.903,
+          "raw": "data: {\"id\": \"chatcmpl-0097f490ad834b2aa54d5273\", \"object\": \"chat.completion.chunk\", \"created\": 1792567286, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"Sunlight contains all colors of light mixed together. As sunlight passes through the atmosphere, air molecules scatter the shorter blue wavelengths much more than the longer red ones. This scattered blue light reaches your eyes from all directions, so the sky appears blue. At sunset, the light travels farther and the blue is scattered away, leaving reds and oranges.\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-0097f490ad834b2aa54d5273\", \"object\": \"chat.completion.chunk\", \"created\": 1792567286, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"Sunlight contains all colors of light mixed together. As sunlight passes through the atmosphere, air molecules scatter the shorter blue wavelengths much more than the longer red ones. This scattered blue light reaches your eyes from all directions, so the sky appears blue. At sunset, the light travels farther and the blue is scattered away, leaving reds and oranges.\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-0097f490ad834b2aa54d5273",
+            "object": "chat.completion.chunk",
+            "created": 1792567286,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "Sunlight contains all colors of light mixed together. As sunlight passes through the atmosphere, air molecules scatter the shorter blue wavelengths much more than the longer red ones. This scattered blue light reaches your eyes from all directions, so the sky appears blue. At sunset, the light travels farther and the blue is scattered away, leaving reds and oranges."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 1666.939,
+          "raw": "data: {\"id\": \"chatcmpl-0097f490ad834b2aa54d5273\", \"object\": \"chat.completion.chunk\", \"created\": 1792567286, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4778, \"decode_s\": 1.1587, \"rounds\": 31, \"drafts\": true, \"cached\": 0, \"min_rows\": 2, \"drafted\": 73, \"accepted\": 38, \"token_sha\": \"89bd71bc6102\"}, \"usage\": {\"prompt_tokens\": 287, \"completion_tokens\": 70, \"total_tokens\": 357, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-0097f490ad834b2aa54d5273\", \"object\": \"chat.completion.chunk\", \"created\": 1792567286, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4778, \"decode_s\": 1.1587, \"rounds\": 31, \"drafts\": true, \"cached\": 0, \"min_rows\": 2, \"drafted\": 73, \"accepted\": 38, \"token_sha\": \"89bd71bc6102\"}, \"usage\": {\"prompt_tokens\": 287, \"completion_tokens\": 70, \"total_tokens\": 357, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-0097f490ad834b2aa54d5273",
+            "object": "chat.completion.chunk",
+            "created": 1792567286,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.4778,
+              "decode_s": 1.1587,
+              "rounds": 31,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 2,
+              "drafted": 73,
+              "accepted": 38,
+              "token_sha": "89bd71bc6102"
+            },
+            "usage": {
+              "prompt_tokens": 287,
+              "completion_tokens": 70,
+              "total_tokens": 357,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 1666.955,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 1666.903,
+          "kind": "content",
+          "value": "Sunlight contains all colors of light mixed together. As sunlight passes through the atmosphere, air molecules scatter the shorter blue wavelengths much more than the longer red ones. This scattered blue light reaches your eyes from all directions, so the sky appears blue. At sunset, the light travels farther and the blue is scattered away, leaving reds and oranges."
+        },
+        {
+          "frame": 2,
+          "at_ms": 1666.939,
+          "kind": "finish",
+          "value": "stop"
+        },
+        {
+          "frame": 3,
+          "at_ms": 1666.955,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:26 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 1667.014,
+      "metrics": {
+        "frame_count": 4,
+        "event_counts": {
+          "content": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 1666.903,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 1666.903,
+        "elapsed_ms": 1667.014
+      },
+      "name": "prose_with_tools",
+      "status": "PASS",
+      "reason": "Single buffered answer chunk before terminal"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Do not call tools. Explain in three sentences how to compute 17 times 23 and give the answer."
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 16.697,
+          "raw": "data: {\"id\": \"chatcmpl-c6402871b30d489c997bf2ac\", \"object\": \"chat.completion.chunk\", \"created\": 1792567288, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-c6402871b30d489c997bf2ac\", \"object\": \"chat.completion.chunk\", \"created\": 1792567288, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-c6402871b30d489c997bf2ac",
+            "object": "chat.completion.chunk",
+            "created": 1792567288,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 1273.333,
+          "raw": "data: {\"id\": \"chatcmpl-c6402871b30d489c997bf2ac\", \"object\": \"chat.completion.chunk\", \"created\": 1792567288, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"To compute 17 times 23, you can break 23 into 20 + 3, then multiply 17 by each part: 17 \\u00d7 20 = 340 and 17 \\u00d7 3 = 51. Add those two results together: 340 + 51 = 391. So, 17 \\u00d7 23 = 391.\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-c6402871b30d489c997bf2ac\", \"object\": \"chat.completion.chunk\", \"created\": 1792567288, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"To compute 17 times 23, you can break 23 into 20 + 3, then multiply 17 by each part: 17 \\u00d7 20 = 340 and 17 \\u00d7 3 = 51. Add those two results together: 340 + 51 = 391. So, 17 \\u00d7 23 = 391.\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-c6402871b30d489c997bf2ac",
+            "object": "chat.completion.chunk",
+            "created": 1792567288,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "To compute 17 times 23, you can break 23 into 20 + 3, then multiply 17 by each part: 17 × 20 = 340 and 17 × 3 = 51. Add those two results together: 340 + 51 = 391. So, 17 × 23 = 391."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 1273.366,
+          "raw": "data: {\"id\": \"chatcmpl-c6402871b30d489c997bf2ac\", \"object\": \"chat.completion.chunk\", \"created\": 1792567288, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4656, \"decode_s\": 0.7772, \"rounds\": 17, \"drafts\": true, \"cached\": 0, \"min_rows\": 3, \"drafted\": 71, \"accepted\": 55, \"token_sha\": \"e8f3cfadf792\"}, \"usage\": {\"prompt_tokens\": 289, \"completion_tokens\": 73, \"total_tokens\": 362, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-c6402871b30d489c997bf2ac\", \"object\": \"chat.completion.chunk\", \"created\": 1792567288, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4656, \"decode_s\": 0.7772, \"rounds\": 17, \"drafts\": true, \"cached\": 0, \"min_rows\": 3, \"drafted\": 71, \"accepted\": 55, \"token_sha\": \"e8f3cfadf792\"}, \"usage\": {\"prompt_tokens\": 289, \"completion_tokens\": 73, \"total_tokens\": 362, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-c6402871b30d489c997bf2ac",
+            "object": "chat.completion.chunk",
+            "created": 1792567288,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.4656,
+              "decode_s": 0.7772,
+              "rounds": 17,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 3,
+              "drafted": 71,
+              "accepted": 55,
+              "token_sha": "e8f3cfadf792"
+            },
+            "usage": {
+              "prompt_tokens": 289,
+              "completion_tokens": 73,
+              "total_tokens": 362,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 1273.382,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 1273.333,
+          "kind": "content",
+          "value": "To compute 17 times 23, you can break 23 into 20 + 3, then multiply 17 by each part: 17 × 20 = 340 and 17 × 3 = 51. Add those two results together: 340 + 51 = 391. So, 17 × 23 = 391."
+        },
+        {
+          "frame": 2,
+          "at_ms": 1273.366,
+          "kind": "finish",
+          "value": "stop"
+        },
+        {
+          "frame": 3,
+          "at_ms": 1273.382,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:28 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 1273.433,
+      "metrics": {
+        "frame_count": 4,
+        "event_counts": {
+          "content": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 1273.333,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 1273.333,
+        "elapsed_ms": 1273.433
+      },
+      "name": "thinking_explicit_false",
+      "status": "PASS",
+      "reason": "Single buffered answer chunk before terminal"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Do not call tools. Work out 17 times 23, then explain the answer in three sentences."
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": true,
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 16.648,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 505.448,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"The\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"The\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": "The"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 562.15,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" user says do\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" user says do\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " user says do"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 612.425,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" not call tools. So I\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" not call tools. So I\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " not call tools. So I"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 4,
+          "at_ms": 651.818,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" just\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" just\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " just"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 5,
+          "at_ms": 697.219,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" compute 17\\u00d7\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" compute 17\\u00d7\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " compute 17×"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 6,
+          "at_ms": 741.687,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"23 = 391 and\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"23 = 391 and\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": "23 = 391 and"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 7,
+          "at_ms": 790.99,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" explain in three sentences.\\n\\n17\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" explain in three sentences.\\n\\n17\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " explain in three sentences.\n\n17"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 8,
+          "at_ms": 838.243,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" \\u00d7 23 = 17\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" \\u00d7 23 = 17\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " × 23 = 17"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 9,
+          "at_ms": 882.9,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" \\u00d7 \"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" \\u00d7 \"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " × "
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 10,
+          "at_ms": 930.581,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"20 + 17 \\u00d7 \"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"20 + 17 \\u00d7 \"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": "20 + 17 × "
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 11,
+          "at_ms": 978.015,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"3 = 340 + \"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"3 = 340 + \"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": "3 = 340 + "
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 12,
+          "at_ms": 1024.873,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"51 = 391.\\n\\nThree\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \"51 = 391.\\n\\nThree\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": "51 = 391.\n\nThree"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 13,
+          "at_ms": 1069.946,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" sentences explaining\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \" sentences explaining\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": " sentences explaining"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 14,
+          "at_ms": 1113.7,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \".\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"reasoning_content\": \".\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "reasoning_content": "."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 15,
+          "at_ms": 2196.585,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"17 \\u00d7 23 = 391.\\n\\nYou can break 23 into 20 + 3, so the problem becomes 17 \\u00d7 20 plus 17 \\u00d7 3. That gives 340 + 51, which adds up to 391. This works because multiplication distributes over addition, letting you split a larger factor into easier pieces.\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"17 \\u00d7 23 = 391.\\n\\nYou can break 23 into 20 + 3, so the problem becomes 17 \\u00d7 20 plus 17 \\u00d7 3. That gives 340 + 51, which adds up to 391. This works because multiplication distributes over addition, letting you split a larger factor into easier pieces.\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "17 × 23 = 391.\n\nYou can break 23 into 20 + 3, so the problem becomes 17 × 20 plus 17 × 3. That gives 340 + 51, which adds up to 391. This works because multiplication distributes over addition, letting you split a larger factor into easier pieces."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 16,
+          "at_ms": 2196.617,
+          "raw": "data: {\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.476, \"decode_s\": 1.6906, \"rounds\": 39, \"drafts\": true, \"cached\": 0, \"min_rows\": 2, \"drafted\": 137, \"accepted\": 87, \"token_sha\": \"327c6ab293b1\"}, \"usage\": {\"prompt_tokens\": 312, \"completion_tokens\": 127, \"total_tokens\": 439, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 56}}}",
+          "data": "{\"id\": \"chatcmpl-a1e03a2955524a39ba241528\", \"object\": \"chat.completion.chunk\", \"created\": 1792567289, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.476, \"decode_s\": 1.6906, \"rounds\": 39, \"drafts\": true, \"cached\": 0, \"min_rows\": 2, \"drafted\": 137, \"accepted\": 87, \"token_sha\": \"327c6ab293b1\"}, \"usage\": {\"prompt_tokens\": 312, \"completion_tokens\": 127, \"total_tokens\": 439, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 56}}}",
+          "json": {
+            "id": "chatcmpl-a1e03a2955524a39ba241528",
+            "object": "chat.completion.chunk",
+            "created": 1792567289,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.476,
+              "decode_s": 1.6906,
+              "rounds": 39,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 2,
+              "drafted": 137,
+              "accepted": 87,
+              "token_sha": "327c6ab293b1"
+            },
+            "usage": {
+              "prompt_tokens": 312,
+              "completion_tokens": 127,
+              "total_tokens": 439,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 56
+              }
+            }
+          }
+        },
+        {
+          "index": 17,
+          "at_ms": 2196.634,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 505.448,
+          "kind": "reasoning",
+          "value": "The"
+        },
+        {
+          "frame": 2,
+          "at_ms": 562.15,
+          "kind": "reasoning",
+          "value": " user says do"
+        },
+        {
+          "frame": 3,
+          "at_ms": 612.425,
+          "kind": "reasoning",
+          "value": " not call tools. So I"
+        },
+        {
+          "frame": 4,
+          "at_ms": 651.818,
+          "kind": "reasoning",
+          "value": " just"
+        },
+        {
+          "frame": 5,
+          "at_ms": 697.219,
+          "kind": "reasoning",
+          "value": " compute 17×"
+        },
+        {
+          "frame": 6,
+          "at_ms": 741.687,
+          "kind": "reasoning",
+          "value": "23 = 391 and"
+        },
+        {
+          "frame": 7,
+          "at_ms": 790.99,
+          "kind": "reasoning",
+          "value": " explain in three sentences.\n\n17"
+        },
+        {
+          "frame": 8,
+          "at_ms": 838.243,
+          "kind": "reasoning",
+          "value": " × 23 = 17"
+        },
+        {
+          "frame": 9,
+          "at_ms": 882.9,
+          "kind": "reasoning",
+          "value": " × "
+        },
+        {
+          "frame": 10,
+          "at_ms": 930.581,
+          "kind": "reasoning",
+          "value": "20 + 17 × "
+        },
+        {
+          "frame": 11,
+          "at_ms": 978.015,
+          "kind": "reasoning",
+          "value": "3 = 340 + "
+        },
+        {
+          "frame": 12,
+          "at_ms": 1024.873,
+          "kind": "reasoning",
+          "value": "51 = 391.\n\nThree"
+        },
+        {
+          "frame": 13,
+          "at_ms": 1069.946,
+          "kind": "reasoning",
+          "value": " sentences explaining"
+        },
+        {
+          "frame": 14,
+          "at_ms": 1113.7,
+          "kind": "reasoning",
+          "value": "."
+        },
+        {
+          "frame": 15,
+          "at_ms": 2196.585,
+          "kind": "content",
+          "value": "17 × 23 = 391.\n\nYou can break 23 into 20 + 3, so the problem becomes 17 × 20 plus 17 × 3. That gives 340 + 51, which adds up to 391. This works because multiplication distributes over addition, letting you split a larger factor into easier pieces."
+        },
+        {
+          "frame": 16,
+          "at_ms": 2196.617,
+          "kind": "finish",
+          "value": "stop"
+        },
+        {
+          "frame": 17,
+          "at_ms": 2196.634,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:29 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 2196.69,
+      "metrics": {
+        "frame_count": 18,
+        "event_counts": {
+          "reasoning": 14,
+          "content": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "reasoning",
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 2196.585,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 2196.585,
+        "elapsed_ms": 2196.69
+      },
+      "name": "thinking_explicit_true",
+      "status": "PASS",
+      "reason": "Separated reasoning and buffered answer"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Call get_status once with service set to tensorfold. Do not answer in prose."
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 16.751,
+          "raw": "data: {\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-5684252dedd04ed7b14dfaa5",
+            "object": "chat.completion.chunk",
+            "created": 1792567291,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 836.894,
+          "raw": "data: {\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"\\n\\n\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"\\n\\n\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-5684252dedd04ed7b14dfaa5",
+            "object": "chat.completion.chunk",
+            "created": 1792567291,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "\n\n"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 836.943,
+          "raw": "data: {\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_6f5172c20bcf425da52a8784\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_6f5172c20bcf425da52a8784\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-5684252dedd04ed7b14dfaa5",
+            "object": "chat.completion.chunk",
+            "created": 1792567291,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "id": "call_6f5172c20bcf425da52a8784",
+                      "type": "function",
+                      "function": {
+                        "name": "get_status",
+                        "arguments": "{\"service\":\"tensorfold\"}"
+                      }
+                    }
+                  ]
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 836.952,
+          "raw": "data: {\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.4538, \"decode_s\": 0.3528, \"rounds\": 7, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 35, \"accepted\": 32, \"token_sha\": \"b3fb7a226bb7\"}, \"usage\": {\"prompt_tokens\": 284, \"completion_tokens\": 40, \"total_tokens\": 324, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-5684252dedd04ed7b14dfaa5\", \"object\": \"chat.completion.chunk\", \"created\": 1792567291, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.4538, \"decode_s\": 0.3528, \"rounds\": 7, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 35, \"accepted\": 32, \"token_sha\": \"b3fb7a226bb7\"}, \"usage\": {\"prompt_tokens\": 284, \"completion_tokens\": 40, \"total_tokens\": 324, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-5684252dedd04ed7b14dfaa5",
+            "object": "chat.completion.chunk",
+            "created": 1792567291,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "tool_calls"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.4538,
+              "decode_s": 0.3528,
+              "rounds": 7,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 6,
+              "drafted": 35,
+              "accepted": 32,
+              "token_sha": "b3fb7a226bb7"
+            },
+            "usage": {
+              "prompt_tokens": 284,
+              "completion_tokens": 40,
+              "total_tokens": 324,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 4,
+          "at_ms": 836.966,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 836.894,
+          "kind": "content",
+          "value": "\n\n"
+        },
+        {
+          "frame": 2,
+          "at_ms": 836.943,
+          "kind": "call",
+          "value": [
+            {
+              "index": 0,
+              "id": "call_6f5172c20bcf425da52a8784",
+              "type": "function",
+              "function": {
+                "name": "get_status",
+                "arguments": "{\"service\":\"tensorfold\"}"
+              }
+            }
+          ]
+        },
+        {
+          "frame": 3,
+          "at_ms": 836.952,
+          "kind": "finish",
+          "value": "tool_calls"
+        },
+        {
+          "frame": 4,
+          "at_ms": 836.966,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:31 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 837.163,
+      "metrics": {
+        "frame_count": 5,
+        "event_counts": {
+          "content": 1,
+          "call": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "call",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 836.894,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 836.894,
+        "elapsed_ms": 837.163
+      },
+      "name": "valid_get_status",
+      "status": "PASS",
+      "reason": "Valid minimal get_status call"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Call get_status once with service set to tensorfold. Do not answer in prose."
+          },
+          {
+            "role": "assistant",
+            "content": "\n\n",
+            "tool_calls": [
+              {
+                "id": "call_6f5172c20bcf425da52a8784",
+                "type": "function",
+                "function": {
+                  "name": "get_status",
+                  "arguments": "{\"service\":\"tensorfold\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_6f5172c20bcf425da52a8784",
+            "content": "{\"status\":\"STATUS_PROBE_OK_947\"}"
+          },
+          {
+            "role": "user",
+            "content": "Do not call tools again. Report the exact status string returned by the tool."
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 17.252,
+          "raw": "data: {\"id\": \"chatcmpl-ddfb1e782ca84899b046d8f9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567292, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-ddfb1e782ca84899b046d8f9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567292, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-ddfb1e782ca84899b046d8f9",
+            "object": "chat.completion.chunk",
+            "created": 1792567292,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 627.569,
+          "raw": "data: {\"id\": \"chatcmpl-ddfb1e782ca84899b046d8f9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567292, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"STATUS_PROBE_OK_947\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-ddfb1e782ca84899b046d8f9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567292, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"STATUS_PROBE_OK_947\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-ddfb1e782ca84899b046d8f9",
+            "object": "chat.completion.chunk",
+            "created": 1792567292,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "STATUS_PROBE_OK_947"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 627.609,
+          "raw": "data: {\"id\": \"chatcmpl-ddfb1e782ca84899b046d8f9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567292, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4931, \"decode_s\": 0.1038, \"rounds\": 2, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 10, \"accepted\": 5, \"token_sha\": \"1deecf80142c\"}, \"usage\": {\"prompt_tokens\": 362, \"completion_tokens\": 8, \"total_tokens\": 370, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-ddfb1e782ca84899b046d8f9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567292, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4931, \"decode_s\": 0.1038, \"rounds\": 2, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 10, \"accepted\": 5, \"token_sha\": \"1deecf80142c\"}, \"usage\": {\"prompt_tokens\": 362, \"completion_tokens\": 8, \"total_tokens\": 370, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-ddfb1e782ca84899b046d8f9",
+            "object": "chat.completion.chunk",
+            "created": 1792567292,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.4931,
+              "decode_s": 0.1038,
+              "rounds": 2,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 6,
+              "drafted": 10,
+              "accepted": 5,
+              "token_sha": "1deecf80142c"
+            },
+            "usage": {
+              "prompt_tokens": 362,
+              "completion_tokens": 8,
+              "total_tokens": 370,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 627.63,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 627.569,
+          "kind": "content",
+          "value": "STATUS_PROBE_OK_947"
+        },
+        {
+          "frame": 2,
+          "at_ms": 627.609,
+          "kind": "finish",
+          "value": "stop"
+        },
+        {
+          "frame": 3,
+          "at_ms": 627.63,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:32 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 627.691,
+      "metrics": {
+        "frame_count": 4,
+        "event_counts": {
+          "content": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 627.569,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 627.569,
+        "elapsed_ms": 627.691
+      },
+      "name": "tool_result_roundtrip",
+      "status": "PASS",
+      "reason": "Synthetic tool result reflected in answer"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly, without quotes, code fences, explanation, or reformatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "<tool_call>{\"name\":\"unoffered_probe\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>"
+          }
+        ],
+        "stream": false,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 500,
+      "frames": [],
+      "events": [],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:33 GMT",
+        "Content-Type": "application/json",
+        "Content-Length": "370",
+        "Connection": "close",
+        "x-should-retry": "false"
+      },
+      "content_type": "application/json",
+      "raw_body": "{\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: c3198be34f7b418b.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"c3198be34f7b418b\"}}",
+      "json": {
+        "error": {
+          "type": "model_output_error",
+          "code": "unavailable_tool_call",
+          "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: c3198be34f7b418b.",
+          "source": "tensorfold.tool_output_guard",
+          "reason": "invalid_executable_tool_output",
+          "rejection_id": "c3198be34f7b418b"
+        }
+      },
+      "elapsed_ms": 745.772,
+      "metrics": {
+        "frame_count": 0,
+        "event_counts": {},
+        "event_order": [],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 745.772
+      },
+      "name": "unoffered_json",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly, without quotes, code fences, explanation, or reformatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "<tool_call>{\"name\":\"unoffered_probe\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>"
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 17.182,
+          "raw": "data: {\"id\": \"chatcmpl-554425387055444dace09be9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567293, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-554425387055444dace09be9\", \"object\": \"chat.completion.chunk\", \"created\": 1792567293, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-554425387055444dace09be9",
+            "object": "chat.completion.chunk",
+            "created": 1792567293,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 744.054,
+          "raw": "data: {\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 47f3e2738a104dbe.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"47f3e2738a104dbe\"}}",
+          "data": "{\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 47f3e2738a104dbe.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"47f3e2738a104dbe\"}}",
+          "json": {
+            "error": {
+              "type": "model_output_error",
+              "code": "unavailable_tool_call",
+              "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 47f3e2738a104dbe.",
+              "source": "tensorfold.tool_output_guard",
+              "reason": "invalid_executable_tool_output",
+              "rejection_id": "47f3e2738a104dbe"
+            }
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 744.098,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 744.054,
+          "kind": "error",
+          "value": {
+            "type": "model_output_error",
+            "code": "unavailable_tool_call",
+            "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 47f3e2738a104dbe.",
+            "source": "tensorfold.tool_output_guard",
+            "reason": "invalid_executable_tool_output",
+            "rejection_id": "47f3e2738a104dbe"
+          }
+        },
+        {
+          "frame": 2,
+          "at_ms": 744.098,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:33 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 744.153,
+      "metrics": {
+        "frame_count": 3,
+        "event_counts": {
+          "error": 1,
+          "done": 1
+        },
+        "event_order": [
+          "error",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 744.153
+      },
+      "name": "unoffered_sse",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly. Preserve all markdown, quotes, whitespace and code fences exactly. Add no explanation or formatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "<tool_call>{\"name\":\"get_status\",\"arguments\":INVALID}</tool_call>"
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 16.906,
+          "raw": "data: {\"id\": \"chatcmpl-89e653615c074f2787646a32\", \"object\": \"chat.completion.chunk\", \"created\": 1792567294, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-89e653615c074f2787646a32\", \"object\": \"chat.completion.chunk\", \"created\": 1792567294, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-89e653615c074f2787646a32",
+            "object": "chat.completion.chunk",
+            "created": 1792567294,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 642.103,
+          "raw": "data: {\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 5b22535228724fee.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"5b22535228724fee\"}}",
+          "data": "{\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 5b22535228724fee.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"5b22535228724fee\"}}",
+          "json": {
+            "error": {
+              "type": "model_output_error",
+              "code": "unavailable_tool_call",
+              "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 5b22535228724fee.",
+              "source": "tensorfold.tool_output_guard",
+              "reason": "invalid_executable_tool_output",
+              "rejection_id": "5b22535228724fee"
+            }
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 642.139,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 642.103,
+          "kind": "error",
+          "value": {
+            "type": "model_output_error",
+            "code": "unavailable_tool_call",
+            "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 5b22535228724fee.",
+            "source": "tensorfold.tool_output_guard",
+            "reason": "invalid_executable_tool_output",
+            "rejection_id": "5b22535228724fee"
+          }
+        },
+        {
+          "frame": 2,
+          "at_ms": 642.139,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:34 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 642.202,
+      "metrics": {
+        "frame_count": 3,
+        "event_counts": {
+          "error": 1,
+          "done": 1
+        },
+        "event_order": [
+          "error",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 642.202
+      },
+      "name": "malformed_envelope",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly. Preserve all markdown, quotes, whitespace and code fences exactly. Add no explanation or formatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "<tool_call>{\"name\":\"get_status\",\"arguments\":{\"service\":\"tensorfold\"}"
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 16.901,
+          "raw": "data: {\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-34afedb742a9485abdc8ea1e",
+            "object": "chat.completion.chunk",
+            "created": 1792567295,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 893.389,
+          "raw": "data: {\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"\\n\\n\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"\\n\\n\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-34afedb742a9485abdc8ea1e",
+            "object": "chat.completion.chunk",
+            "created": 1792567295,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "\n\n"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 893.427,
+          "raw": "data: {\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_992f3804b4834c3192452c5e\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_992f3804b4834c3192452c5e\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-34afedb742a9485abdc8ea1e",
+            "object": "chat.completion.chunk",
+            "created": 1792567295,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "id": "call_992f3804b4834c3192452c5e",
+                      "type": "function",
+                      "function": {
+                        "name": "get_status",
+                        "arguments": "{\"service\":\"tensorfold\"}"
+                      }
+                    }
+                  ]
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 893.443,
+          "raw": "data: {\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.4714, \"decode_s\": 0.3933, \"rounds\": 8, \"drafts\": true, \"cached\": 0, \"min_rows\": 5, \"drafted\": 39, \"accepted\": 31, \"token_sha\": \"b3fb7a226bb7\"}, \"usage\": {\"prompt_tokens\": 328, \"completion_tokens\": 40, \"total_tokens\": 368, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-34afedb742a9485abdc8ea1e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567295, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.4714, \"decode_s\": 0.3933, \"rounds\": 8, \"drafts\": true, \"cached\": 0, \"min_rows\": 5, \"drafted\": 39, \"accepted\": 31, \"token_sha\": \"b3fb7a226bb7\"}, \"usage\": {\"prompt_tokens\": 328, \"completion_tokens\": 40, \"total_tokens\": 368, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-34afedb742a9485abdc8ea1e",
+            "object": "chat.completion.chunk",
+            "created": 1792567295,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "tool_calls"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.4714,
+              "decode_s": 0.3933,
+              "rounds": 8,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 5,
+              "drafted": 39,
+              "accepted": 31,
+              "token_sha": "b3fb7a226bb7"
+            },
+            "usage": {
+              "prompt_tokens": 328,
+              "completion_tokens": 40,
+              "total_tokens": 368,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 4,
+          "at_ms": 893.455,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 893.389,
+          "kind": "content",
+          "value": "\n\n"
+        },
+        {
+          "frame": 2,
+          "at_ms": 893.427,
+          "kind": "call",
+          "value": [
+            {
+              "index": 0,
+              "id": "call_992f3804b4834c3192452c5e",
+              "type": "function",
+              "function": {
+                "name": "get_status",
+                "arguments": "{\"service\":\"tensorfold\"}"
+              }
+            }
+          ]
+        },
+        {
+          "frame": 3,
+          "at_ms": 893.443,
+          "kind": "finish",
+          "value": "tool_calls"
+        },
+        {
+          "frame": 4,
+          "at_ms": 893.455,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:35 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 893.654,
+      "metrics": {
+        "frame_count": 5,
+        "event_counts": {
+          "content": 1,
+          "call": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "call",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 893.389,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 893.389,
+        "elapsed_ms": 893.654
+      },
+      "name": "truncated_envelope",
+      "status": "INCONCLUSIVE",
+      "reason": "Model may have completed or changed the fixture into a valid offered call"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly. Preserve all markdown, quotes, whitespace and code fences exactly. Add no explanation or formatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "<tool_call>{\"name\":\"get_status\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>"
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 16.28,
+          "raw": "data: {\"id\": \"chatcmpl-8b7fe0640b9b4ac594ff9e3e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-8b7fe0640b9b4ac594ff9e3e\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-8b7fe0640b9b4ac594ff9e3e",
+            "object": "chat.completion.chunk",
+            "created": 1792567296,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 481.764,
+          "raw": "data: {\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 1e04804f9e8c404c.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"1e04804f9e8c404c\"}}",
+          "data": "{\"error\": {\"type\": \"model_output_error\", \"code\": \"unavailable_tool_call\", \"message\": \"The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 1e04804f9e8c404c.\", \"source\": \"tensorfold.tool_output_guard\", \"reason\": \"invalid_executable_tool_output\", \"rejection_id\": \"1e04804f9e8c404c\"}}",
+          "json": {
+            "error": {
+              "type": "model_output_error",
+              "code": "unavailable_tool_call",
+              "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 1e04804f9e8c404c.",
+              "source": "tensorfold.tool_output_guard",
+              "reason": "invalid_executable_tool_output",
+              "rejection_id": "1e04804f9e8c404c"
+            }
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 481.8,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 481.764,
+          "kind": "error",
+          "value": {
+            "type": "model_output_error",
+            "code": "unavailable_tool_call",
+            "message": "The model's executable tool output was rejected. Reason: invalid_executable_tool_output; source: tensorfold.tool_output_guard; diagnostic ID: 1e04804f9e8c404c.",
+            "source": "tensorfold.tool_output_guard",
+            "reason": "invalid_executable_tool_output",
+            "rejection_id": "1e04804f9e8c404c"
+          }
+        },
+        {
+          "frame": 2,
+          "at_ms": 481.8,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:36 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 481.862,
+      "metrics": {
+        "frame_count": 3,
+        "event_counts": {
+          "error": 1,
+          "done": 1
+        },
+        "event_order": [
+          "error",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 481.862
+      },
+      "name": "no_tools_envelope",
+      "status": "PASS",
+      "reason": "Native typed rejection with terminal wire contract"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly. Preserve all markdown, quotes, whitespace and code fences exactly. Add no explanation or formatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "Literal sample: get_status(service:string), not a call."
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 17.073,
+          "raw": "data: {\"id\": \"chatcmpl-df55752a85934a80b11d6a30\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-df55752a85934a80b11d6a30\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-df55752a85934a80b11d6a30",
+            "object": "chat.completion.chunk",
+            "created": 1792567296,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 652.711,
+          "raw": "data: {\"id\": \"chatcmpl-df55752a85934a80b11d6a30\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"Literal sample: get_status(service:string), not a call.\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-df55752a85934a80b11d6a30\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"Literal sample: get_status(service:string), not a call.\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-df55752a85934a80b11d6a30",
+            "object": "chat.completion.chunk",
+            "created": 1792567296,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "Literal sample: get_status(service:string), not a call."
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 652.743,
+          "raw": "data: {\"id\": \"chatcmpl-df55752a85934a80b11d6a30\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.475, \"decode_s\": 0.1478, \"rounds\": 3, \"drafts\": true, \"cached\": 0, \"min_rows\": 5, \"drafted\": 14, \"accepted\": 10, \"token_sha\": \"91d4a3946694\"}, \"usage\": {\"prompt_tokens\": 323, \"completion_tokens\": 14, \"total_tokens\": 337, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-df55752a85934a80b11d6a30\", \"object\": \"chat.completion.chunk\", \"created\": 1792567296, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.475, \"decode_s\": 0.1478, \"rounds\": 3, \"drafts\": true, \"cached\": 0, \"min_rows\": 5, \"drafted\": 14, \"accepted\": 10, \"token_sha\": \"91d4a3946694\"}, \"usage\": {\"prompt_tokens\": 323, \"completion_tokens\": 14, \"total_tokens\": 337, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-df55752a85934a80b11d6a30",
+            "object": "chat.completion.chunk",
+            "created": 1792567296,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.475,
+              "decode_s": 0.1478,
+              "rounds": 3,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 5,
+              "drafted": 14,
+              "accepted": 10,
+              "token_sha": "91d4a3946694"
+            },
+            "usage": {
+              "prompt_tokens": 323,
+              "completion_tokens": 14,
+              "total_tokens": 337,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 652.763,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 652.711,
+          "kind": "content",
+          "value": "Literal sample: get_status(service:string), not a call."
+        },
+        {
+          "frame": 2,
+          "at_ms": 652.743,
+          "kind": "finish",
+          "value": "stop"
+        },
+        {
+          "frame": 3,
+          "at_ms": 652.763,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:36 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 652.816,
+      "metrics": {
+        "frame_count": 4,
+        "event_counts": {
+          "content": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 652.711,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 652.711,
+        "elapsed_ms": 652.816
+      },
+      "name": "literal_ordinary",
+      "status": "PASS",
+      "reason": "Exact literal preserved without structured calls"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly. Preserve all markdown, quotes, whitespace and code fences exactly. Add no explanation or formatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "```text\n<tool_call>{\"name\":\"get_status\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>\n```"
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 20.6,
+          "raw": "data: {\"id\": \"chatcmpl-e7e383acbb0b4b4aa0e19ad0\", \"object\": \"chat.completion.chunk\", \"created\": 1792567297, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-e7e383acbb0b4b4aa0e19ad0\", \"object\": \"chat.completion.chunk\", \"created\": 1792567297, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-e7e383acbb0b4b4aa0e19ad0",
+            "object": "chat.completion.chunk",
+            "created": 1792567297,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 783.935,
+          "raw": "data: {\"id\": \"chatcmpl-e7e383acbb0b4b4aa0e19ad0\", \"object\": \"chat.completion.chunk\", \"created\": 1792567297, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"```text\\n<tool_call>{\\\"name\\\":\\\"get_status\\\",\\\"arguments\\\":{\\\"service\\\":\\\"tensorfold\\\"}}</tool_call>\\n```\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-e7e383acbb0b4b4aa0e19ad0\", \"object\": \"chat.completion.chunk\", \"created\": 1792567297, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"content\": \"```text\\n<tool_call>{\\\"name\\\":\\\"get_status\\\",\\\"arguments\\\":{\\\"service\\\":\\\"tensorfold\\\"}}</tool_call>\\n```\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-e7e383acbb0b4b4aa0e19ad0",
+            "object": "chat.completion.chunk",
+            "created": 1792567297,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "```text\n<tool_call>{\"name\":\"get_status\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>\n```"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 783.976,
+          "raw": "data: {\"id\": \"chatcmpl-e7e383acbb0b4b4aa0e19ad0\", \"object\": \"chat.completion.chunk\", \"created\": 1792567297, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4988, \"decode_s\": 0.2521, \"rounds\": 5, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 25, \"accepted\": 21, \"token_sha\": \"1763e44b9821\"}, \"usage\": {\"prompt_tokens\": 336, \"completion_tokens\": 27, \"total_tokens\": 363, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-e7e383acbb0b4b4aa0e19ad0\", \"object\": \"chat.completion.chunk\", \"created\": 1792567297, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"stop\"}], \"tensorfold\": {\"prefill_s\": 0.4988, \"decode_s\": 0.2521, \"rounds\": 5, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 25, \"accepted\": 21, \"token_sha\": \"1763e44b9821\"}, \"usage\": {\"prompt_tokens\": 336, \"completion_tokens\": 27, \"total_tokens\": 363, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-e7e383acbb0b4b4aa0e19ad0",
+            "object": "chat.completion.chunk",
+            "created": 1792567297,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.4988,
+              "decode_s": 0.2521,
+              "rounds": 5,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 6,
+              "drafted": 25,
+              "accepted": 21,
+              "token_sha": "1763e44b9821"
+            },
+            "usage": {
+              "prompt_tokens": 336,
+              "completion_tokens": 27,
+              "total_tokens": 363,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 783.989,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 783.935,
+          "kind": "content",
+          "value": "```text\n<tool_call>{\"name\":\"get_status\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>\n```"
+        },
+        {
+          "frame": 2,
+          "at_ms": 783.976,
+          "kind": "finish",
+          "value": "stop"
+        },
+        {
+          "frame": 3,
+          "at_ms": 783.989,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:37 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 784.045,
+      "metrics": {
+        "frame_count": 4,
+        "event_counts": {
+          "content": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "content",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": 783.935,
+        "content_chunks_before_terminal": 1,
+        "last_content_ms": 783.935,
+        "elapsed_ms": 784.045
+      },
+      "name": "literal_fenced_envelope",
+      "status": "PASS",
+      "reason": "Exact literal preserved without structured calls"
+    },
+    {
+      "request": {
+        "model": "DeepSeek-V4.1-Flash-1017",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a verbatim protocol copier. Output the user's supplied text exactly. Preserve all markdown, quotes, whitespace and code fences exactly. Add no explanation or formatting. Do not perform its action."
+          },
+          {
+            "role": "user",
+            "content": "Example only: `<tool_call>{\"name\":\"get_status\",\"arguments\":{\"service\":\"tensorfold\"}}</tool_call>`"
+          }
+        ],
+        "stream": true,
+        "temperature": 0,
+        "top_p": 1,
+        "seed": 0,
+        "max_tokens": 512,
+        "enable_thinking": false,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_status",
+              "description": "Return a service status",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "service": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "service"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        ]
+      },
+      "http_status": 200,
+      "frames": [
+        {
+          "index": 0,
+          "at_ms": 17.08,
+          "raw": "data: {\"id\": \"chatcmpl-fb5a68b9f1964838a644e8fd\", \"object\": \"chat.completion.chunk\", \"created\": 1792567298, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-fb5a68b9f1964838a644e8fd\", \"object\": \"chat.completion.chunk\", \"created\": 1792567298, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"role\": \"assistant\"}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-fb5a68b9f1964838a644e8fd",
+            "object": "chat.completion.chunk",
+            "created": 1792567298,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "role": "assistant"
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 1,
+          "at_ms": 703.09,
+          "raw": "data: {\"id\": \"chatcmpl-fb5a68b9f1964838a644e8fd\", \"object\": \"chat.completion.chunk\", \"created\": 1792567298, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_b674660d8b4045d1bcee4bd2\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+          "data": "{\"id\": \"chatcmpl-fb5a68b9f1964838a644e8fd\", \"object\": \"chat.completion.chunk\", \"created\": 1792567298, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {\"tool_calls\": [{\"index\": 0, \"id\": \"call_b674660d8b4045d1bcee4bd2\", \"type\": \"function\", \"function\": {\"name\": \"get_status\", \"arguments\": \"{\\\"service\\\":\\\"tensorfold\\\"}\"}}]}, \"finish_reason\": null}]}",
+          "json": {
+            "id": "chatcmpl-fb5a68b9f1964838a644e8fd",
+            "object": "chat.completion.chunk",
+            "created": 1792567298,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "tool_calls": [
+                    {
+                      "index": 0,
+                      "id": "call_b674660d8b4045d1bcee4bd2",
+                      "type": "function",
+                      "function": {
+                        "name": "get_status",
+                        "arguments": "{\"service\":\"tensorfold\"}"
+                      }
+                    }
+                  ]
+                },
+                "finish_reason": null
+              }
+            ]
+          }
+        },
+        {
+          "index": 2,
+          "at_ms": 703.134,
+          "raw": "data: {\"id\": \"chatcmpl-fb5a68b9f1964838a644e8fd\", \"object\": \"chat.completion.chunk\", \"created\": 1792567298, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.476, \"decode_s\": 0.1982, \"rounds\": 4, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 20, \"accepted\": 18, \"token_sha\": \"e999dcfef76b\"}, \"usage\": {\"prompt_tokens\": 335, \"completion_tokens\": 23, \"total_tokens\": 358, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "data": "{\"id\": \"chatcmpl-fb5a68b9f1964838a644e8fd\", \"object\": \"chat.completion.chunk\", \"created\": 1792567298, \"model\": \"DeepSeek-V4.1-Flash-1017\", \"choices\": [{\"index\": 0, \"delta\": {}, \"finish_reason\": \"tool_calls\"}], \"tensorfold\": {\"prefill_s\": 0.476, \"decode_s\": 0.1982, \"rounds\": 4, \"drafts\": true, \"cached\": 0, \"min_rows\": 6, \"drafted\": 20, \"accepted\": 18, \"token_sha\": \"e999dcfef76b\"}, \"usage\": {\"prompt_tokens\": 335, \"completion_tokens\": 23, \"total_tokens\": 358, \"prompt_tokens_details\": {\"cached_tokens\": 0}, \"completion_tokens_details\": {\"reasoning_tokens\": 0}}}",
+          "json": {
+            "id": "chatcmpl-fb5a68b9f1964838a644e8fd",
+            "object": "chat.completion.chunk",
+            "created": 1792567298,
+            "model": "DeepSeek-V4.1-Flash-1017",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "tool_calls"
+              }
+            ],
+            "tensorfold": {
+              "prefill_s": 0.476,
+              "decode_s": 0.1982,
+              "rounds": 4,
+              "drafts": true,
+              "cached": 0,
+              "min_rows": 6,
+              "drafted": 20,
+              "accepted": 18,
+              "token_sha": "e999dcfef76b"
+            },
+            "usage": {
+              "prompt_tokens": 335,
+              "completion_tokens": 23,
+              "total_tokens": 358,
+              "prompt_tokens_details": {
+                "cached_tokens": 0
+              },
+              "completion_tokens_details": {
+                "reasoning_tokens": 0
+              }
+            }
+          }
+        },
+        {
+          "index": 3,
+          "at_ms": 703.148,
+          "raw": "data: [DONE]",
+          "data": "[DONE]"
+        }
+      ],
+      "events": [
+        {
+          "frame": 1,
+          "at_ms": 703.09,
+          "kind": "call",
+          "value": [
+            {
+              "index": 0,
+              "id": "call_b674660d8b4045d1bcee4bd2",
+              "type": "function",
+              "function": {
+                "name": "get_status",
+                "arguments": "{\"service\":\"tensorfold\"}"
+              }
+            }
+          ]
+        },
+        {
+          "frame": 2,
+          "at_ms": 703.134,
+          "kind": "finish",
+          "value": "tool_calls"
+        },
+        {
+          "frame": 3,
+          "at_ms": 703.148,
+          "kind": "done",
+          "value": true
+        }
+      ],
+      "transport_error": null,
+      "headers": {
+        "Server": "BaseHTTP/0.6 Python/3.12.3",
+        "Date": "Wed, 21 Oct 2026 07:21:38 GMT",
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "close"
+      },
+      "content_type": "text/event-stream",
+      "elapsed_ms": 703.222,
+      "metrics": {
+        "frame_count": 4,
+        "event_counts": {
+          "call": 1,
+          "finish": 1,
+          "done": 1
+        },
+        "event_order": [
+          "call",
+          "finish",
+          "done"
+        ],
+        "first_content_ms": null,
+        "content_chunks_before_terminal": 0,
+        "last_content_ms": null,
+        "elapsed_ms": 703.222
+      },
+      "name": "literal_quoted_envelope",
+      "status": "INCONCLUSIVE",
+      "reason": "Model may have invoked the offered tool instead of copying the literal"
+    }
+  ],
+  "safety": {
+    "generated_tools_executed": false,
+    "retries": 0,
+    "max_tokens": 512
+  }
+}

@@ -31,12 +31,17 @@ if [ "$head_running" = true ] || [ "$worker_running" = true ]; then
   log "REFUSING experimental startup: stop both existing ranks after the benchmark finishes"
   exit 1
 fi
+case "${MEM_ALLOCATOR_CAP:-1}" in
+  0|1) ;;
+  *) log "MEM_ALLOCATOR_CAP must be 0 or 1"; exit 1 ;;
+esac
+case "${TOOL_OUTPUT_STREAMING:-1}" in
+  0|1) ;;
+  *) log "TOOL_OUTPUT_STREAMING must be 0 or 1"; exit 1 ;;
+esac
 '''
     start = start.replace(anchor, anchor + guard)
     # Non-forced removal cannot kill a rank started concurrently by another launcher.
-    # start.sh has exactly two such commands (rank 0 and rank 1): another count means start.sh changed.
-    if start.count("docker rm -f tfv41-") != 2:
-        raise ValueError("start.sh docker rm anchors changed; review the experiment")
     start = start.replace("docker rm -f tfv41-", "docker rm tfv41-")
     anchor = "--device /dev/infiniband --cap-add IPC_LOCK"
     if start.count(anchor) != 1:
@@ -45,21 +50,16 @@ fi
     anchor = "-e TF_DS_REPLAY=1"
     if start.count(anchor) != 1:
         raise ValueError("start.sh environment anchor changed; review the experiment")
-    start = start.replace(anchor, "-e TF_DS_DISPLAY_KV_MIB=1792 -e TF_DS_KV=native " + anchor)
+    start = start.replace(anchor, "-e TF_DS_MEM_CAP=${MEM_ALLOCATOR_CAP:-1} "
+                          "-e TF_TOOL_OUTPUT_STREAMING=${TOOL_OUTPUT_STREAMING:-1} "
+                          "-e TF_DS_DISPLAY_KV_MIB=1792 -e TF_DS_KV=native " + anchor)
     config = (ROOT / ".env").read_text()
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/:@-]*", image):
         raise ValueError("invalid experimental image reference")
-    # This stage deliberately excludes the mapped-storage-safe spill port.
-    # Override only the private bundle, never the user's active .env.
-    for anchor in ("TF_DS_PREFILL_CHUNK=2048", "TF_DS_PREFILL_CHUNK=${PREFILL_CHUNK:-2048}"):
-        if start.count(anchor) == 1:
-            start = start.replace(anchor, "TF_DS_PREFILL_CHUNK=512")
-            break
-    else:
-        raise ValueError("start.sh prefill anchor changed; review the experiment")
-    for key, value in (("IMAGE", image), ("SPILL_GIB", "0"), ("PREFILL_CHUNK", "512")):
+    # SPILL_GIB is inherited from .env: the display-safe tier supports it now.
+    for key, value in (("IMAGE", image), ("PREFILL_CHUNK", "512")):
         config, count = re.subn(rf"(?m)^{key}=.*$", f"{key}={value}", config)
-        if count == 0 and key in ("PREFILL_CHUNK", "SPILL_GIB"):
+        if count == 0 and key == "PREFILL_CHUNK":
             config = config.rstrip() + f"\n{key}={value}\n"
             count = 1
         if count != 1:

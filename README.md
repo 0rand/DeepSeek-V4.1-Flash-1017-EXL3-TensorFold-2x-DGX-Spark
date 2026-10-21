@@ -43,6 +43,7 @@ Optional: [cache accounting for health and Prometheus](experiments/cache-metrics
 - **Prefix cache.** A second question about the same long document has a TTFT of about 1 s instead of 13 s. Cached prompts also go to disk, so after a restart the TTFT is about 3 s.
 - **Fault isolation.** One failed request ends only that request, not the whole server.
 - **1M-token context.** The full 1,048,576-token context window. A needle test with a 1,035,020-token prompt passed.
+- **Optional display-backed KV lane.** `./start-display-kv.sh` maps 1792 MiB of the display reservation per node into a 2.1M-position pool and keeps the SSD spill tier, memory guard, cache metrics, bounded top-k and tool-output validation in one opt-in image. The experiment uses the 1.0.0 engine base; the ordinary `./start.sh` uses engine 1.1.0. See [Display KV](docs/DISPLAY-KV.md).
 
 ---
 

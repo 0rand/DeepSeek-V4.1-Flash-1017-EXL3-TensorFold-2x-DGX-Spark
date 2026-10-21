@@ -63,6 +63,16 @@ Draft ranking (fork PR #20): `TF_DS_DEPTH_POLICY=rank` is the default. The engin
 
 **Little free memory on the head.** The 1.1.0 release notes give a known issue: with 4 long streams, the lowest `MemAvailable` on the head was 1.45 GiB in the gate run, against the 1 GiB earlyoom limit. If the head has less free memory at idle (for example because other processes use it), set `PREFILL_CHUNK=1024` or `PARALLEL=2` in `.env`, then run `./stop.sh && ./start.sh`. No run in this repo measures these two values on 1.1.0.
 
+## Display-KV variant
+
+`./start-display-kv.sh` is the opt-in display-backed lane. Stop both ranks first, build the 1.0.0 base if needed, then run `./start-display-kv.sh --build`. The launcher prepares DRM on both nodes, probes the full 1792 MiB mapping and starts a private bundle. It uses `DISPLAY_KV_BASE` (default `tensorfold-dsv41:07aa02585f64`, engine 1.0.0) while the ordinary `./start.sh` uses `IMAGE` (engine 1.1.0). Keep `BIND_HOST=127.0.0.1` unless network access and an API key are explicitly configured. Never stop GDM. Never use `docker exec` in a serving rank. See [Display KV](DISPLAY-KV.md) for settings, spill, tool-output validation and rollback.
+
+## Native tool-output errors (display-KV variant)
+
+The display image uses strict tool-output validation. `model_output_error` / `unavailable_tool_call` from `source=tensorfold.tool_output_guard` is a terminal model-response rejection, not a broken distributed lane. Do not enable an unoffered tool, retry the same generation automatically or restart the lane to hide this error.
+
+Prose before the first raw protocol candidate can stream. The remainder and all executable calls wait for final validation. For a content-latency rollback, set `TOOL_OUTPUT_STREAMING=0` in `.env` and use `./stop.sh && ./start-display-kv.sh`. Validation stays enabled. Source changes require the explicit `--build` option on the first restart; plain launches reuse the saved image.
+
 ## When the lane breaks
 
 The engine keeps serving when one request fails:

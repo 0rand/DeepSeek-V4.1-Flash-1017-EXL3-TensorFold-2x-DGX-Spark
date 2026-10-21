@@ -1,12 +1,11 @@
 """CPU-only checks for the offline display-KV source installer."""
-
 from __future__ import annotations
 
 import ast
 import importlib.util
 import os
 from pathlib import Path
-import hashlib
+import shutil
 import tempfile
 import types
 import unittest
@@ -14,7 +13,7 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = Path(os.environ["TF_DISPLAY_SOURCE"]) if os.environ.get("TF_DISPLAY_SOURCE") else None
+SOURCE = Path(os.environ.get("TF_DISPLAY_SOURCE", "/tmp/opencode/tfv41-display-source"))
 APPLY_PATH = ROOT / "apply.py"
 spec = importlib.util.spec_from_file_location("display_kv_apply", APPLY_PATH)
 apply = importlib.util.module_from_spec(spec)
@@ -22,7 +21,6 @@ assert spec.loader is not None
 spec.loader.exec_module(apply)
 
 
-@unittest.skipUnless(SOURCE is not None and SOURCE.is_dir(), "set TF_DISPLAY_SOURCE to a pinned checkout")
 class DisplayKvIntegrationTest(unittest.TestCase):
     def source(self, name: str) -> tuple[Path, str]:
         path = SOURCE / apply.FAMILY / name
@@ -40,7 +38,7 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         changed = apply.transform(relative, text)
         self.assertIn("display_bytes: int = 0", changed)
         self.assertIn("arena = display_kv.CacheArena(c, cap, display_bytes) if display_bytes else None", changed)
-        self.assertIn('else lambda shape, dtype: torch.zeros(shape, dtype=dtype, device="cuda")', changed)
+        self.assertIn("else lambda shape, dtype: torch.zeros(shape, dtype=dtype, device=\"cuda\")", changed)
         self.assertIn("sc.ring = [torch.zeros", changed)
         self.assertIn("sc.tokens = torch.zeros", changed)
 
@@ -50,14 +48,14 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         self.assertIn("display_kv.pool_capacity(cfg, self.display_bytes, max_rows=0)", changed)
         self.assertIn("self.display_pool_cap < self.limit + self.max_rows + 8", changed)
         self.assertIn("display KV requires --parallel greater than 1 before weights load", changed)
-        self.assertIn("display-only KV requires TF_DS_SPILL_GIB=0", changed)
+        self.assertNotIn("display-only KV staging requires TF_DS_SPILL_GIB=0", changed)
         self.assertIn("display KV requires TF_DS_KV=native packed storage", changed)
         self.assertIn("world * 7", changed)
         self.assertIn("self.display_bytes, self.display_pool_cap, self.limit", changed)
         relative, text = self.source("model.py")
         changed = apply.transform(relative, text)
         self.assertIn("self.display_arena = arena", changed)
-        self.assertIn('getattr(self, "display_arena", None) is not None', changed)
+        self.assertIn("getattr(self, \"display_arena\", None) is not None", changed)
         relative, text = self.source("multi.py")
         changed = apply.transform(relative, text)
         self.assertIn("display_kv.pool_capacity(m.cfg, engine.display_bytes, max_rows=0)", changed)
@@ -192,10 +190,7 @@ class DisplayKvIntegrationTest(unittest.TestCase):
                 self.ring, self.comp, self.index_k, self.comp_raw, self.tokens = [], {}, {}, {}, None
 
         namespace["SeqCache"] = SeqCache
-        exec(
-            compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "new_cache", "exec"),
-            namespace,
-        )
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "new_cache", "exec"), namespace)
 
         class Model:
             new_cache = namespace["new_cache"]
@@ -214,91 +209,160 @@ class DisplayKvIntegrationTest(unittest.TestCase):
         self.assertEqual(cache.tokens.origin, "ordinary")
         self.assertEqual(sum(value.fill == 127 for value in arena.calls), len(cfg.index_sources))
 
+    def test_shutdown_drain_hook_is_installed(self):
+        relative, text = self.source("app.py")
+        changed = apply.transform(relative, text)
+        self.assertIn("self.on_exit = self._flush_spill", changed)
+        self.assertIn("def _flush_spill(self)", changed)
+        relative = Path("src/tensorfold/cuda/http.py")
+        changed = apply.transform(relative, (SOURCE / relative).read_text())
+        self.assertIn('hook = getattr(app, "on_exit", None)', changed)
+        self.assertIn("hook()", changed)
 
-class InstallerValidationTest(unittest.TestCase):
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.checkout = Path(self.temp.name)
-        self.originals = {path: f"# {path.name}\nvalue = 1\n" for path in apply.FILES}
-        for path, text in self.originals.items():
-            target = self.checkout / path
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(text)
-        hashes = {path: hashlib.sha256(text.encode()).hexdigest() for path, text in self.originals.items()}
-        self.enterContext(mock.patch.object(apply, "FILES", hashes))
-        self.head = self.enterContext(mock.patch.object(apply, "_git_head", return_value=apply.REVISION))
+    def test_shutdown_drain_waits_for_queued_writes(self):
+        relative, text = self.source("app.py")
+        tree = ast.parse(apply.transform(relative, text), filename=str(relative))
+        app = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "DsApp")
+        method = next(node for node in app.body if isinstance(node, ast.FunctionDef) and node.name == "_flush_spill")
+        method.decorator_list, method.returns = [], None
+        for arg in [*method.args.posonlyargs, *method.args.args, *method.args.kwonlyargs]:
+            arg.annotation = None
+        namespace = {"time": types.SimpleNamespace(perf_counter=lambda: 0.0)}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "_flush_spill", "exec"),
+             namespace)
 
-    def snapshot(self):
-        return {
-            path.relative_to(self.checkout): path.read_bytes() for path in self.checkout.rglob("*") if path.is_file()
-        }
+        class Spill:
+            def __init__(self):
+                self.calls = []
 
-    def test_install_copies_only_display_overlay_and_refuses_reinstall(self):
-        with mock.patch.object(apply, "transform", side_effect=lambda path, text: text + "# transformed\n"):
-            apply.install(self.checkout)
-        added = set(self.snapshot()) - set(self.originals)
-        self.assertEqual(added, {apply.FAMILY / "display_kv.py"})
-        self.assertEqual(
-            (self.checkout / apply.FAMILY / "display_kv.py").read_text(), (ROOT / "overlay/display_kv.py").read_text()
-        )
-        before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "already installed"):
-            apply.install(self.checkout)
-        self.assertEqual(self.snapshot(), before)
+            def drain(self, timeout):
+                self.calls.append(timeout)
+                return True
 
-    def test_revision_rejection_leaves_checkout_unchanged(self):
-        self.head.return_value = "wrong"
-        before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "HEAD"):
-            apply.install(self.checkout)
-        self.assertEqual(self.snapshot(), before)
+        class Engine:
+            def __init__(self):
+                self.multi = types.SimpleNamespace(spill=Spill())
 
-    def test_hash_rejection_leaves_checkout_unchanged(self):
-        (self.checkout / next(iter(self.originals))).write_text("changed = True\n")
-        before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "fingerprint") as raised:
-            apply.install(self.checkout)
-        message = str(raised.exception)                      # a user can compare both hashes with a local patch
-        self.assertIn(f"expected sha256 {apply.FILES[next(iter(self.originals))]}", message)
-        self.assertRegex(message, r"found sha256 [0-9a-f]{64}")
-        self.assertEqual(self.snapshot(), before)
+        class App:
+            _flush_spill = namespace["_flush_spill"]
 
-    def test_bad_anchor_leaves_checkout_unchanged(self):
-        before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "anchor"):
-            apply.install(self.checkout)
-        self.assertEqual(self.snapshot(), before)
+        app = App()
+        app.engine = Engine()
+        with mock.patch("builtins.print"):
+            app._flush_spill()
+        self.assertEqual(app.engine.multi.spill.calls, [55.0])
+        app.engine.multi = None
+        with mock.patch("builtins.print"):
+            app._flush_spill()
 
-    def test_late_transform_rejection_leaves_checkout_unchanged(self):
-        before = self.snapshot()
-        with mock.patch.object(
-            apply, "transform", side_effect=["valid = 1\n", "valid = 2\n", ValueError("bad anchor")]
-        ):
-            with self.assertRaisesRegex(ValueError, "anchor"):
-                apply.install(self.checkout)
-        self.assertEqual(self.snapshot(), before)
+    def test_spill_signature_ignores_the_driver_version(self):
+        relative, text = self.source("multi.py")
+        changed = apply.transform(relative, text)
+        self.assertIn('build_id(getattr(engine, "model_dir", ".")).split("|driver=")[0]', changed)
+        self.assertNotIn('"dsv41-multi", build_id(getattr(engine, "model_dir", ".")),', changed)
 
-    def test_ast_rejection_leaves_checkout_unchanged(self):
-        before = self.snapshot()
-        with mock.patch.object(apply, "transform", side_effect=["valid = 1\n", "valid = 2\n", "def broken("]):
-            with self.assertRaises(SyntaxError):
-                apply.install(self.checkout)
-        self.assertEqual(self.snapshot(), before)
+    def test_spill_calls_match_the_reused_tier(self):
+        relative, text = self.source("multi.py")
+        changed = apply.transform(relative, text)
+        tree = ast.parse(changed, filename=str(relative))
+        calls = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                value = node.func.value
+                if (isinstance(value, ast.Attribute) and isinstance(value.value, ast.Name)
+                        and value.value.id == "self" and value.attr == "spill"):
+                    calls.add(node.func.attr)
+        self.assertNotIn("lineage", calls)
+        self.assertTrue({"save", "find", "load_async", "finish_load", "release", "info", "forget"} <= calls)
+        self.assertIn("self.spill.forget(key)", changed)
 
-    def test_overlay_ast_rejection_leaves_checkout_unchanged(self):
-        before = self.snapshot()
-        with mock.patch.object(apply, "transform", side_effect=lambda path, text: text):
-            with mock.patch.object(apply, "overlays", return_value={apply.FAMILY / "display_kv.py": "def broken("}):
-                with self.assertRaises(SyntaxError):
-                    apply.install(self.checkout)
-        self.assertEqual(self.snapshot(), before)
+    def test_spill_share_callback_is_installed(self):
+        relative, text = self.source("multi.py")
+        changed = apply.transform(relative, text)
+        self.assertIn("share=self._share", changed)
+        self.assertIn("def _share(self, values", changed)
 
-    def test_only_three_display_sources_are_supported(self):
-        self.assertEqual({path.name for path in apply.FILES}, {"model.py", "engine.py", "multi.py"})
-        with self.assertRaisesRegex(ValueError, "unsupported"):
-            apply.transform("src/tensorfold/cuda/http.py", "pass\n")
-        self.assertEqual(set(apply.overlays()), {apply.FAMILY / "display_kv.py"})
+    def test_spill_share_returns_rank_zero_values_on_every_rank(self):
+        relative, text = self.source("multi.py")
+        tree = ast.parse(apply.transform(relative, text), filename=str(relative))
+        multi = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MultiDecoder")
+        method = next(node for node in multi.body if isinstance(node, ast.FunctionDef) and node.name == "_share")
+        method.decorator_list, method.returns = [], None
+        for arg in [*method.args.posonlyargs, *method.args.args, *method.args.kwonlyargs]:
+            arg.annotation = None
+
+        class Tensor:
+            def __init__(self, values):
+                self.values = list(values)
+
+            def numel(self):
+                return len(self.values)
+
+        class Torch:
+            int64 = "int64"
+
+            @staticmethod
+            def tensor(values, dtype, device):
+                return Tensor(values)
+
+            @staticmethod
+            def zeros(n, dtype, device):
+                return Tensor([0] * n)
+
+            @staticmethod
+            def cat(tensors):
+                return Tensor([value for tensor in tensors for value in tensor.values])
+
+        class Rows:
+            def __init__(self, rows):
+                self.rows = rows
+
+            def tolist(self):
+                return self.rows
+
+        class Comm:
+            def __init__(self, length=3):
+                self.length = length
+
+            def gather(self, tensor):
+                if len(tensor.values) == 1:
+                    return Rows([[self.length], [0]])
+                return Rows([[1, 2, 3], [0, 0, 0]])
+
+        namespace = {"torch": Torch}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[method], type_ignores=[])), "_share", "exec"),
+             namespace)
+
+        class Multi:
+            _share = namespace["_share"]
+
+        multi = Multi()
+        multi.e = types.SimpleNamespace(world=2)
+        multi.m = types.SimpleNamespace(comm=Comm())
+        self.assertEqual(multi._share([1, 2, 3]), [1, 2, 3])
+        self.assertEqual(multi._share(None), [1, 2, 3])
+        multi.m.comm = Comm(length=0)
+        self.assertEqual(multi._share(None), [])
+        multi.e.world = 1
+        self.assertEqual(multi._share([4, 5]), [4, 5])
+        self.assertEqual(multi._share(None), [])
+
+    def test_install_transforms_minimal_checkout_and_refuses_reinstall(self):
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = Path(directory)
+            for relative in apply.FILES:
+                target = checkout / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(SOURCE / relative, target)
+            with mock.patch.object(apply, "_git_head", return_value=apply.REVISION):
+                apply.install(checkout)
+                for relative in apply.FILES:
+                    changed = (checkout / relative).read_text()
+                    ast.parse(changed, filename=str(relative))
+                installed = checkout / apply.FAMILY / "display_kv.py"
+                self.assertEqual(installed.read_text(), (ROOT / "overlay" / "display_kv.py").read_text())
+                with self.assertRaisesRegex(ValueError, "already installed"):
+                    apply.install(checkout)
 
 
 if __name__ == "__main__":

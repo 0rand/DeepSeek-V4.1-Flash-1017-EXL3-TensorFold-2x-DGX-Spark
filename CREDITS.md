@@ -17,11 +17,15 @@ This recipe stands on other people's work. The table lists what each project giv
 
 The OpenAI Codex review bot reviewed every engine change; its findings and our fixes are on the three fork pull requests.
 
-## Display mapping experiment
+## Display mapping and display-backed KV
 
-The optional `experiments/display-kv/overlay/display_kv.py` adapts Gilesco's display-memory mapping technique and credits coolbho3k's display-reserve allocator. See [the display NOTICE](experiments/display-kv/NOTICE.md) for the source references and license notes. This display-only variant does not include the separate SSD spill port or NVFP4 C toolkit.
+The optional `experiments/display-kv/overlay/display_kv.py` adapts Gilesco's display-memory mapping technique and credits coolbho3k's display-reserve allocator. See [the display NOTICE](experiments/display-kv/NOTICE.md) for the source references and license notes.
 
 **0rand** wrote the display-KV variant. **Sora39831** and **hjasond** tested it on their own nodes; the measured runs of Sora39831 are in `runs/2026-10-19/` ([record](runs/2026-10-19/display-kv-tester-ab.md)).
+
+## Display cache and SSD spill
+
+The display-backed KV cache and SSD spill tier are modifications built on bertholomus's V4.1 engine. The display cache maps the compressed KV and indexer planes into the NVIDIA display reservation, adds a shared pool with a per-request context limit, and exposes pool and spill telemetry through `/health` and `/metrics`. The SSD spill tier reuses the GLM spill implementation with display-safe staging copies, CRC-checked restores, eviction, shutdown draining and restart persistence. These changes were developed and validated by **opencode** (the DeepSeek V4.1 Flash coding agent) on top of bertholomus's engine. **GPT Sol** fixed the improper pre-OOM SIGTERM handling, so earlyoom stops the engine cleanly instead of leaving the lane broken.
 
 ## This repo's licence
 

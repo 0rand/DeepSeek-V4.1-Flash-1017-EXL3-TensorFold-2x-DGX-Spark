@@ -48,3 +48,15 @@ Files:
 | `gate-1.1.0/data/f-*` | 1.1.0 step: the same files |
 | `gate-1.1.0/data/idle-b.log`, `idle-f.log` | idle `MemAvailable` before the start, after the start and before the long run |
 | `gate-1.1.0/data/mem-b-full-*`, `mem-f-full-*` | `MemAvailable` in kB each second, head and worker, over the whole step |
+
+## Parser isolation and conservative prose streaming
+
+[Parser guardrails record](parser-guardrails/README.md) documents the upstream
+review, integrated strict-validator foundation, conservative prose projector,
+installed-source CPU checks and old-image model-backed baseline.
+
+The code is deployed as `tensorfold-dsv41:display-kv-58e319cb2866` on both nodes
+and live-validated: `./verify.sh` 5/5, parser probe 12 PASS / 2 INCONCLUSIVE /
+0 FAIL. The two inconclusive cases are fixture-induction limits, not parser
+failures. The `TOOL_OUTPUT_STREAMING=0` rollback was also validated live with a
+negative control, and the streaming default was restored and re-validated.

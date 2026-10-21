@@ -1,69 +1,101 @@
-# Display-backed KV experiment
+# Display-Backed KV
 
-This is an opt-in display-only variant. The ordinary `start.sh`, `.env` and
-base image stay unchanged. Full two-node hardware validation is still pending.
-Do not use the offline test results as proof of safe serving or better performance.
+`./start-display-kv.sh` is an opt-in, self-contained launcher for the experimental
+display-only DeepSeek variant. The ordinary `start.sh` remains unchanged.
 
-## Scope and risks
+## Start
 
-The installer changes only the pinned TensorFold `model.py`, `engine.py` and
-`multi.py`, and adds `display_kv.py`. It checks the source revision, file hashes,
-replacement anchors and generated Python before it writes files. It does not
-install tool-output guards, memory-policy changes, metrics or a replacement spill tier.
-
-The private launch bundle uses native packed KV, a 1792 MiB display reservation
-per node, prefill chunk 512 and `SPILL_GIB=0`. Spill is disabled because this
-stage does not include mapped-storage-safe spill. Ordinary launch defaults do
-not change. The display pool and each request's context limit are separate.
-
-Display mapping and runtime DRM changes can fail or affect the local display.
-Keep both nodes idle before a cutover. Never stop GDM or another display manager.
-Never use `docker exec` in serving `tfv41-r0` or `tfv41-r1` containers. Run only
-one model server at a time. Keep `BIND_HOST=127.0.0.1` unless network access and
-an API key are explicitly configured. Do not change DRM while any GPU or DRM
-client is active. The launcher refuses active ranks and incompatible clients.
-
-## Opt-in use
-
-First complete the ordinary recipe setup, including network and host tuning.
-The launcher builds from `IMAGE` in `.env`. It checks the pristine source of the 1.0.0 engine `07aa02585f64`, not the engine that `docker/build.sh` builds now (`730d41abd8f4`). For this experiment, build the 1.0.0 base on the head, copy it to the worker, and set `IMAGE=tensorfold-dsv41:07aa02585f64` in `.env` (see the return steps below). Run these commands from the repository root:
-
-```bash
-docker build --build-arg TF_COMMIT=07aa02585f64 -t tensorfold-dsv41:07aa02585f64 docker
-```
-
-```bash
-. ./.env; docker save tensorfold-dsv41:07aa02585f64 | ssh -o BatchMode=yes "$WORKER_SSH" docker load
-```
-
-The 1.0.0 engine ignores `DROP_UNOFFERED_TOOL_CALLS`. Use the head node and the repository root. Inspect state without a cutover:
-
-```bash
-./start-display-kv.sh --check
-```
-
-When the current work has finished, stop both ranks deliberately:
+Run from the head after normal setup, host tuning, and the base image build:
 
 ```bash
 ./stop.sh
-./start-display-kv.sh --build-only
-./start-display-kv.sh
+./start-display-kv.sh --build
 ./verify.sh
 ```
 
-`--build-only` builds and copies the derived image but does not change DRM or
-start a server. `--build` builds, copies and starts in one command. A later
-launch uses the saved image and checks its ID on both nodes. The head can ask
-for sudo. The worker needs passwordless sudo for runtime DRM preparation.
-The launcher probes the full reservation on both nodes before it starts the
-private bundle. It does not stop a running server for you.
+The launcher reads the current `.env`, including `WORKER_SSH`, `DISPLAY_KV_BASE`,
+paths, networking, context, API binding and authentication settings. It does not
+modify that file. The ordinary `./start.sh` uses `IMAGE` (engine 1.1.0,
+`730d41abd8f4`), but the display experiment needs the 1.0.0 engine base:
+`DISPLAY_KV_BASE` defaults to `tensorfold-dsv41:07aa02585f64`. The source
+installer requires the pinned TensorFold revision
+`07aa02585f64cfb04c60a96de6554c0d4708ed46`; it refuses source drift rather than
+guessing how to patch another version.
 
-Private bundles and logs are under `experiments/display-kv/bundle-launch-*`.
-They contain a configuration snapshot. Do not publish them or their secrets.
-If startup fails, the launcher attempts to restore DRM defaults. It does not
-start an ordinary-memory fallback. Inspect `--check` if restore fails.
+The first launch needs `--build`. After that, `./start-display-kv.sh` reuses the
+image saved in `.display-kv-image`: it never builds or transfers an image, even
+when source files changed. Use `--build` to explicitly prepare an update and
+launch it, or `--build-only` to prepare it separately. A missing image or changed
+image ID on either node causes a clear refusal, not an automatic build/copy.
 
-To return to the ordinary engine after all GPU and DRM clients have stopped, first set `IMAGE=tensorfold-dsv41:730d41abd8f4` in `.env` again (the ordinary engine; `TF_COMMIT` in `.env` should still be `730d41abd8f4`). Then run:
+Thinking defaults are controlled by `.env`: `THINKING=1` and
+`REASONING_EFFORT=high`. Valid launcher efforts are `low`, `medium`, `high` and
+`xhigh`. Requests can still override these server defaults. Each fresh display
+launch snapshot inherits the current values; existing snapshots are unchanged.
+
+Both ranks must be stopped even for `--build-only`. Building while weights are
+resident risks exhausting host memory. Do not run another model server or GPU
+workload during preparation or probes. The head requires sudo authorization;
+the worker requires working `sudo -n` over key-based SSH. Never stop GDM or the
+firmware framebuffer console to make the checks pass.
+
+The startup sequence is:
+
+1. Refuse running DeepSeek ranks and acquire a local launcher lock.
+2. Load the saved image reference, or build a source-tagged image only when
+   `--build` or `--build-only` was explicitly requested.
+3. Verify image IDs on both nodes. Transfer a missing/different image only in
+   explicit build mode, then atomically save the selected reference.
+4. Authorize sudo, then prepare runtime DRM settings on both nodes.
+5. Run two complete SM-side integrity sweeps across the 1792 MiB mapping on each
+   node in disposable probe containers.
+6. Create a private fresh launch snapshot in
+   `experiments/display-kv/bundle-launch-*` and start it with ordinary preflight.
+
+Generated snapshots preserve the latest recipe settings but select the variant
+image, native packed KV, 512-token prefill chunks and inherit `SPILL_GIB` from
+`.env`; a nonzero value enables the display-safe SSD spill tier. No stale
+previous bundle or configuration snapshot is reused. Each bundle has its own
+startup/build logs. `./stop.sh` still stops both rank container names and saves
+their logs in the root recipe's `logs/` directory.
+
+## Commands
+
+| Command | Effect |
+|---|---|
+| `./start-display-kv.sh --check` | Read-only DRM/card/compute status on both nodes; safe with ranks running |
+| `./start-display-kv.sh --build` | Explicitly prepare an updated image on both nodes, then prepare DRM, probe and start |
+| `./start-display-kv.sh --build-only` | Build and copy the derived image; no DRM change, allocation probe or startup |
+| `./start-display-kv.sh` | Use the saved image, prepare DRM, probe and start; never build or copy |
+| `./start-display-kv.sh --restore-drm` | Restore boot-default DRM module parameters on both nodes; no server startup |
+| `./stop.sh` | Stop both ranks and save their container logs |
+
+Unreadable or empty DRM parameter files are reported as unknown, not as proof
+of readiness. Some 580.x drivers do not expose their parameter values correctly;
+the allocation and integrity probes are authoritative.
+
+## Safety And Recovery
+
+All DRM operations are local to `scripts/display_drm.sh`, streamed to the worker
+over SSH. No checkout, script, binary or configuration from another model repo
+is required. The helper discovers NVIDIA-owned cards and render nodes rather
+than assuming `card0` or `card1`.
+
+Preparation and restoration refuse active compute processes, active NVIDIA
+scanout encoders, NVIDIA DRM mappings/open file descriptors, unknown connected
+encoder state, or a positive module reference count. The simple-framebuffer TTY
+is a different device and is not a reason to reject an idle NVIDIA reservation.
+The helper reloads only `nvidia_drm`, never the compute driver. It does not write
+modprobe configuration or rebuild initramfs. Reboot restores boot defaults.
+
+After a cutover failure, the launcher stops only rank containers belonging to
+its own image and attempts to restore DRM defaults on both nodes. It does not
+silently start an ordinary-memory fallback. If another GPU/DRM user appears,
+restoration can safely refuse; inspect the error, stop that workload yourself,
+then use `--restore-drm`. The generated launcher does not force-remove a rank
+that appeared concurrently.
+
+To return to the normal engine:
 
 ```bash
 ./stop.sh
@@ -71,43 +103,116 @@ To return to the ordinary engine after all GPU and DRM clients have stopped, fir
 ./start.sh
 ```
 
-## Measured cost (tester report, not repeated)
+Do not run the normal and display launchers concurrently. The display launcher
+lock serializes display launches only; both variants intentionally share rank
+names, API ports and model-cache paths.
 
-A tester measured the combined display build of pull request #6 on one pair of
-Spark nodes. That build had display KV and also a patched SSD spill, a tool-output
-guard and a memory guard, which this experiment does not include. The maintainers
-did not repeat the runs. The saved report, with setup and caveats, is
-[`runs/2026-10-19/display-kv-tester-ab.md`](../runs/2026-10-19/display-kv-tester-ab.md).
-Credit: Sora39831 for the runs, and hjasond for an early report.
+## Capacity And Metrics
 
-| Measure | Stock lane | Display lane |
-|---|---|---|
-| Cold prefill, 32K / 128K / about 1M tokens | 2,124 / 1,923 / 1,299 tok/s | 1,680 / 1,534 / 1,092 tok/s |
-| Change in prefill tok/s | | -20.9% / -20.2% / -15.9% |
-| Decode, one stream | 51 to 62 tok/s | 48 to 59 tok/s |
-| Prefix cache hit, 54K prompt, TTFT | 0.73 s | 0.46 s |
-| Minimum host MemAvailable, 1M prefill | 1.96 GiB | 2.01 GiB |
+The 1792 MiB display mapping per rank holds a 2,109,440-position shared KV/indexer
+pool, not a larger context for an individual request. Rings, weights, snapshots,
+RoPE and workspaces remain in ordinary memory. The reservation is not added to
+`nvidia-smi`'s normal VRAM accounting.
 
-- The display lane gives about the same KV positions (2,109,440 against 2,097,152) and no more free host memory. It moves the KV out of host RAM.
-- The prefill gap is not isolated. The display bundle fixes the prefill chunk at 512 (it ignores `PREFILL_CHUNK` in `.env`) and the stock lane used 2048. The stock image of the test also carried a local patch, and the runs were sequential with one run per size.
-- The SSD spill never evicted in these runs. This experiment keeps `SPILL_GIB=0`.
+`/health` and `/metrics` report capacity, free/used positions, largest free
+extent, retained prompts, snapshot bytes, and display versus ordinary backing.
+EngineMetrics' TensorFold adapter can read these fields without changes. Byte
+figures are per rank, not summed across replicated ranks. See the
+[implementation notes](../experiments/display-kv/README.md#cache-telemetry) for
+precise field semantics.
 
-## Switches of the bundle
+The staged image also includes [tool-output hardening](TOOL-OUTPUT.md) for the
+DeepSeek app: an unoffered tool call becomes an explicit model-output error,
+without retries or tool permission changes. Read its streaming tradeoff before
+deploying the new image.
 
-The private bundle sets `SPILL_GIB=0` and the prefill chunk 512 and ignores the `.env` values of both. Everything else comes from `.env`, as `./start.sh` reads it.
+Disk prompt spill is enabled through the reused GLM spill tier. Mapped rows move
+through the tier's bounded CUDA staging path (`_by_kernel`), never through CPU
+reads or copy engines. `SPILL_GIB` is inherited from `.env`; a nonzero value
+enables per-rank SSD storage, and both ranks must independently write and
+restore. Queued writes are drained on SIGTERM before exit. In-memory prefix
+reuse is enabled. Two-node integrity, basic inference, 24K-prefix reuse, four
+concurrent 32K+ requests and a depth-65536 benchmark have passed. SSD write,
+eviction, restore, CRC handling and four-stream concurrent restore have also
+passed. Full-window and near-full-pool operation are not yet established as
+production-safe.
 
-## Head sudo and source drift
+## Disk Spill
 
-The launcher tries `sudo -n true` on the head first and calls `sudo -v` only when that fails, so a user with passwordless sudo can run it without a terminal. If both fail, it stops before any DRM change. A source-drift error names the file and shows the expected and the found SHA-256 values. A base image with a local patch counts as drift: build a pristine base from the committed Dockerfile first.
+The display-safe tier stores kept prompts under `TF_DS_SPILL_DIR` (default
+`~/.cache/tensorfold`) up to `SPILL_GIB` per rank. `TF_DS_SPILL_HIGHWATER`,
+`TF_DS_SPILL_MIN`, `TF_DS_SPILL_MIN_FREE_GIB`, `TF_DS_SPILL_KEEP_BUILDS`,
+`TF_SPILL_WRITERS`, `TF_SPILL_DIRECT` and `TF_SPILL_FLUSH_S` tune background
+writes. `/health["spill"]` and the `spill_*` Prometheus families expose entries,
+bytes, write/load counters, restore latency, failures and free disk. A restart
+keeps only prompts whose writes reached disk; `docker stop` sends SIGTERM, and
+the shutdown hook waits up to 55 seconds for queued writes (inside `docker stop -t 60`).
+The spill signature ignores the driver version, so nodes with frozen, differing
+drivers can share stored prompts; the model, TensorFold sources, CUDA/torch
+version, GPU name, KV layout and display size still gate compatibility.
 
-## Validation status
+Live validation on the two-node display recipe: 32 GiB per rank, four concurrent
+streams, 170K-197K-token prompts, disk restores at 4608, 176640 and 195584
+tokens, 26 entries and 43 writes with no write, CRC or load failures; both
+ranks' entry counts matched. A restart restored a 237568-token prompt from disk
+in 0.05 s (41 ms restore p50). Full-window and near-full-pool operation remain
+unvalidated.
 
-Offline tests use temporary fixtures and mocks. Optional source tests need an
-explicit `TF_DISPLAY_SOURCE` checkout. See [tests](../tests/README.md).
-Full hardware validation of this split is pending: two-node mapping and probe
-success, a real reply, `verify.sh` PASS on all five checks, and an ordinary
-launch regression check. A health response alone is not sufficient.
-No new capacity, TTFT, decode tok/s or prefill performance claim is made.
+## Live Memory Guard
 
-See [implementation notes](../experiments/display-kv/README.md) and
-[attribution](../experiments/display-kv/NOTICE.md).
+Updated display images replace the upstream allocator cap frozen after warm-up
+with a live budget, refreshed before and after each prefill chunk and parallel
+decode round on both ranks. The budget is current PyTorch reserved bytes plus
+host `MemAvailable` minus `MEM_FLOOR_GIB`, capped at the CUDA device total.
+Reclaimed host RAM therefore becomes usable without restarting the engine.
+Near the floor, unused PyTorch cache blocks are returned to the host rather
+than retaining a prefill peak until earlyoom kills the process.
+
+Positive floors below 1.5 GiB are raised to 1.5 GiB: earlyoom sends SIGTERM at
+1 GiB, so a 0.5 GiB reserve cannot protect the engine. An explicit zero still
+disables the guard and is unsafe on these unified-memory nodes. The guard is
+not a reservation against other processes or non-PyTorch allocations, and
+genuine memory exhaustion can still break the distributed lane. Startup logs
+identify the live guard; a broken step logs its last budget in bytes.
+
+For a controlled test without a PyTorch allocator cap, add
+`MEM_ALLOCATOR_CAP=0` to `.env` and keep `MEM_FLOOR_GIB` positive. Updated
+launchers pass this as `TF_DS_MEM_CAP=0` on both ranks. This retains pressure
+cleanup and budget telemetry, but the calculated ceiling is advisory only.
+Startup logs explicitly say `hard cap DISABLED; cleanup only`. The default is
+`MEM_ALLOCATOR_CAP=1`. This switch is implemented by the display overlay, not
+the ordinary upstream image. It is read at startup, not changed live.
+
+Keep earlyoom enabled during this test. Without the allocator cap, a memory
+spike can instead trigger earlyoom or a real CUDA/host OOM; this is a diagnostic
+mode, not proof that every workload fits. `MEM_FLOOR_GIB=0` is different: it
+turns off cleanup and telemetry as well, and is not needed for the cap-only test.
+
+Long-context attention indexing now tiles its packed ordering keys (16 MiB
+per key tile, or one complete row if larger) and builds them in place. This
+preserves the original score ordering and lower-index tie rule. The tile limit
+does not include the input scores, output, index vector or sorting workspace.
+A GPU regression case with 512 x 32768 scores and k=256 reduced incremental
+peak allocated scratch from 448.2 MiB to 35.2 MiB, with identical indices.
+
+Existing saved images do not acquire source changes automatically. With both
+ranks stopped, run `./start-display-kv.sh --build-only` to build/copy the new
+image, then `./start-display-kv.sh` to launch it. A regular start never rebuilds.
+
+## Offline Tests
+
+No live Docker, SSH, sudo or DRM operations occur in these launcher/helper tests:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 tests/display_drm_test.py
+PYTHONDONTWRITEBYTECODE=1 python3 tests/start_display_kv_test.py
+```
+
+Engine-patch and telemetry checks need a pristine checkout of the pinned
+TensorFold revision. Most use fake tensors. Top-k equivalence tests use CPU
+PyTorch when installed; CUDA equivalence, graph capture and peak-memory tests
+run only when CUDA is available. No model weights are loaded:
+
+```bash
+TF_DISPLAY_SOURCE=/path/to/TensorFold PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/display-kv/tests -v
+```
