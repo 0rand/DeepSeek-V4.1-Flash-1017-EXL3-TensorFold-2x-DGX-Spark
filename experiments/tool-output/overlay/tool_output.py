@@ -175,7 +175,8 @@ class ToolOutputGuard:
             wrapper = "dsml" if made else "json"
             inner = block.group(1).lower()                # (the Qwen and GLM tags inside one call block)
             if any(self._open_tail(inner, opener, closer) > self._RUNAWAY for opener, closer in (
-                    ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"))):
+                    ("<parameter=", "</parameter>"), ("<arg_key>", "</arg_key>"), ("<arg_value>", "</arg_value>"),
+                    ("<arg_key>", "<arg_value>"))):           # (a key needs a value after it to make a pair)
                 raise reject("", "runaway_markup", start, stop, wrapper)
             try:
                 names = self._call_names(reply_text, block.group(1).strip(), complete=max_calls is not None)
