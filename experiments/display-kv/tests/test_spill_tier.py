@@ -54,8 +54,8 @@ class SpillTierTests(unittest.TestCase):
                 imports.update(alias.name.split(".")[0] for alias in node.names)
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imports.add(node.module.split(".")[0])
-        allowed = {"__future__", "contextlib", "dataclasses", "errno", "hashlib", "importlib", "json",
-                   "os", "queue", "shutil", "struct", "threading", "time", "zlib", "collections",
+        allowed = {"__future__", "contextlib", "ctypes", "dataclasses", "errno", "hashlib", "importlib", "json",
+                   "os", "queue", "shutil", "stat", "struct", "threading", "time", "zlib", "collections",
                    "concurrent", "typing", "pathlib", "numpy", "torch", "tensorfold"}
         self.assertEqual(imports - allowed, set())
 
