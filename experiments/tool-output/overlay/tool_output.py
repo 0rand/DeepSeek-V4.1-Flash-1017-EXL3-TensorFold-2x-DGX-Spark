@@ -41,6 +41,7 @@ class ToolOutputGuard:
     _glm_args_re = re.compile(r"<arg_key>.*?</arg_key>\s*<arg_value>.*?</arg_value>", re.DOTALL)
     _name_re = re.compile(r"[\w.:-]+\Z")
     _close_re = re.compile(r"\s*</tool_call>", re.IGNORECASE)
+    _pair_re = re.compile(r"(<tool_call>)|(</tool_call>)|(<｜DSML｜ calls>)|(</｜DSML｜ calls>)", re.IGNORECASE)
     _opener_re = re.compile(r"<tool_call>|<｜DSML｜ calls>", re.IGNORECASE)
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
@@ -95,15 +96,34 @@ class ToolOutputGuard:
 
         known = {tool_spec_name(tool).lower() for tool in self.tools if tool_spec_name(tool)}
         candidates: list[tuple[int, int, list[str], str]] = []
-        for block in reply_text._DSML_BLOCK_RE.finditer(text):
-            names = [match.group(1).strip() for match in reply_text._DSML_INVOKE_RE.finditer(block.group(1))]
-            names = [name for name in names if self._name_re.fullmatch(name)]
-            candidates.append((block.start(), block.end(), names, "dsml"))
-        for block in self._call_re.finditer(text):
-            name = self._call_name(block.group(1))
-            body = block.group(1).lstrip()
+        def dsml(start: int, stop: int, body: str) -> None:
+            names = [match.group(1).strip() for match in reply_text._DSML_INVOKE_RE.finditer(body)]
+            candidates.append((start, stop, [name for name in names if self._name_re.fullmatch(name)], "dsml"))
+
+        def tool_call(start: int, stop: int, body: str) -> None:
+            name = self._call_name(body)
+            body = body.lstrip()
             kind = "json" if body.startswith("{") else "qwen_xml" if body.lower().startswith("<function=") else "glm"
-            candidates.append((block.start(), block.end(), [name] if name else [], kind))
+            candidates.append((start, stop, [name] if name else [], kind))
+
+        for block in reply_text._DSML_BLOCK_RE.finditer(text):
+            dsml(block.start(), block.end(), block.group(1))
+        for block in self._call_re.finditer(text):
+            tool_call(block.start(), block.end(), block.group(1))
+        # An opener inside an earlier malformed envelope is not scanned by the matches above (they do not overlap).
+        # Pair each closing tag with the nearest opener before it, so a complete inner envelope is a candidate too.
+        open_call = open_dsml = None
+        for tag in self._pair_re.finditer(text):
+            if tag.lastindex == 1:
+                open_call = tag
+            elif tag.lastindex == 3:
+                open_dsml = tag
+            elif tag.lastindex == 2 and open_call is not None:
+                tool_call(open_call.start(), tag.end(), text[open_call.end():tag.start()].strip())
+                open_call = None
+            elif tag.lastindex == 4 and open_dsml is not None:
+                dsml(open_dsml.start(), tag.end(), text[open_dsml.end():tag.start()].strip())
+                open_dsml = None
         # A closing tag inside a JSON string is data, not the envelope's end.
         for opening in re.finditer(r"<tool_call>\s*", text, re.IGNORECASE):
             try:

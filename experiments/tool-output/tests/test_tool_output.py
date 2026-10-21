@@ -314,6 +314,16 @@ class ToolOutputTests(unittest.TestCase):
         content, calls = self.guard().parse("<tool_call> " + b)
         self.assertFalse(any("deep" in call["function"]["arguments"] for call in calls or []))
 
+    def test_a_complete_inner_call_after_a_malformed_opener_is_checked(self):
+        xml = '<tool_call><function=unoffered><parameter=secret>PRIVATE</parameter></function></tool_call>'
+        glm = '<tool_call>unoffered<arg_key>k</arg_key><arg_value>PRIVATE</arg_value></tool_call>'
+        dsml = '<｜DSML｜ calls><｜DSML｜ invoke name="unoffered"> </｜DSML｜ invoke></｜DSML｜ calls>'
+        for label, inner in (("qwen", xml), ("glm", glm), ("dsml", dsml)):
+            for outer in ("<tool_call> junk ", "<｜DSML｜ calls> junk "):
+                with self.subTest(inner=label, outer=outer):
+                    with self.assertRaises(self.module.ModelOutputError):
+                        self.guard().parse(outer + inner)
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 
