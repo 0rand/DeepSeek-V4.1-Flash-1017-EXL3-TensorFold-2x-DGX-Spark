@@ -1282,6 +1282,8 @@ class SpillTierTests(unittest.TestCase):
             offsets = []
 
             def gather(values):
+                if len(values) == 1:                                      # a failure flag of the agreement
+                    return [list(values), list(values)]
                 offsets.append(len(offsets) * 3)
                 window = offsets[-1]
                 return [list(values), self.sp._encode_builds(peer[window:window + 3])]
@@ -1312,6 +1314,89 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual(kinds["0.host"], "cpu")
             self.assertEqual(kinds["0.keys"], "cpu")
             self.assertEqual(kinds["0.snaps.32.0"], "meta")
+
+    def test_a_failure_while_one_rank_merges_the_build_windows_is_shared(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=1)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            store.gather, store.world = gather, 2
+            with mock.patch.object(self.sp, "_decode_builds", side_effect=MemoryError("lists")):
+                with self.assertRaises(MemoryError):
+                    store._retained_builds(["spill-00000000000000aa"])
+            self.assertEqual(rounds[-1], [1])                              # the failure is in the agreement
+
+    def test_a_linked_spill_root_is_refused_and_not_followed(self):
+        with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as outside:
+            victim = os.path.join(outside, "spill-0000000000000001", "rank0", "0.safetensors")
+            os.makedirs(os.path.dirname(victim))
+            with open(victim, "wb") as f:
+                f.write(b"x")
+            root = os.path.join(base, "cache")
+            try:
+                os.symlink(outside, root)
+            except (OSError, NotImplementedError):
+                self.skipTest("no symbolic links here")
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
+            with self.assertRaises(RuntimeError):
+                self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            self.assertTrue(os.path.exists(victim))                       # nothing behind the link was touched
+
+    def test_a_capacity_eviction_whose_file_stays_skips_the_save(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=6000 / (1 << 30), min_free_gib=0, min_tokens=1)   # one entry fits
+            classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            first_ids, first = self.new_state(500)
+            self.assertIsNotNone(store.save(first_ids, first, skip=("ids",)))
+            self.assertTrue(store.drain(10))
+            first_path = self.entry_path(store)
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target == first_path:
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            second_ids, second = self.new_state(900)
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(io.StringIO()):
+                self.assertIsNone(store.save(second_ids, second, skip=("ids",)))     # its room is not free
+            self.assertEqual(store.stats.no_space, 1)
+            self.assertTrue(os.path.exists(first_path))
+            third_ids, third = self.new_state(1300)
+            self.assertIsNotNone(store.save(third_ids, third, skip=("ids",)))        # the file goes at the next try
+            self.assertFalse(os.path.exists(first_path))
+
+    def test_a_peer_whose_eviction_file_stays_skips_the_save_on_this_rank(self):
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=((1 << 20) + 1000) / (1 << 30), min_free_gib=0, min_tokens=1)
+            classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes, quiet=True)
+            first_ids, first = self.new_state(500)
+            self.assertIsNotNone(store.save(first_ids, first, skip=("ids",)))
+            self.assertTrue(store.drain(10))
+
+            def gather(values):
+                if len(values) == 4:                                      # the size exchange: the peer agrees
+                    return [list(values), list(values)]
+                return [list(values), [1]]                                # the peer's eviction left its file
+
+            store.gather, store.world = gather, 2
+            second_ids, second = self.new_state(900)
+            self.assertIsNone(store.save(second_ids, second, skip=("ids",)))
+            self.assertEqual(store.stats.no_space, 1)
+            self.assertEqual(len(store.index), 0)                         # the index changed alike on both ranks
 
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib

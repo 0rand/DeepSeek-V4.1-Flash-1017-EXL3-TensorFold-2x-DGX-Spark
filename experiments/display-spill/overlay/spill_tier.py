@@ -637,6 +637,8 @@ class SpillStore:
         self.active: set[Job] = set()            # every job not yet done, also one whose entry was evicted
         self.clock = 0
         self.seq = 0
+        self.stuck: set[str] = set()             # evicted files that could not be removed (tried again later)
+        self._evictions = [0, 0]                 # evicted entries, and those whose file stayed, since a save began
         self.generation = 0                     # bumped whenever the index changes
         self.stats = Stats()
         self.direct = bool(cfg.direct) and hasattr(os, "O_DIRECT")
@@ -654,6 +656,8 @@ class SpillStore:
             while not os.path.isdir(probe) and os.path.dirname(probe) != probe:
                 missing.append(probe)                         # folders this start makes: they are the user's too
                 probe = os.path.dirname(probe)
+            if os.path.islink(cfg.root):                      # (name the real folder: a link is never followed)
+                raise OSError(f"{cfg.root} is a symbolic link; use the folder it points to")
             os.makedirs(cfg.root, exist_ok=True)
             for d in reversed(missing):
                 self._own(d)
@@ -847,14 +851,19 @@ class SpillStore:
             return set(names[:keep])
         offered: list[list[str]] = []
         offset = 0
-        while True:                                            # a window of each rank's newest builds at a time
-            rows = self.gather(_encode_builds(names[offset:offset + BUILDS_SHARED]))
+
+        def merge(rows: list[list[int]]) -> tuple[list[str], bool]:
             if not offered:
-                offered = [[] for _ in rows]
+                offered.extend([] for _ in rows)
             for rank, row in enumerate(rows):
                 offered[rank] += _decode_builds(row)
             common = [n for n in offered[0] if all(n in set(other) for other in offered)]
-            if len(common) >= keep or not any(int(row[0]) == BUILDS_SHARED for row in rows):
+            return common, any(int(row[0]) == BUILDS_SHARED for row in rows)
+
+        while True:                                            # a window of each rank's newest builds at a time
+            rows = self.gather(_encode_builds(names[offset:offset + BUILDS_SHARED]))
+            common, more = self._agreed(lambda: merge(rows))
+            if len(common) >= keep or not more:
                 return set(common[:keep])
             offset += BUILDS_SHARED
 
@@ -1038,7 +1047,10 @@ class SpillStore:
                     pass
                 except OSError as exc:                         # the bytes stay on disk: save() measures the disk again
                     self.stats.unlink_failed += 1
+                    self.stuck.add(os.path.join(self.dir, e.name + ".safetensors"))
+                    self._evictions[1] += 1
                     print(f"[tensorfold] spill rank {self.rank}: could not remove {e.name}: {exc!r}", flush=True)
+            self._evictions[0] += 1
             self.stats.pruned += 1
 
     def touch(self, e: Entry) -> None:
@@ -1104,6 +1116,14 @@ class SpillStore:
         still in memory, which would otherwise evict each other in turn under a small cap)."""
 
         with self.lock:
+            for path in list(self.stuck):                  # an earlier eviction whose file stayed: once more
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+                except OSError:
+                    continue
+                self.stuck.discard(path)
             cap = self.cap if cap is None else min(cap, self.cap)
             total = self._total() + extra
             if total > cap and extra + sum(e.size for e in self.index.values() if e.key in keep) > cap:
@@ -1499,12 +1519,22 @@ class SpillStore:
             if not drained:
                 self.stats.no_space += 1
                 return None
+        self._evictions = [0, 0]
         if short and not self._make_room(size, keep, cap=self._total() + size - short):
             self.stats.no_space += 1               # below the floor even with every entry outside ``keep`` gone
             return None
         if not self._make_room(size, keep):
             self.stats.full += 1
             return None
+        if self._evictions[0]:
+            # Every rank evicted the same entries (the index decides). An eviction whose file stayed on one rank
+            # freed no room there: the save is skipped on every rank.
+            kept = self._evictions[1]
+            if self.world > 1 and self.gather is not None:
+                kept = max(r[0] for r in self.gather([kept]))
+            if kept:
+                self.stats.no_space += 1
+                return None
         if short:
             # Entries went to make room for the floor. Check that their bytes really left the disk (a file that could
             # not be removed does not), and agree: one rank without room stops the save on every rank.
