@@ -38,14 +38,14 @@ No performance claim is made.
 - Ordinary prose streams as before, including when tools are offered.
 - A possible opening tag at the end of a chunk waits for more text. Prose before it is released.
 - A real call envelope is held until the whole answer is validated.
-- The guard fails closed and reads no Markdown. Every complete call envelope counts as a call, wherever it is: in prose, in quotes, in inline code, in a quote line, or in a code fence. An unoffered call gives the safe error. An offered call runs as a call.
-- A complete call that stands inside the data of another call, or after a malformed opener, or that crosses another candidate, is checked too. The guard pairs each closing tag with every opener before it that has no closer yet, so a complete inner call is found. If more than 256 openers wait for one closing tag (a looping model), the guard rejects the reply. Only the outer envelopes run as calls.
+- The guard uses the engine's own parser rules and reads no Markdown. It takes the engine's functions in `tensorfold.cuda.reply_text`: the DSML rewrite (`dsml_to_tool_calls`), the call-block expression and the Qwen and GLM readers. It reads the tool name of each call block as the engine does, and rejects the answer if a name is not offered. The reply is then the engine's own `parse_tool_calls` result on the same text. The guard and the parser therefore cannot disagree about what is a call, for any tool name.
+- Every call block counts as a call, wherever it is: in prose, in quotes, in inline code, in a quote line or in a code fence. An unoffered call gives the safe error. An offered call runs as a call.
+- Known limit of a guard that fails closed: an example of a tool call in a code fence is a call. If the tool is not offered, the reply is rejected. If the tool is offered, the example runs as a call. A model that explains tool-call syntax to a user can trigger this.
+- What the parser does not read as a call stays in the content, and nothing runs. Examples are a call whose JSON text holds a closing tag (the engine ends the block at that tag) and a complete call inside the data of another call. The guard does not reject these. One case is stricter than the parser: a flat JSON call with an empty nested `function` object has no name for the engine (not a call), but the guard reads the top-level `name`, so an unoffered one is rejected.
 - While streaming, every call opener waits until the answer is complete, like a real call. The final result then decides.
-- Known limit of a guard that fails closed: an example of a tool call in a code fence is a call. If the tool is not offered, the reply is rejected. If the tool is offered, the example runs as a call. A model that explains tool-call syntax to a user can trigger this. The limit is the price of a guard that a Markdown trick cannot get around.
-- The guard reads the answer in one pass. It does not copy the answer once for each envelope.
+- If the answer holds no closing call tag, the guard does not call the parser (the engine's expressions are slow when many openers have no closing tag, as in a looping model).
 - Streaming scans each new part of the answer once. It does not scan the whole answer again for each chunk. If a new text does not extend the text of the last call, it scans from the start.
 - The content of a guarded reply passes through the same `ToolCallPolicy.content()` step as before. With `parallel_tool_calls: false`, that step removes tool text that is not a complete call.
-- A flat JSON call with an empty nested `function` object is read by its top-level `name`.
 - An unoffered call returns one safe error. It does not expose tool arguments.
 - A stream sends one error frame and one done frame. It sends no call delta and no finish reason.
 - A non-stream request returns HTTP 422 with `model_output_error`. A client may retry a 5xx response, and this response cannot change on a retry.

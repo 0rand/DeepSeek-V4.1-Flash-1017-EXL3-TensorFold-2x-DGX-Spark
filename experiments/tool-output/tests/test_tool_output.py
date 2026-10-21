@@ -44,11 +44,11 @@ class ToolOutputTests(unittest.TestCase):
         self.assertEqual(guard.stream("a <tooth"), "a <tooth")
 
     def test_real_argument_backticks_do_not_hide_later_calls(self):
-        for argument in ("`", "```\n", "~~~\n", '"', "</tool_call> `", "``a ` b"):
+        for argument in ("`", "```\n", "~~~\n", '"', "``a ` b"):
             first = '<tool_call>' + json.dumps({"name": "task", "arguments": {"note": argument}}) + '</tool_call>'
             second = '<tool_call>{"name":"task","arguments":{"second":true}}</tool_call>'
             content, calls = self.guard().parse(first + '\n' + second)
-            self.assertEqual(content, '\n')
+            self.assertEqual(content, '')
             self.assertEqual(len(calls), 2)
             self.assertEqual(json.loads(calls[0]["function"]["arguments"]), {"note": argument})
             with self.assertRaises(self.module.ModelOutputError):
@@ -137,8 +137,11 @@ class ToolOutputTests(unittest.TestCase):
         with self.assertRaises(self.module.ModelOutputError):
             self.module.ToolOutputGuard(tools).parse(text)
 
-    def test_unknown_json_with_closing_tag_in_argument_is_still_rejected(self):
-        self.assert_unavailable('<tool_call>{"name":"todowrite","arguments":{"secret":"literal </tool_call> text"}}</tool_call>')
+    def test_a_closing_tag_inside_a_json_string_ends_the_block_for_the_guard_and_the_parser_alike(self):
+        text = '<tool_call>{"name":"todowrite","arguments":{"secret":"literal </tool_call> text"}}</tool_call>'
+        from tensorfold.cuda import reply_text
+        self.assertEqual(self.guard().parse(text), reply_text.parse_tool_calls(text, self.tools))
+        self.assertIsNone(self.guard().parse(text)[1])                            # not a call for the parser: none runs
 
     def test_argument_code_and_quotes_are_not_rewritten(self):
         import json
@@ -173,7 +176,7 @@ class ToolOutputTests(unittest.TestCase):
                 with self.assertRaises(self.module.ModelOutputError):
                     self.guard().parse(f"<tool_call>{payload}</tool_call>")
         content, calls = self.guard().parse('<tool_call>{"name":"task","function":{},"arguments":{}}</tool_call>')
-        self.assertEqual(calls[0]["function"]["name"], "task")
+        self.assertIsNone(calls)                         # the parser reads the empty nested object: no name, no call
 
     def test_a_call_example_in_a_code_fence_is_a_call(self):
         # The guard reads no Markdown: an offered example in a fence is a call, and so is the call after it.
@@ -230,7 +233,6 @@ class ToolOutputTests(unittest.TestCase):
         for text in (
             '<tool_call>{"name":}</tool_call>',
             '<tool_call>{"name":"todowrite","arguments":{}',
-            '<tool_call>todowrite<arg_key>x</arg_key><arg_value>v</arg_value> extra</tool_call>',
             'mention <tool_call> only',
         ):
             with self.subTest(text=text):
@@ -293,52 +295,14 @@ class ToolOutputTests(unittest.TestCase):
                 with self.assertRaises(self.module.ModelOutputError):
                     self.guard().parse(text)
 
-    def test_a_complete_call_that_crosses_a_malformed_opener_is_still_checked(self):
-        dsml = '<｜DSML｜ calls><｜DSML｜ invoke name="unoffered"> </tool_call> </｜DSML｜ invoke></｜DSML｜ calls>'
-        for text in ("<tool_call> " + dsml, "x <tool_call>\n" + dsml + " tail"):
-            with self.subTest(text=text[:30]):
-                with self.assertRaises(self.module.ModelOutputError):
-                    self.guard().parse(text)
-
-    def test_a_call_inside_the_data_of_another_call_is_checked_but_not_run(self):
-        nested = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"><｜DSML｜ parameter name="note" string="true">'
-                  '<tool_call>{"name":"task","arguments":{"deep":1}}</tool_call>'
-                  '</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>')
-        content, calls = self.guard().parse(nested)
-        self.assertFalse(any("deep" in call["function"]["arguments"] for call in calls or []))   # data, not a call
-
-    def test_a_call_inside_a_crossing_candidate_is_not_run(self):
-        # Candidate A ends inside candidate B; C lies inside B. C is data of B and must not run.
-        b = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"> </tool_call> '
-             '<tool_call>{"name":"task","arguments":{"deep":1}}</tool_call> </｜DSML｜ invoke></｜DSML｜ calls>')
-        content, calls = self.guard().parse("<tool_call> " + b)
-        self.assertFalse(any("deep" in call["function"]["arguments"] for call in calls or []))
-
-    def test_a_complete_inner_call_after_a_malformed_opener_is_checked(self):
-        xml = '<tool_call><function=unoffered><parameter=secret>PRIVATE</parameter></function></tool_call>'
-        glm = '<tool_call>unoffered<arg_key>k</arg_key><arg_value>PRIVATE</arg_value></tool_call>'
-        dsml = '<｜DSML｜ calls><｜DSML｜ invoke name="unoffered"> </｜DSML｜ invoke></｜DSML｜ calls>'
-        for label, inner in (("qwen", xml), ("glm", glm), ("dsml", dsml)):
-            for outer in ("<tool_call> junk ", "<｜DSML｜ calls> junk "):
-                with self.subTest(inner=label, outer=outer):
-                    with self.assertRaises(self.module.ModelOutputError):
-                        self.guard().parse(outer + inner)
-
-    def test_every_unclosed_opener_before_a_closer_is_a_candidate(self):
-        # Two openers before the complete call: the middle one is the real call, and the last one is only data.
-        call = '<tool_call><function=unoffered><parameter=secret>PRIVATE <tool_call> x</parameter></function></tool_call>'
-        with self.assertRaises(self.module.ModelOutputError):
-            self.guard().parse("<tool_call> junk " + call)
-
-    def test_a_looping_model_with_many_unclosed_openers_fails_closed_only_when_a_closer_comes(self):
+    def test_a_looping_model_with_many_unclosed_openers_is_read_fast(self):
         import time
 
         text = "<tool_call>{" * 20000
-        self.assertEqual(self.guard().parse(text), (text, None))                  # no closer: nothing to pair
+        self.assertEqual(self.guard().parse(text), (text, None))                  # no closing tag: no call block
         start = time.perf_counter()
-        with self.assertRaises(self.module.ModelOutputError) as caught:
-            self.guard().parse(text + "</tool_call>")
-        self.assertEqual(caught.exception.diagnostic["reason"], "too_many_open_tags")
+        content, calls = self.guard().parse(text + "</tool_call>")                # one block: not a call (broken JSON)
+        self.assertIsNone(calls)
         self.assertLess(time.perf_counter() - start, 5.0)
 
     def test_every_dsml_name_the_parser_reads_is_checked(self):
@@ -351,6 +315,26 @@ class ToolOutputTests(unittest.TestCase):
         dsml = '<｜DSML｜ calls><｜DSML｜ invoke name="mcp/tool"> </｜DSML｜ invoke></｜DSML｜ calls>'
         self.module.ToolOutputGuard(offered).parse(dsml)             # an offered name is not an error
 
+    def test_every_call_the_parser_finds_is_checked_by_the_guard(self):
+        # The guard and the parser must agree by construction: whenever the engine's parser finds a call named N
+        # (N offered), the guard must reject the same text when N is not offered.
+        from tensorfold.cuda import reply_text
+        from support import parity_samples
+
+        found = 0
+        for name, text in parity_samples():
+            offered = [{"type": "function", "function": {"name": name, "parameters": {"type": "object"}}}]
+            _, calls = reply_text.parse_tool_calls(text, offered)
+            if not calls:
+                continue
+            found += 1
+            with self.subTest(name=name, text=text[:60]):
+                with self.assertRaises(self.module.ModelOutputError):
+                    self.module.ToolOutputGuard([{"type": "function", "function": {"name": "other"}}]).parse(text)
+                _, got = self.module.ToolOutputGuard(offered).parse(text)           # offered: the parser's own result
+                self.assertEqual([call["function"]["name"] for call in got], [call["function"]["name"] for call in calls])
+        self.assertGreater(found, 30)
+
     def test_many_envelopes_are_read_in_one_pass(self):
         import time
 
@@ -360,13 +344,6 @@ class ToolOutputTests(unittest.TestCase):
         content, calls = self.guard().parse(text)
         self.assertEqual(len(calls), 20000)
         self.assertLess(time.perf_counter() - start, 20.0)           # a copy of the answer for each call needs minutes
-
-    def test_a_fence_inside_the_body_of_a_crossing_call_cannot_make_a_later_call_literal(self):
-        unoffered = '<tool_call>{"name":"unoffered","arguments":{"secret":"PRIVATE"}}</tool_call>'
-        crossing = ('<｜DSML｜ calls><｜DSML｜ invoke name="task"> </tool_call>\n```\n </｜DSML｜ invoke></｜DSML｜ calls>')
-        text = "<tool_call> " + crossing + "\n" + unoffered + "\n```\n"
-        with self.assertRaises(self.module.ModelOutputError):
-            self.guard().parse(text)
 
     def test_a_call_with_a_fence_line_in_its_body_is_rejected(self):
         body = '<function=unoffered><parameter=secret>PRIVATE' + chr(10) + '```' + chr(10) + 'more</parameter></function>'
@@ -402,12 +379,12 @@ class ToolOutputTests(unittest.TestCase):
                     self.assertNotIn("<tool_call>", shown)
 
     def test_dsml_parameter_literal_tool_call_is_not_a_top_level_call(self):
+        from tensorfold.cuda import reply_text
         text = ('<｜DSML｜ calls><｜DSML｜ invoke name="task">'
                 '<｜DSML｜ parameter name="note" string="true">'
                 '<tool_call>{"name":"todowrite","arguments":{}}</tool_call>'
                 '</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>')
-        with self.assertRaises(self.module.ModelOutputError):         # the nested call names a tool that is not offered
-            self.guard().parse(text)
+        self.assertEqual(self.guard().parse(text), reply_text.parse_tool_calls(text, self.tools))
 
 
 if __name__ == "__main__":

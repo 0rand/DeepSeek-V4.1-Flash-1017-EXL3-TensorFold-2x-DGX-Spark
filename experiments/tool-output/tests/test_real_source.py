@@ -279,6 +279,28 @@ class ToolOutputHttpTests(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertIn("tool_use", text)                         # an offered call still works through the route
 
+    def test_every_call_the_real_parser_finds_is_checked_by_the_guard(self):
+        # The guard reads calls through the engine's own parser rules, so they cannot disagree: whenever the parser
+        # finds a call named N (N offered), the guard rejects the same text when N is not offered.
+        from tensorfold.cuda import reply_text
+
+        sys.path.insert(0, os.path.dirname(__file__))
+        from support import parity_samples
+
+        found = 0
+        for name, text in parity_samples():
+            offered = [{"type": "function", "function": {"name": name, "parameters": {"type": "object"}}}]
+            _, calls = reply_text.parse_tool_calls(text, offered)
+            if not calls:
+                continue
+            found += 1
+            with self.subTest(name=name, text=text[:60]):
+                with self.assertRaises(self.tool.ModelOutputError):
+                    self.tool.ToolOutputGuard([{"type": "function", "function": {"name": "other"}}]).parse(text)
+                _, got = self.tool.ToolOutputGuard(offered).parse(text)
+                self.assertEqual([call["function"]["name"] for call in got], [call["function"]["name"] for call in calls])
+        self.assertGreater(found, 30)
+
     def test_valid_calls_dsml_and_plain_content_are_structured_or_plain(self):
         app = app_for(self.ds_app, self.server)
         with http_server(self.http, app) as port:

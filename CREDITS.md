@@ -25,7 +25,7 @@ The optional `experiments/display-kv/overlay/display_kv.py` adapts Gilesco's dis
 
 ## Tool-output guard experiment
 
-The optional `experiments/tool-output/` holds one copied file: `tests/fixtures/http.py.txt` is an unchanged copy of TensorFold's `src/tensorfold/cuda/http.py` at revision `07aa02585f64` (Apache-2.0), used by the installer tests. See [the NOTICE](experiments/tool-output/NOTICE.md).
+The optional `experiments/tool-output/` holds two test files taken from TensorFold at revision `07aa02585f64` (Apache-2.0): `tests/fixtures/http.py.txt` is an unchanged copy of `src/tensorfold/cuda/http.py` (used by the installer tests), and `tests/fixtures/parser.py` is a reduced copy of the reply-text functions. See [the NOTICE](experiments/tool-output/NOTICE.md).
 
 ## This repo's licence
 

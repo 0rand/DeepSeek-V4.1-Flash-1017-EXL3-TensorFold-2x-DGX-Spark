@@ -60,3 +60,27 @@ def fixtures():
     modules["tensorfold.server.token_routes"].ROUTES = ()
     with patch.dict(sys.modules, modules), patch.dict("os.environ", {"TF_API_KEY": "", "TF_API_KEY_FILE": ""}):
         yield guard
+
+
+NAMES = ("task", "$TOOL_NAME", "mcp/tool", "a b", "tool{x}", "x.y:z-1", "UPPER", "Ünï", "a>b", "tab\tname", "q\"uote")
+
+
+def parity_samples():
+    """(name, text) pairs: one call named ``name`` in every wrapper form, plus mixed and surrounded forms."""
+    import json
+
+    samples = []
+    for name in NAMES:
+        forms = (
+            f'<｜DSML｜ calls><｜DSML｜ invoke name="{name}"><｜DSML｜ parameter name="k" string="true">v</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>',
+            f'<｜DSML｜ calls>\n<｜DSML｜ invoke name="{name}">\n</｜DSML｜ invoke>\n</｜DSML｜ calls>',
+            f"<tool_call>{json.dumps({'name': name, 'arguments': {'k': 'v'}})}</tool_call>",
+            f"<tool_call>{json.dumps({'function': {'name': name, 'arguments': '{}'}})}</tool_call>",
+            f"<tool_call><function={name}><parameter=k>v</parameter></function></tool_call>",
+            f"<tool_call>{name}<arg_key>k</arg_key><arg_value>v</arg_value></tool_call>",
+            f"<tool_call>{name}</tool_call>",
+        )
+        for form in forms:
+            samples.append((name, form))
+            samples.append((name, "intro\n```\n" + form + "\n```\ntail"))
+    return samples

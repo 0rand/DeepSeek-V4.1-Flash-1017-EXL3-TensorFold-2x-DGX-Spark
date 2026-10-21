@@ -34,15 +34,6 @@ class ModelOutputError(Exception):
 class ToolOutputGuard:
     """Validate complete call envelopes before the CUDA parser can execute any call."""
 
-    _call_re = re.compile(r"<tool_call>\s*(.*?)\s*</tool_call>", re.IGNORECASE | re.DOTALL)
-    _xml_re = re.compile(r"\s*<function=([^>\s]+)>\s*(.*?)\s*</function>\s*", re.IGNORECASE | re.DOTALL)
-    _parameters_re = re.compile(r"<parameter=[^>\s]+>.*?</parameter>", re.IGNORECASE | re.DOTALL)
-    _glm_re = re.compile(r"\s*([\w.:-]+)(.*)", re.DOTALL)
-    _glm_args_re = re.compile(r"<arg_key>.*?</arg_key>\s*<arg_value>.*?</arg_value>", re.DOTALL)
-    _close_re = re.compile(r"\s*</tool_call>", re.IGNORECASE)
-    _MAX_OPEN = 256               # unclosed openers a closing tag may pair with
-    _start_re = re.compile(r"\s*(?:\{|<function=|[\w.:-])", re.IGNORECASE)
-    _pair_re = re.compile(r"(<tool_call>)|(</tool_call>)|(<｜DSML｜ calls>)|(</｜DSML｜ calls>)", re.IGNORECASE)
     _opener_re = re.compile(r"<tool_call>|<｜DSML｜ calls>", re.IGNORECASE)
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
@@ -90,68 +81,38 @@ class ToolOutputGuard:
         return text[:-held] if held else text
 
     def parse(self, text: str, max_calls: int | None = None) -> tuple[str, list[dict[str, Any]] | None]:
-        """Return CUDA's parsed result, or fail atomically on an unavailable complete call."""
+        """Return CUDA's parsed result, or fail atomically on a call that is not offered.
+
+        The guard reads calls with the engine's own parser rules (``tensorfold.cuda.reply_text``): it rewrites DSML
+        blocks and finds call blocks with the engine's own expressions, reads the name of each block as the engine
+        does, and rejects the answer when a name is not offered. The result is the engine's own ``parse_tool_calls``
+        on the same text, so the guard and the parser cannot disagree about what is a call.
+        """
 
         from tensorfold.cuda import reply_text
         from tensorfold.server.tools import tool_spec_name
 
-        known = {tool_spec_name(tool).lower() for tool in self.tools if tool_spec_name(tool)}
-        candidates: list[tuple[int, int, list[str], str]] = []
-        def dsml(start: int, stop: int, body: str) -> None:
-            names = [match.group(1).strip() for match in reply_text._DSML_INVOKE_RE.finditer(body)]
-            candidates.append((start, stop, [name for name in names if name], "dsml"))   # every name the parser reads
-
-        def tool_call(start: int, stop: int, body: str) -> None:
-            name = self._call_name(body)
-            body = body.lstrip()
-            kind = "json" if body.startswith("{") else "qwen_xml" if body.lower().startswith("<function=") else "glm"
-            candidates.append((start, stop, [name] if name else [], kind))
-
-        # One pass over the opening and closing tags. A closing tag ends every opener before it that has no closer
-        # yet: the first of them gives the envelope that the CUDA parser reads (first opener to first closer), and
-        # each other one is a candidate too, so a complete inner envelope is checked whatever stands before it.
-        # (A regular expression that tries each opener against the rest of the answer is slow for many openers.)
-        waiting: dict[int, list] = {1: [], 3: []}
-        for tag in self._pair_re.finditer(text):
-            slot = tag.lastindex
-            if slot in (1, 3):
-                waiting[slot].append(tag)
-                continue
-            openers = waiting[slot - 1]
-            if len(openers) > self._MAX_OPEN:
-                # A looping model: too many unclosed openers to pair one by one. Fail closed.
-                raise ModelOutputError(tag.group(0), diagnostic={
-                    "reason": "too_many_open_tags", "wrapper": "json" if slot == 2 else "dsml",
-                    "span_start": tag.start(), "span_end": tag.end(),
-                    "answer_sha256": hashlib.sha256(text.encode()).hexdigest(),
-                    "tools_field": self.tools_field, "tool_choice": self.tool_choice})
-            for number, opener in enumerate(openers):
-                body = text[opener.end():tag.start()].strip()
-                if slot == 4:
-                    dsml(opener.start(), tag.end(), body)
-                elif number == 0 or self._start_re.match(text, opener.end()):    # (a call starts with a name or {)
-                    tool_call(opener.start(), tag.end(), body)
-            openers.clear()
-        # A closing tag inside a JSON string is data, not the envelope's end.
-        for opening in re.finditer(r"<tool_call>\s*", text, re.IGNORECASE):
-            try:
-                _, size = json.JSONDecoder().raw_decode(text, opening.end())
-            except json.JSONDecodeError:
-                continue
-            closing = self._close_re.match(text, size)
-            if closing:
-                name = self._call_name(text[opening.end():size])
-                candidates.append((opening.start(), closing.end(), [name] if name else [], "json"))
-
-        def check(start: int, stop: int, names: list[str], kind: str) -> None:
-            for name in names:
+        known = {reply_text._tool_name(tool).lower() for tool in self.tools if reply_text._tool_name(tool)}
+        converted = reply_text.dsml_to_tool_calls(text)
+        if reply_text._CALL_CLOSE not in converted.lower():
+            # No call block can exist. (The parser would try every opener against the rest of the answer.)
+            return (converted.strip(), None) if self.tools else (text, None)
+        # The blocks that the DSML rewrite makes, with the span of their DSML block in the answer.
+        rewritten: dict[str, tuple[int, int]] = {}
+        for dsml in reply_text._DSML_BLOCK_RE.finditer(text):
+            for made in reply_text._TOOL_CALL_BLOCK_RE.finditer(reply_text.dsml_to_tool_calls(dsml.group(0))):
+                rewritten.setdefault(made.group(0), (dsml.start(), dsml.end()))
+        for block in reply_text._TOOL_CALL_BLOCK_RE.finditer(converted):
+            for name, kind in self._call_names(reply_text, block.group(1).strip()):
                 if name.lower() not in known:
+                    start, stop = rewritten.get(block.group(0), (block.start(), block.end()))
                     effective = sorted({tool_spec_name(tool) for tool in self.tools if tool_spec_name(tool)})
                     declared = sorted({tool_spec_name(tool) for tool in self.declared_tools if tool_spec_name(tool)})
                     raise ModelOutputError(name, diagnostic={
                         "reason": "disallowed_by_tool_choice" if name.lower() in {value.lower() for value in declared}
                                   else "unavailable_tool",
-                        "wrapper": kind, "span_start": start, "span_end": stop,
+                        "wrapper": "dsml" if block.group(0) in rewritten else kind,
+                        "span_start": start, "span_end": stop,
                         "answer_sha256": hashlib.sha256(text.encode()).hexdigest(),
                         "effective_tools": [value[:96] for value in effective[:64]],
                         "effective_tool_count": len(effective),
@@ -159,47 +120,24 @@ class ToolOutputGuard:
                         "declared_tool_count": len(declared),
                         "tools_field": self.tools_field, "tool_choice": self.tool_choice,
                     })
+        return reply_text.parse_tool_calls(text, self.tools, max_calls=max_calls)
 
-        # The guard reads no Markdown: every complete envelope counts as a call, in a code fence or not, and a call
-        # inside the data of another call is checked too. Only the top-level envelopes (no overlap) are parsed as calls.
-        end = -1
-        chosen = []
-        for start, stop, names, kind in sorted(candidates, key=lambda item: (item[0], -item[1])):
-            check(start, stop, names, kind)
-            if start < end:                          # inside, or crossing, an earlier span: data of that span
-                end = max(end, stop)
-                continue
-            end = stop
-            chosen.append((start, stop))
+    def _call_names(self, reply_text: Any, block: str) -> list[tuple[str, str]]:
+        """The (tool name, wrapper) that the engine's parser may read from one call block (JSON, Qwen XML or GLM)."""
 
-        # Parse the top-level envelopes without masking or rewriting argument values.
-        content, calls, cursor = [], [], 0
-        for start, stop in chosen:
-            content.append(text[cursor:start])
-            remaining = None if max_calls is None else max(0, max_calls - len(calls))
-            residue, parsed = reply_text.parse_tool_calls(text[start:stop], self.tools, max_calls=remaining)
-            content.append(residue)
-            calls.extend(parsed or [])
-            cursor = stop
-        content.append(text[cursor:])
-        result = "".join(content)
-        return result, calls or None
-
-    def _call_name(self, block: str) -> str | None:
         try:
             payload = json.loads(block)
         except json.JSONDecodeError:
             payload = None
         if isinstance(payload, dict):
             function = payload.get("function")
-            for source in (function, payload):         # an empty nested object falls back to the flat form
+            for source in (function, payload):         # (an empty nested object falls back to the flat form)
                 name = source.get("name") if isinstance(source, dict) else None
-                if isinstance(name, str) and name.strip():
-                    return name.strip()
-        xml = self._xml_re.fullmatch(block)
-        if xml and not self._parameters_re.sub("", xml.group(2)).strip():
-            return xml.group(1).strip()
-        glm = self._glm_re.fullmatch(block)
-        if glm and not self._glm_args_re.sub("", glm.group(2)).strip():
-            return glm.group(1).strip()
-        return None
+                if name and str(name).strip():
+                    return [(str(name).strip(), "json")]
+            return []
+        xml = reply_text._TOOL_FUNCTION_BLOCK_RE.match(block)
+        if xml:
+            return [(xml.group(1).strip(), "qwen_xml")]
+        glm = reply_text.parse_glm_tool_call_block(block, self.tools)
+        return [(str(glm[0]).strip(), "glm")] if glm is not None and str(glm[0]).strip() else []
