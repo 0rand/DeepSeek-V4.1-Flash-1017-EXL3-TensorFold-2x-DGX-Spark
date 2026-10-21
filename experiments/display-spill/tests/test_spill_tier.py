@@ -1466,6 +1466,54 @@ class SpillTierTests(unittest.TestCase):
                 self.assertEqual(store._prune_builds(), 0)
             self.assertTrue(os.path.exists(old))                          # nothing was pruned on a guess
 
+    def test_a_root_spelled_through_a_link_with_a_trailing_mark_is_refused(self):
+        with tempfile.TemporaryDirectory() as base, tempfile.TemporaryDirectory() as outside:
+            link = os.path.join(base, "cache")
+            try:
+                os.symlink(outside, link)
+            except (OSError, NotImplementedError):
+                self.skipTest("no symbolic links here")
+            for spelling in (link + "/", link + "/.", link + "//"):
+                with self.subTest(spelling=spelling):
+                    cfg = self.sp.SpillConfig(root=spelling, gib=1, min_free_gib=0, min_tokens=1)
+                    with self.assertRaises(RuntimeError):
+                        self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+                    self.assertEqual(os.listdir(outside), [])                 # nothing was made behind the link
+
+    def test_a_memory_failure_while_the_state_is_made_is_shared_at_start(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            with mock.patch.object(self.sp.queue, "Queue", side_effect=MemoryError("queue")):
+                with self.assertRaises(RuntimeError):
+                    self.sp.SpillStore(cfg, rank=0, world=2, device="cpu", classes=[], quiet=True, gather=gather)
+            self.assertEqual(rounds[-1], [1])                              # the failure is in the start agreement
+
+    def test_a_failure_while_one_rank_retries_stuck_files_is_shared(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[], quiet=True)
+            rounds = []
+
+            def gather(values):
+                rounds.append(list(values))
+                return [list(values), list(values)]
+
+            store.gather, store.world = gather, 2
+            ids, snap = self.new_state()
+            with mock.patch.object(store, "_retry_stuck", side_effect=MemoryError("stuck")):
+                self.assertIsNone(store.save(ids, snap, skip=("ids",)))
+            self.assertEqual(rounds[-1][2], 1)                             # the failure flag of the size exchange
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io

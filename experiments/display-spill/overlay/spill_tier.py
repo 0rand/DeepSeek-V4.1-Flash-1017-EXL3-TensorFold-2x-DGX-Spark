@@ -617,10 +617,11 @@ class SpillStore:
                       "rank 0, so no rank can resume another's stored prompts until they match", flush=True)
             words = [w for row in rows for w in row[:8]]
         self.compat = hashlib.sha256(np.asarray(words, dtype=np.int32).tobytes()).hexdigest()[:16]
-        self.top = os.path.join(cfg.root, f"spill-{self.compat}")
+        self.root = os.path.abspath(cfg.root)                 # the spelling that is checked for a link is the one used
+        self.top = os.path.join(self.root, f"spill-{self.compat}")
         self.dir = os.path.join(self.top, f"rank{self.rank}")
         self.uid = self.gid = -1
-        probe = os.path.abspath(cfg.root)
+        probe = self.root
         while True:                                           # files belong to --snapshot-dir's owner (or, when it is
             try:                                              # not made yet, the owner of its nearest folder): a
                 st = os.stat(probe)                           # server run as root in a container writes them as you
@@ -631,34 +632,34 @@ class SpillStore:
                 if parent == probe:
                     break
                 probe = parent
-        self.lock = threading.RLock()
-        self.index: dict[tuple, Entry] = {}
-        self.pending: dict[tuple, Job] = {}      # the newest job of each prompt
-        self.active: set[Job] = set()            # every job not yet done, also one whose entry was evicted
-        self.clock = 0
-        self.seq = 0
-        self.stuck: dict[str, int] = {}          # evicted files that could not be removed: path -> size (tried again)
-        self._evictions = [0, 0]                 # evicted entries, and those whose file stayed, since a save began
-        self.generation = 0                     # bumped whenever the index changes
-        self.stats = Stats()
-        self.direct = bool(cfg.direct) and hasattr(os, "O_DIRECT")
-        self.jobs: queue.Queue = queue.Queue()
-        self.reads: queue.Queue = queue.Queue()
-        self._threads: list[threading.Thread] = []
-        self._reader: threading.Thread | None = None
-        self._read_stage: torch.Tensor | None = None   # the reader's staging buffer, kept from the start
-        self._dirty = False
-        self._last_dir_sync = 0.0
-        self._dir_lock = threading.Lock()
         problem = ""
         try:
-            missing, probe = [], os.path.abspath(cfg.root)
+            self.lock = threading.RLock()
+            self.index: dict[tuple, Entry] = {}
+            self.pending: dict[tuple, Job] = {}      # the newest job of each prompt
+            self.active: set[Job] = set()            # every job not yet done, also one whose entry was evicted
+            self.clock = 0
+            self.seq = 0
+            self.stuck: dict[str, int] = {}          # evicted files that could not be removed: path -> size (tried again)
+            self._evictions = [0, 0]                 # evicted entries, and those whose file stayed, since a save began
+            self.generation = 0                     # bumped whenever the index changes
+            self.stats = Stats()
+            self.direct = bool(cfg.direct) and hasattr(os, "O_DIRECT")
+            self.jobs: queue.Queue = queue.Queue()
+            self.reads: queue.Queue = queue.Queue()
+            self._threads: list[threading.Thread] = []
+            self._reader: threading.Thread | None = None
+            self._read_stage: torch.Tensor | None = None   # the reader's staging buffer, kept from the start
+            self._dirty = False
+            self._last_dir_sync = 0.0
+            self._dir_lock = threading.Lock()
+            missing, probe = [], self.root
             while not os.path.isdir(probe) and os.path.dirname(probe) != probe:
                 missing.append(probe)                         # folders this start makes: they are the user's too
                 probe = os.path.dirname(probe)
-            if os.path.islink(cfg.root):                      # (name the real folder: a link is never followed)
+            if os.path.islink(self.root):                     # (name the real folder: a link is never followed)
                 raise OSError(f"{cfg.root} is a symbolic link; use the folder it points to")
-            os.makedirs(cfg.root, exist_ok=True)
+            os.makedirs(self.root, exist_ok=True)
             for d in reversed(missing):
                 self._own(d)
             for d in (self.top, self.dir):                    # prompts' token ids: this user's only
@@ -814,16 +815,16 @@ class SpillStore:
 
         complete = True
         try:
-            names = [d for d in os.listdir(self.cfg.root)
-                     if d.startswith("spill-") and os.path.join(self.cfg.root, d) != self.top]
+            names = [d for d in os.listdir(self.root)
+                     if d.startswith("spill-") and os.path.join(self.root, d) != self.top]
         except FileNotFoundError:
             return [], True
         except OSError as exc:                                # (older builds may stay: counted and logged)
-            self._unlink_failed(self.cfg.root, exc, "list")
+            self._unlink_failed(self.root, exc, "list")
             return [], False
         dated = []
         for name in names:
-            d = os.path.join(self.cfg.root, name)
+            d = os.path.join(self.root, name)
             try:
                 status = os.lstat(d)
             except FileNotFoundError:
@@ -1457,9 +1458,10 @@ class SpillStore:
         n = len(ids)
         if n < self.cfg.min_tokens:
             return None
-        stuck = self._retry_stuck()                    # evicted files that stayed still hold capacity
+        stuck = 0
         failure, key, stored = None, None, 0
         try:
+            stuck = self._retry_stuck()                # evicted files that stayed still hold capacity
             key = ids_key(ids)                         # (this allocates too: it is inside the shared failure path)
             with self.lock:
                 e = self.index.get(key)
