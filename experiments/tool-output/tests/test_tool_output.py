@@ -505,7 +505,8 @@ class ToolOutputTests(unittest.TestCase):
         shapes = (done + "<tool_call>" + unit * 64,
                   done + "<tool_call><function=task>" + unit * 64,
                   done + "<tool_call><function=task>" + (" " * 100 + "<parameter=a>") * 300,
-                  '<｜DSML｜ calls><｜DSML｜ invoke name="a">' + unit * 64 + "</｜DSML｜ calls>" + "<tool_call>" + unit * 64)
+                  '<｜DSML｜ calls><｜DSML｜ invoke name="a">' + unit * 64 + "</｜DSML｜ calls>" + "<tool_call>" + unit * 64,
+                  done + ("<tool_call>" + "a" * 47000) * 64)             # (no white space: 64 openers, 3 million characters)
         for text in shapes:
             for guard in (self.guard(), self.module.ToolOutputGuard(None), self.module.ToolOutputGuard([], request={"tools": []})):
                 with self.subTest(text=text[:40], tools=bool(guard.tools)):

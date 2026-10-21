@@ -63,7 +63,9 @@ class ToolOutputGuard:
             return False
         if count > cls._RUNAWAY:
             return True
+        # (a text without white space still costs one scan per opener: that counts as a run of 2)
         longest = max((len(run.group()) for run in cls._white.finditer(rest)), default=0)
+        longest = max(longest, 2)
         return count * len(rest) * longest * longest > cls._SCAN_BUDGET
 
     def __init__(self, tools: list[dict[str, Any]] | None, *, request: dict | None = None):
