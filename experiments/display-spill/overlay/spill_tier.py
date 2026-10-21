@@ -40,7 +40,6 @@ import json
 import os
 import queue
 import re
-import shutil
 import struct
 import threading
 import time
@@ -640,6 +639,30 @@ class SpillStore:
                 continue
             total -= size
 
+    def _remove_tree(self, top: str) -> bool:
+        """Remove a folder with everything in it. A path that cannot be removed is counted and logged, the rest goes,
+        and the result says whether the folder is gone."""
+
+        done = True
+        for base, dirs, files in os.walk(top, topdown=False):
+            for name in files + [d for d in dirs if os.path.islink(os.path.join(base, d))]:
+                try:
+                    os.remove(os.path.join(base, name))
+                except FileNotFoundError:
+                    pass
+                except OSError as exc:
+                    self._unlink_failed(os.path.join(base, name), exc)
+                    done = False
+            try:
+                os.rmdir(base)
+            except FileNotFoundError:
+                pass
+            except OSError as exc:
+                if done:                                   # (a folder that still holds a stuck file is no new failure)
+                    self._unlink_failed(base, exc)
+                done = False
+        return done
+
     def _unlink_failed(self, path: str, exc: OSError) -> None:
         self.stats.unlink_failed += 1
         print(f"[tensorfold] spill rank {self.rank}: could not remove {path}: {exc!r}", flush=True)
@@ -660,8 +683,7 @@ class SpillStore:
             self._trim_kept_build(mine)
         for d in others[max(0, self.cfg.keep_builds):]:
             mine = os.path.join(d, f"rank{self.rank}")
-            if os.path.isdir(mine):
-                shutil.rmtree(mine, ignore_errors=True)
+            if os.path.isdir(mine) and self._remove_tree(mine):
                 gone += 1
             try:
                 os.rmdir(d)                                    # empty once every rank pruned its own
@@ -1405,12 +1427,17 @@ class SpillStore:
                 want = _up(k) if direct else k
                 mv = memoryview(pin.numpy())[:want]
                 at = lj.data_at + s
-                got = os.preadv(fd, [mv], at) if hasattr(os, "preadv") else os.pread(fd, want, at)
-                if isinstance(got, bytes):
-                    mv[:len(got)] = got
-                    got = len(got)
-                if got < k:
-                    raise EOFError(f"{lj.path}: short read")
+                got = 0
+                while got < k:                           # a read may return less than asked, long before the end
+                    if hasattr(os, "preadv"):
+                        step = os.preadv(fd, [mv[got:]], at + got)
+                    else:
+                        part = os.pread(fd, want - got, at + got)
+                        mv[got:got + len(part)] = part
+                        step = len(part)
+                    if step <= 0:
+                        raise EOFError(f"{lj.path}: short read")
+                    got += step
                 hashing[flip] = [pool.submit(zlib.crc32, mv[i:min(i + BLOCK, k)]) for i in range(0, k, BLOCK)]
                 sums += hashing[flip]
                 lo, hi = s, s + k

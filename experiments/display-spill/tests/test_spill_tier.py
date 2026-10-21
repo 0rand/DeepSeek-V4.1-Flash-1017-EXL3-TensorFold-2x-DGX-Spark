@@ -759,6 +759,58 @@ class SpillTierTests(unittest.TestCase):
             self.assertEqual([os.path.exists(path) for path in paths], [True, False, False])   # the next victims went
             self.assertEqual(store.stats.unlink_failed, 1)
 
+    def test_an_old_build_that_cannot_be_removed_is_not_counted_as_pruned(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            old = os.path.join(root, "spill-0000000000000000", "rank0")
+            os.makedirs(old)
+            stuck, other = os.path.join(old, "0.safetensors"), os.path.join(old, "1.safetensors")
+            for path in (stuck, other):
+                with open(path, "wb") as f:
+                    f.write(b"x")
+            real_remove = os.remove
+
+            def remove(target, *args, **kwargs):
+                if target == stuck:
+                    raise PermissionError("immutable")
+                return real_remove(target, *args, **kwargs)
+
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1, keep_builds=0)
+            out = io.StringIO()
+            with mock.patch.object(self.sp.os, "remove", remove), contextlib.redirect_stdout(out):
+                store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=[])
+                store.announce()
+            self.assertTrue(os.path.exists(stuck))
+            self.assertFalse(os.path.exists(other))                       # the rest of the build went
+            self.assertEqual(store.stats.unlink_failed, 1)
+            self.assertNotIn("pruned 1 older builds", out.getvalue())
+            self.assertIn("1 files could not be removed", out.getvalue())
+
+    def test_a_read_that_returns_less_than_asked_is_continued(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            cfg = self.sp.SpillConfig(root=root, gib=1, min_free_gib=0, min_tokens=1)
+            classes = [f"{Snap.__module__}:{Snap.__qualname__}"]
+            store = self.sp.SpillStore(cfg, rank=0, world=1, device="cpu", classes=classes)
+            ids = list(range(100))
+            ring = torch.arange(100 * 4, dtype=torch.uint8).reshape(100, 4)
+            self.assertIsNotNone(store.save(ids, Snap(ids=ids, ring=ring), skip=("ids",)))
+            self.assertTrue(store.drain(10))
+            real = os.preadv
+
+            def preadv(fd, buffers, offset):
+                return real(fd, [buffers[0][:7]], offset)                # at most 7 bytes for each call
+
+            with mock.patch.object(self.sp.os, "preadv", preadv):
+                lj = store.load_async(self.sp.ids_key(ids), lambda name, shape, dt: None)
+                obj, rows, meta = store.finish_load(lj)
+            self.assertTrue(torch.equal(obj.ring, ring))
+            self.assertEqual(store.info()["load_failed"], 0)
+
     def test_a_startup_eviction_whose_unlink_fails_is_counted_and_shown(self):
         import contextlib
         import io
