@@ -60,3 +60,19 @@ and live-validated: `./verify.sh` 5/5, parser probe 12 PASS / 2 INCONCLUSIVE /
 0 FAIL. The two inconclusive cases are fixture-induction limits, not parser
 failures. The `TOOL_OUTPUT_STREAMING=0` rollback was also validated live with a
 negative control, and the streaming default was restored and re-validated.
+
+## Display-KV unified 1.0 serving run
+
+- Serving image: `tensorfold-dsv41:display-kv-0dc9c3fefb06` (ID `4dd9d9a7f234`),
+  built from the 1.0.0 base `tensorfold-dsv41:07aa02585f64`.
+- Run files: `runall-07aa02585f64-083516Z-*`. The filename uses the root
+  `.env` `IMAGE` tag; the serving container was the display variant above.
+- `./verify.sh`: 5/5. `v41_suite.py`: 30/30 (the 2 router tests were skipped
+  without a router key). `v41_grammar_check.py`: 14/14.
+- `v41_conformance.py`: 3/5. The 3 API-path cases pass. The 2 raw-template
+  cases fail on special-token/`<action>` rendering differences, the documented
+  diagnostic cases; the API serving path passes. See
+  [What I changed](../../docs/WHAT-I-CHANGED.md) (3/3 API roles).
+- Differential, bench and Hermes were skipped (`ENCODING_DIR`, `BENCH`,
+  `HERMES` not set).
+- The suite log's repository path is sanitized to `<repo>`.

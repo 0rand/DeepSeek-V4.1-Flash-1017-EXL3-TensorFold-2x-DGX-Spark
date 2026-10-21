@@ -1,0 +1,11 @@
+run_all: server http://127.0.0.1:8100/v1, model DeepSeek-V4.1-Flash-1017, image tag 07aa02585f64, output runs/2026-10-21
+[PASS] verify: 5/5 passed (3 s)
+[SKIP] suite/router: no V41_ROUTER_API_KEY, so the 2 router tests do not run (see tests/README.md)
+[PASS] suite: 30/30 passed in 312s (313 s)
+[PASS] grammar-check: 14/14 passed (18 s)
+[FAIL] conformance: exit code 1; 2 FAIL line(s); no summary line with equal counts (log: runs/2026-10-21/runall-07aa02585f64-083516Z-conformance.log)
+[SKIP] differential: ENCODING_DIR is not set or has no encoding.py (see tests/README.md for the download)
+[SKIP] bench: set BENCH=1 to run it (about 3 minutes)
+[SKIP] hermes: set HERMES=1 and HERMES_DIR to run it (needs the Hermes install and its router)
+
+run_all: 1 step(s) failed. Summary: runs/2026-10-21/runall-07aa02585f64-083516Z-summary.txt

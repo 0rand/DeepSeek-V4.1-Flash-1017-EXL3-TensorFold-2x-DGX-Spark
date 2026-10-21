@@ -1,0 +1,23 @@
+[PASS] case 1 via API path (2363 chars, thinking_mode=thinking, tools=2, effort=None)
+[PASS] case 2 via API path (250 chars, thinking_mode=None, tools=0, effort=None)
+[FAIL] case 3 via raw template: prompt differs
+    '--- deepseek\n'
+    '+++ tensorfold\n'
+    '@@ -1,2 +1,2 @@\n'
+    '-<｜begin▁of▁sentence｜><｜System｜>该助手为DeepSeek，由深度求索公司创造。<｜latest_reminder｜>2026-02-21,星期六,广州,App,中文<｜System｜>CITATION FORMAT: 【{cursor_id}†L{start_line_id}(-L{end_line_id})?】\n'
+    '+<｜begin▁of▁sentence｜><｜System｜>该助手为DeepSeek，由深度求索公司创造。\n'
+    ' \n'
+    '@@ -28,3 +28,3 @@\n'
+    ' You MUST strictly follow the above defined tool name and parameter schemas to invoke tool calls.\n'
+    '-<｜User｜>小柴胡冲剂和布洛芬能一起吃吗？<｜Assistant｜></think>\n'
+    '+<｜latest_reminder｜>2026-02-21,星期六,广州,App,中文<｜System｜>CITATION FORMAT: 【{cursor_id}†L{start_line_id}(-L{end_line_id})?】<｜User｜>小柴胡冲剂和布洛芬能一起吃吗？<｜Assistant｜></think>\n'
+    ' \n'
+[FAIL] case 4 via raw template: prompt differs
+    '--- deepseek\n'
+    '+++ tensorfold\n'
+    '@@ -1,2 +1,2 @@\n'
+    ' <｜begin▁of▁sentence｜><｜System｜>该助手为DeepSeek-V3，由深度求索公司创造。\n'
+    '-今天是2025年10月17日，星期五。<｜latest_reminder｜>2024-11-15,上海市,App,中文<｜User｜>热海大滚锅是世界著名温泉吗<｜Assistant｜></think>热海大滚锅在中国乃至全球的地热奇观中占有重要地位，但“世界著名”的称号更侧重于它作为独特的地质现象和旅游景点。<｜end▁of▁sentence｜><｜User｜>世界著名温泉有哪些<｜Assistant｜></think><｜action｜>Search<｜end▁of▁sentence｜>'
+    '+今天是2025年10月17日，星期五。<｜latest_reminder｜>2024-11-15,上海市,App,中文<｜User｜>热海大滚锅是世界著名温泉吗<｜Assistant｜></think>热海大滚锅在中国乃至全球的地热奇观中占有重要地位，但“世界著名”的称号更侧重于它作为独特的地质现象和旅游景点。<｜end▁of▁sentence｜><｜User｜>世界著名温泉有哪些<｜Assistant｜></think>Search<｜end▁of▁sentence｜>'
+[PASS] case 5 via API path (280 chars, thinking_mode=thinking, tools=0, effort=max)
+3/5 cases match
