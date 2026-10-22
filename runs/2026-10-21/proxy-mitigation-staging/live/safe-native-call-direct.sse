@@ -1,8 +1,0 @@
-data: {"id": "chatcmpl-5d5113bd07cd407ca955c6aa", "object": "chat.completion.chunk", "created": 1792608321, "model": "DeepSeek-V4.1-Flash-1017", "choices": [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": null}]}
-
-data: {"id": "chatcmpl-5d5113bd07cd407ca955c6aa", "object": "chat.completion.chunk", "created": 1792608321, "model": "DeepSeek-V4.1-Flash-1017", "choices": [{"index": 0, "delta": {"tool_calls": [{"index": 0, "id": "call_2217a215db964ed3a2ea8a7f", "type": "function", "function": {"name": "get_status", "arguments": "{}"}}]}, "finish_reason": null}]}
-
-data: {"id": "chatcmpl-5d5113bd07cd407ca955c6aa", "object": "chat.completion.chunk", "created": 1792608321, "model": "DeepSeek-V4.1-Flash-1017", "choices": [{"index": 0, "delta": {}, "finish_reason": "tool_calls"}], "tensorfold": {"prefill_s": 0.8985, "decode_s": 0.19390000000000002, "rounds": 4, "drafts": true, "cached": 0, "min_rows": 9, "drafted": 17, "accepted": 8, "token_sha": "b201a0a65f15"}, "usage": {"prompt_tokens": 273, "completion_tokens": 21, "total_tokens": 294, "prompt_tokens_details": {"cached_tokens": 0}, "completion_tokens_details": {"reasoning_tokens": 0}}}
-
-data: [DONE]
-

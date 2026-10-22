@@ -21,23 +21,26 @@ def git(*args):
 
 @unittest.skipUnless(shutil.which("git") and (ROOT / ".git").exists(), "needs a git checkout")
 class RunsFolder(unittest.TestCase):
-    """runs/ holds the evidence for every number in the docs. Git must track it, in one layout."""
+    """runs/ is transient and ignored; checksums/ holds the committed manifests."""
 
-    def test_runs_not_ignored(self):
+    def test_runs_ignored(self):
         for probe in ("runs/2099-01-01/INDEX.md", "runs/2099-01-01/bench.log", "runs/2099-01-01/x/results.json"):
             with self.subTest(path=probe):
                 r = git("check-ignore", "--no-index", "-q", probe)
-                self.assertEqual(r.returncode, 1, f"{probe} is ignored by git; runs/ must stay tracked")
+                self.assertEqual(r.returncode, 0, f"{probe} is not ignored by git; runs/ must stay local")
 
     def test_day_folders(self):
         tracked = git("ls-files", "runs").stdout.split()
-        self.assertTrue(tracked, "runs/ has no tracked files")
+        if not tracked:
+            self.skipTest("runs/ is transient; no tracked runs")
         for top in sorted({p.split("/")[1] for p in tracked}):
             with self.subTest(entry=top):
                 self.assertRegex(top, RUN_DAY, "each entry in runs/ must be a runs/YYYY-MM-DD/ folder")
 
     def test_day_folders_have_index(self):
         tracked = set(git("ls-files", "runs").stdout.split())
+        if not tracked:
+            self.skipTest("runs/ is transient; no tracked runs")
         for day in sorted({p.split("/")[1] for p in tracked if RUN_DAY.match(p.split("/")[1])}):
             with self.subTest(day=day):
                 self.assertIn(f"runs/{day}/INDEX.md", tracked, "each run day needs an INDEX.md")

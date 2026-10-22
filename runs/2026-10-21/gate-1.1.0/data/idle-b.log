@@ -1,3 +1,0 @@
-[gate2 02:17:52Z] STEP b (3c45bdaeab7d): idle memory before the start: head: 116512 MiB (free 118297, cache 1945) | worker: 115362 MiB (free 113119, cache 6986)
-[gate2 02:18:49Z] b idle memory after the start: head: 3635 MiB (free 5066, cache 3930) | worker: 4403 MiB (free 5992, cache 3612)
-[gate2 02:25:24Z] b idle memory before the long run: head: 2113 MiB (free 4649, cache 2016) | worker: 2625 MiB (free 4559, cache 2937)

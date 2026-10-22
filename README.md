@@ -6,7 +6,7 @@ Optional: [display-backed KV experiment](docs/DISPLAY-KV.md). Spill is disabled 
 
 Also on Hugging Face: [Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster](https://huggingface.co/Elevatormusic/DeepSeek-V4.1-Flash-1017-2x-DGX-Spark-TensorFold-2x-Faster). The engine is [my TensorFold fork](https://github.com/Elevatormusic/TensorFold) (branch `deepseek-v41-tp2`).
 
-Measured on 17 and 18 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run in [`runs/`](runs/2026-10-17/INDEX.md) ([prefill and 1M context](runs/2026-10-18/INDEX.md)).
+Measured on 17 and 18 October 2026 on one pair of DGX Spark. Every number on this page comes from a saved run; the committed index is [`checksums/libertai-2.9bpw/INDEX.md`](checksums/libertai-2.9bpw/INDEX.md) ([prefill and 1M context](runs/2026-10-18/INDEX.md)).
 
 ---
 
@@ -257,7 +257,7 @@ Method, definitions and every run: [Benchmarks](docs/BENCHMARKS.md).
 | vLLM comparison | MiaAI kit @ `6f7d1590`, image `sha256:2f0cf3ad...` |
 | Tested on | DGX OS (Ubuntu 24.04.5), kernel 7.0.0-1019-nvidia, driver 580.178.04, CUDA 13.0, Docker 29.6.2, CX7 firmware 28.45.4028. Use driver 580.178.04 or newer: `scripts/preflight.sh` warns on an older one ([#24](https://github.com/Elevatormusic/DeepSeek-V4.1-Flash-1017-EXL3-TensorFold-2x-DGX-Spark/issues/24)). |
 
-Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROVENANCE.md).
+Every checksum, file size and computer detail: [PROVENANCE](checksums/libertai-2.9bpw/PROVENANCE.md).
 
 </details>
 
@@ -272,7 +272,7 @@ Every checksum, file size and computer detail: [PROVENANCE](runs/2026-10-17/PROV
 | `tests/` | the 32 agent tests, the format check, the benchmark, the prompt tests, the Hermes test ([guide](tests/README.md)) |
 | `experiments/memory-topk/` | opt-in image with bounded top-k scratch and an opt-in allocator policy ([guide](docs/MEMORY-TOPK.md)) |
 | `.github/` | CI (offline tests, ruff, shellcheck, link check), the pull request and issue templates |
-| `runs/2026-10-17/` | every log and result behind this page |
+| `checksums/libertai-2.9bpw/` | committed provenance and index; run logs are local under `runs/` |
 | `docs/` | how to connect your app, the full story, benchmarks, network, operations, known limits |
 
 </details>

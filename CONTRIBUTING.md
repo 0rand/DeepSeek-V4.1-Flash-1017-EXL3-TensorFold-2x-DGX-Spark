@@ -83,12 +83,12 @@ A new feature must be off by default, or it must be in a separate start script. 
 
 ## The evidence rule
 
-Every performance number in this repo comes from a saved run. This rule applies to the README, `docs/`, the Hugging Face card and the pull request text.
+Every performance number in this repo comes from a saved run. The run output stays local under `runs/`; the exact weights are committed as a checksum manifest under `checksums/`. This rule applies to the README, `docs/`, the Hugging Face card and the pull request text.
 
-- **Link each number to its run.** The run is a file under `runs/YYYY-MM-DD/`. Use the UTC date of the run.
+- **Link each number to its run.** The run is a file under `runs/YYYY-MM-DD/` (local and ignored by git). Use the UTC date of the run.
 - **Use one layout.** Put each run in `runs/YYYY-MM-DD/`. You can use subfolders in a day folder. Do not use other layouts (for example `runs/YYYY/MM/`). Do not put files directly in `runs/`.
 - **Add the run to the day index.** Each day folder has an `INDEX.md`. Add one line for each new run: what it measured, the image, the settings and the result.
-- **Keep `runs/` tracked by git.** Do not add `runs/` or `runs/*` to `.gitignore`. The offline tests fail if git ignores a file in `runs/`.
+- **Keep `runs/` local.** `runs/` is transient and ignored by git. Commit the checksum manifest under `checksums/` (for example `checksums/libertai-2.9bpw/weights.sha256`).
 - **Do not edit old runs.** A run is a record. To correct a run, add a new run and say in the index which run it replaces.
 - **Do not change the scripts in `runs/`.** They are the scripts as they ran. CI does not lint them.
 

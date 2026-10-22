@@ -1,9 +1,0 @@
-proxy_source_base 2e7ceb5094aa9c2e02d70e288ef753303ef140af
-proxy_commit 13b8561
-proxy_branch WIP-2026-10-21-Proxy-tool-fix
-deployment not applied
-proxy_dll_sha256 ca7fe92422062acdef46f73533d11154ac6d3e8d2f62d1df1cc6db0f13e4ece9
-recipe_ref 5212f35b1f84ec6a217e9330fd137ed33f22c310
-dotnet_sdk 10.0.400
-runtime Microsoft.NETCore.App 10.0.11
-tested_utc 2026-10-21T18:44Z

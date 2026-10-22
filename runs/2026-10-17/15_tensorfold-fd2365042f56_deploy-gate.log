@@ -1,8 +1,0 @@
-[gate 22:58:14Z] serving fd2365042f56
-smoke schema 200 {"id": "chatcmpl-f8d899b6b7e3449895f0651c", "object": "chat.completion", "created": 1792277897, "model": "DeepSeek-v4.1-Flash-1017-TF", "choices": [{"index": 0, "message": {"role": "assistant", "conte
-smoke plain 200 {"id": "chatcmpl-dc00150657014c2893f43185", "object": "chat.completion", "created": 1792277900, "model": "DeepSeek-v4.1-Flash-1017-TF", "choices": [{"index": 0,
-[gate 22:58:23Z] SMOKE_OK
-[gate 23:03:18Z] SUITE_EXIT=0 32 pass 0 fail
-[gate 23:03:43Z] 14/14 passed CHECK_EXIT=0 
-[gate 23:06:06Z] BENCH_EXIT=0
-[gate 23:06:06Z] GATE_DONE

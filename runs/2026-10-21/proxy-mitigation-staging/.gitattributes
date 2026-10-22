@@ -1,2 +1,0 @@
-# Raw SSE is byte evidence. Keep its original line endings.
-*.sse -text

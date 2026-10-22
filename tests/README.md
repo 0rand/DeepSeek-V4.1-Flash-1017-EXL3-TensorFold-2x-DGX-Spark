@@ -1,6 +1,6 @@
 # Tests
 
-This folder holds the tests that gave the results in [`runs/2026-10-17/`](../runs/2026-10-17/).
+This folder holds the tests that gave the results in `runs/2026-10-17/`; the committed index is [`checksums/libertai-2.9bpw/INDEX.md`](../checksums/libertai-2.9bpw/INDEX.md).
 Run all of them with one command, or run each test alone.
 
 ## Offline tests (no server, no GPU)
@@ -243,7 +243,7 @@ Set the router key without writing it to a file or to your shell history:
 read -rs V41_ROUTER_API_KEY && export V41_ROUTER_API_KEY
 ```
 
-The 32/32 results in `runs/2026-10-17/` include the two router tests.
+The 32/32 results in `runs/2026-10-17/` (committed index: [`checksums/libertai-2.9bpw/INDEX.md`](../checksums/libertai-2.9bpw/INDEX.md)) include the two router tests.
 
 ## Get DeepSeek's `encoding.py`
 

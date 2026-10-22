@@ -60,4 +60,4 @@ Write docs and the pull request text in ASD-STE100 Simplified Technical English.
 | Open an issue or a pull request | [CONTRIBUTING.md](CONTRIBUTING.md), [.github/ISSUE_TEMPLATE/](.github/ISSUE_TEMPLATE/), [.github/pull_request_template.md](.github/pull_request_template.md) |
 | Report a security problem | [SECURITY.md](SECURITY.md) |
 | What is not supported | [docs/KNOWN-LIMITS.md](docs/KNOWN-LIMITS.md) |
-| Exact versions and checksums | [runs/2026-10-17/PROVENANCE.md](runs/2026-10-17/PROVENANCE.md) |
+| Exact versions and checksums | [checksums/libertai-2.9bpw/PROVENANCE.md](checksums/libertai-2.9bpw/PROVENANCE.md) |

@@ -30,7 +30,7 @@ The suite covers:
 - thinking levels;
 - 64K and 200K needle-in-a-haystack.
 
-The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are in [`runs/2026-10-17/`](../runs/2026-10-17/).
+The suite is [`tests/v41_suite.py`](../tests/v41_suite.py), and the run logs are local under `runs/2026-10-17/`; the committed index is [`checksums/libertai-2.9bpw/INDEX.md`](../checksums/libertai-2.9bpw/INDEX.md).
 
 ## 1. Forced tool calls on DeepSeek's DSML format (PR #1)
 

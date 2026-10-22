@@ -1,8 +1,0 @@
-: comment
-data: {"choices":
-data: [{"delta":{"content":"日本語"},"finish_reason":null}]}
-
-data: {"id": "fixture", "object": "chat.completion.chunk", "created": 1, "model": "DeepSeek-V4.1-Flash-1017", "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]}
-
-data: [DONE]
-

@@ -1,7 +1,7 @@
 # Benchmarks
 
 This page gives the method and every number behind the speed claims in the README.
-All numbers come from the files in [`runs/2026-10-17/`](../runs/2026-10-17/). The page states no number that a run did not produce.
+All numbers come from the saved runs; the committed index and provenance are in [`checksums/libertai-2.9bpw/`](../checksums/libertai-2.9bpw/). The page states no number that a run did not produce.
 A number that the page derives from run numbers (a ratio, a median, a rate) is marked "derived".
 
 ## Summary
@@ -108,7 +108,7 @@ All token counts come from the `usage` field of the server reply. The suite neve
 | 11 | TensorFold | `fd2365042f56` (the image of 17 October; release 1.0.0 was `07aa02585f64`, the recipe now builds `730d41abd8f4`) | 32/32 | 295 s |
 
 - The failed tests in runs 02, 03 and 04 are tool-choice and structured-output tests, not speed tests. Their speed rows are valid.
-- Runs 02, 03 and 04 used engine builds from before the structured-output work. See [`INDEX.md`](../runs/2026-10-17/INDEX.md) for the failed test names.
+- Runs 02, 03 and 04 used engine builds from before the structured-output work. See [`INDEX.md`](../checksums/libertai-2.9bpw/INDEX.md) for the failed test names.
 
 ### Single stream, every run
 
@@ -199,7 +199,7 @@ Those numbers are from the card, for the weights. They are not from TensorFold o
 
 ## Hardware and software
 
-All values are from [`PROVENANCE.md`](../runs/2026-10-17/PROVENANCE.md).
+All values are from [`PROVENANCE.md`](../checksums/libertai-2.9bpw/PROVENANCE.md).
 
 | Item | Value |
 |---|---|

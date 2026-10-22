@@ -1,3 +1,0 @@
-# docker logs tfv41-r0 (rank 0, head), run 2, after the start: the vision tower allocation
-[tensorfold] vision tower on rank 0: 0.95 GiB; VL bias for 43 gates
-[tensorfold] vision warm-up: small image (184 tokens, 546x546 px) 730 ms, peak +0.06 GiB
