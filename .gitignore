@@ -8,5 +8,5 @@ __pycache__/
 .display-kv-image.tmp
 /data/
 switch-checkpoint.sh
-runs/2026/
-runs/2026-10-22/
+runs/
+proxy-tool-output-assessment-2026-10-21.md
