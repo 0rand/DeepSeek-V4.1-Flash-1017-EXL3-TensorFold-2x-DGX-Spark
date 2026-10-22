@@ -3,9 +3,9 @@
 #   scripts/download.sh [phase ...]
 # With no argument, it runs all phases in this order. Each phase is safe to run again:
 # it resumes a download, or it skips work that is done.
-#   download  EXL3 2.9 bpw weights (196 GiB, 43 shards) at a pinned revision, with the hf command
+#   download  EXL3 2.9 bpw weights (196 GiB, 39 shards) at a pinned revision, with the hf command
 #   engram    Engram shards 47 and 48 (189 GiB in total) and two small files, with resumable curl
-#   verify    sha256 check of 53 files against runs/2026-10-17/weights.sha256 (reads ~385 GiB)
+#   verify    sha256 check of 48 files against runs/2026-10-22/weights.sha256 (reads ~385 GiB)
 #   view      hard-link view in $MODEL_VIEW (model/ and engram/); the chat template comes next
 #   worker    copy the view to the worker with rsync, then check the hashes there
 # The files go to $DOWNLOAD_DIR first (default: $MODEL_VIEW.src). Keep it on the same disk as
@@ -21,11 +21,11 @@ case "${1:-}" in -h | --help) usage; exit 0 ;; esac
 # shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
-# --- Pinned inputs. The sizes come from runs/2026-10-17/PROVENANCE.md, section 2. ---
-EXL3_REPO=LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-2.9bpw
-EXL3_REV=afc7aa0aab98ee735c0f54e0a122019af1ac08f1
-EXL3_SHARDS=43
-EXL3_BYTES=210818691539   # model/ in the view, without the two template files
+# --- Pinned inputs. The sizes come from the Hub index and runs/2026-10-22/weights.sha256. ---
+EXL3_REPO=Mia-AiLab/DeepSeek-V4.1-Flash-1017-EXL3-EAQ-v1-2.9-bpw
+EXL3_REV=45ee5d0fd106c94a3d77f721e09cbb2f50e5a16b
+EXL3_SHARDS=39
+EXL3_BYTES=210662934171   # model/ in the view, without chat_template.jinja
 BASE_REPO=deepseek-ai/DeepSeek-V4.1-Flash-1017
 BASE_REV=1bae0e1088993b9b82de08f59de5be5a34e42170
 ENGRAM_FILES=(            # "name size in bytes": the four files of the base repo that the view needs
@@ -34,7 +34,7 @@ ENGRAM_FILES=(            # "name size in bytes": the four files of the base rep
   "model.safetensors.index.json 7470294"
   "config.json 3311"
 )
-SUMS="$ROOT/runs/2026-10-17/weights.sha256"
+SUMS="$ROOT/runs/2026-10-22/weights.sha256"
 SPARE_BYTES=$((10 * 1024 * 1024 * 1024))   # keep 10 GiB free after the work
 
 ENGRAM_BYTES=0
@@ -156,7 +156,7 @@ phase_download() {
   mkdir -p "$DL_DIR/model"
   log "download: $EXL3_REPO at ${EXL3_REV:0:8}, about $(gib_up "$EXL3_BYTES") GiB, into $DL_DIR/model"
   for attempt in 1 2 3 4 5; do
-    if "$hf" download "$EXL3_REPO" --revision "$EXL3_REV" --exclude 'assets/*' --local-dir "$DL_DIR/model" > /dev/null; then
+    if "$hf" download "$EXL3_REPO" --revision "$EXL3_REV" --exclude 'assets/*' --exclude 'encoding/*' --exclude 'images/*' --local-dir "$DL_DIR/model" > /dev/null; then
       log "download: done"
       return 0
     fi

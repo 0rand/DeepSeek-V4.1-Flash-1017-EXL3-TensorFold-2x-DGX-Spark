@@ -30,7 +30,7 @@ else
 fi
 for d in "$MODEL_VIEW/model" "$MODEL_VIEW/engram"; do [ -d "\$d" ] || echo "FAIL missing \$d"; done
 [ -f "$MODEL_VIEW/model/chat_template.jinja" ] || echo "FAIL missing $MODEL_VIEW/model/chat_template.jinja"
-n=\$(ls "$MODEL_VIEW"/model/*.safetensors 2>/dev/null | wc -l); [ "\$n" -ge 43 ] || echo "FAIL \$n of 43 weight shards"
+n=\$(ls "$MODEL_VIEW"/model/*.safetensors 2>/dev/null | wc -l); [ "\$n" -ge "${MIN_SHARDS:-43}" ] || echo "FAIL \$n of ${MIN_SHARDS:-43} weight shards"
 docker image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null | sed 's/^/IMAGE /' || echo "FAIL no image $IMAGE"
 # Opt in with PREFLIGHT_NCCL_BOOTSTRAP=1 in .env (off by default: it starts one container on each node, and no live
 # run shows it is safe for every setup). This checks NCCL's socket bootstrap only, not the RDMA data path. It

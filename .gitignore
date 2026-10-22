@@ -1,4 +1,5 @@
 .env
+.env-*
 logs/
 __pycache__/
 *.pyc
@@ -6,3 +7,6 @@ __pycache__/
 .display-kv-image
 .display-kv-image.tmp
 /data/
+switch-checkpoint.sh
+runs/2026/
+runs/2026-10-22/
