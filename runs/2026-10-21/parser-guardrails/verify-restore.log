@@ -1,6 +1,0 @@
-[PASS] plain reply: 39 tokens in 0.9s
-[PASS] thinking reply: 25 tokens in 0.4s
-[PASS] strict json_schema: 16 tokens in 6.3s
-[PASS] tool_choice required: 39 tokens in 1.1s
-[PASS] regex: 7 tokens in 0.2s
-5/5 passed

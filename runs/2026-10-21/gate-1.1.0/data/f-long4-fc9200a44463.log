@@ -1,7 +1,0 @@
-prompts: [('L20000', 20023), ('L50000', 50192), ('L100000', 100621), ('L200000', 200082)]
-  long L20000 seed=7 tokens=1500 sha=d58f653b2ce8 ttft=9.1 tps=19.0 
-  long L50000 seed=8 tokens=1500 sha=f42ae2e092ab ttft=53.7 tps=29.4 
-  long L100000 seed=9 tokens=1500 sha=0ed6e9e70041 ttft=126.6 tps=40.1 
-  long L200000 seed=10 tokens=1500 sha=0d2a3aa664b6 ttft=245.9 tps=113.6 
-elapsed 260s errors=0
-LONG_EXIT=0

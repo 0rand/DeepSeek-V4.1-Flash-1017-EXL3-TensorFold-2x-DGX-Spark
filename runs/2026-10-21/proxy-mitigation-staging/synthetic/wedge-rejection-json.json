@@ -1,1 +1,0 @@
-{"error": {"type": "model_output_error", "code": "unavailable_tool_call", "source": "tensorfold.tool_output_guard", "reason": "invalid_executable_tool_output"}}

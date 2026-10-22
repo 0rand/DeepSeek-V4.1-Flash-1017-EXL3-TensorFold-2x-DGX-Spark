@@ -1,3 +1,0 @@
-[gate2 02:32:26Z] STEP f (fc9200a44463): idle memory before the start: head: 113838 MiB (free 115875, cache 1443) | worker: 112687 MiB (free 114371, cache 2145)
-[gate2 02:37:52Z] f idle memory after the start: head: 2941 MiB (free 3517, cache 5333) | worker: 3669 MiB (free 4533, cache 5062)
-[gate2 02:44:18Z] f idle memory before the long run: head: 3190 MiB (free 5119, cache 2950) | worker: 3759 MiB (free 5574, cache 3176)
