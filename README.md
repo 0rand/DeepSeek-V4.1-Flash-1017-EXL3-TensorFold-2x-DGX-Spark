@@ -1,6 +1,34 @@
 # DeepSeek V4.1 Flash on two DGX Spark
 
-Optional: [display-backed KV experiment](docs/DISPLAY-KV.md). Spill is disabled in this variant. Full hardware validation is pending.
+**Checkpoint:** This branch serves the LibertAI EXL3 2.9 bpw checkpoint: `LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-2.9bpw` at `afc7aa0a` (43 shards). The Mia-AiLab branch serves the Mia-AiLab EAQ v1 checkpoint at `45ee5d0f` (39 shards).
+
+## What this fork adds
+
+This repository adds the work below to the upstream TensorFold recipe. Each item has a guide in `docs/`.
+
+### Display-backed KV
+
+`./start-display-kv.sh` is an opt-in launcher. It maps 1792 MiB of the display reservation on each node into a 2.1M-position KV pool. It prepares the DRM settings on both nodes, probes the full mapping, and starts a private launch bundle. The ordinary `start.sh` does not change. The launcher never stops GDM. It uses the 1.0.0 engine base for the ordinary and display lanes. See [Display KV](docs/DISPLAY-KV.md).
+
+### SSD prompt cache
+
+The engine keeps the prefix cache in host memory. It also writes kept prompts to `CACHE_DIR/tf-ds-spill` on each node. The spill files use `O_DIRECT`, so they do not fill the page cache. A prompt survives a restart. An 18K-token prompt has a TTFT of 2.7 s after a restart, not 16.8 s. Old entries go after 7 days or when the size limit is reached. `SPILL_GIB` sets the limit. The display lane uses the same spill tier with display-safe settings. `/health["spill"]` and the `spill_*` Prometheus families show the state. See [Operations](docs/OPERATIONS.md) and [Display KV](docs/DISPLAY-KV.md).
+
+### Strict tool-output validation
+
+The display image validates the complete answer before it returns executable calls. It accepts JSON, Qwen function/parameter XML, GLM argument tags, and both spaced and unspaced DeepSeek DSML wrappers. It rejects malformed, truncated, unavailable, schema-invalid, and over-limit calls. It rejects all executable calls in the answer, including a valid call before the failure. It does not repair or truncate output. Literal examples in quotes, inline code, and code fences stay literal. The guard also runs when `tools` is omitted, null, or empty. Reasoning stays separate. `TOOL_OUTPUT_STREAMING=1` streams prose until the first protocol candidate, then buffers the rest for one strict parse. The non-streaming endpoint returns nothing before validation. A terminal rejection returns `x-should-retry: false`. See [Tool output](docs/TOOL-OUTPUT.md) and [the parser plan](streaming-tool-parser-fix-plan.md).
+
+### MediaLLMProxy pairing
+
+The serving stack can run behind MediaLLMProxy. The proxy uses `ToolOutputContract=StrictNative`. Raw scanning and raw-call curing are off. The strict stack is the only authority for tool output. The proxy keeps one strict-guard retry with request-side context. The retry does not change the request policy, the task, the thinking mode, the sampling, or the messages. The proxy test suite has 287 passing tests. Streaming retry stays limited to the pre-visible preamble. The proxy scanner is a second parser; it can kill a valid native call or turn a literal example into a call. Keep `CureRawToolCalls=false`. See [the proxy assessment](proxy-tool-output-assessment-2026-10-21.md) and [the mitigation plan](proxy-mitigation-improvement-plan-2026-10-21.md).
+
+### Loop guard and sampling
+
+The proxy has a loop guard. It stops repeated tool-call loops and a mid-turn wedge. The current safe profile disables the broken mid-turn wedge and keeps the request-side loop-guard stages. Automatic mid-turn loop recovery and automatic strict-error recovery are off in that profile. Long reasoning can still run to the generation limit. The engine default sampling is `temperature=1.0` and `top_p=1.0`, as DeepSeek recommends for V4.1. This pair uses `TEMPERATURE=0.4` and `TOP_P=1.0` in its serving profile. Keep the proxy sampling and the engine sampling aligned. A retry must not change the sampling to force an apparent success. See [Operations](docs/OPERATIONS.md) and [the proxy plan](proxy-mitigation-improvement-plan-2026-10-21.md).
+
+---
+
+Optional: [display-backed KV experiment](docs/DISPLAY-KV.md). The ordinary lane keeps the SSD prompt spill; the display lane uses the display-safe spill tier.
 
 **Run DeepSeek's V4.1 Flash model on two NVIDIA DGX Spark computers with about 2× the decode and prefill speed of the standard vLLM setup, ready for AI agents.**
 
